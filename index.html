@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colourbook — palette library</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><rect width=%228%22 height=%228%22 fill=%22%23C8451F%22/><rect x=%228%22 width=%228%22 height=%228%22 fill=%22%23F2C230%22/><rect y=%228%22 width=%228%22 height=%228%22 fill=%22%233767C8%22/><rect x=%228%22 y=%228%22 width=%228%22 height=%228%22 fill=%22%231D1A16%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F6F2E9;
+    --card: #FFFDF8;
+    --ink: #1D1A16;
+    --line: #E0D8C6;
+    --mut: #8A8272;
+    --accent: #C8451F;
+    --serif: "Fraunces", Georgia, serif;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* paper grain */
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: 40; pointer-events: none; opacity: .05;
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/></filter><rect width="180" height="180" filter="url(%23n)"/></svg>');
+  }
+
+  header.masthead { padding: clamp(3rem, 8vw, 6rem) clamp(1.25rem, 4vw, 4rem) 2rem; }
+  .masthead h1 {
+    font-size: clamp(3rem, 10vw, 8rem);
+    font-weight: 560;
+    font-variation-settings: "opsz" 144;
+    letter-spacing: -.035em;
+    line-height: .95;
+  }
+  .masthead h1 em { font-style: italic; font-weight: 430; }
+  .masthead .sub {
+    margin-top: 1.1rem; font-style: italic; font-size: clamp(1rem, 2vw, 1.25rem); color: var(--mut);
+  }
+  .masthead .meta {
+    margin-top: 2rem; padding-top: .8rem; border-top: 1px solid var(--ink);
+    font-family: var(--mono); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase;
+    display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  }
+
+  .toolbar {
+    position: sticky; top: 0; z-index: 30;
+    background: color-mix(in srgb, var(--paper) 92%, transparent);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
+    padding: .8rem clamp(1.25rem, 4vw, 4rem);
+    display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem;
+  }
+  .toolbar input {
+    font-family: var(--mono); font-size: .8rem; color: var(--ink);
+    background: transparent; border: none; border-bottom: 1px solid var(--line);
+    padding: .35rem 0; width: 13rem; outline: none;
+  }
+  .toolbar input:focus { border-bottom-color: var(--ink); }
+  .toolbar input::placeholder { color: var(--mut); }
+  .chip {
+    font-family: var(--mono); font-size: .65rem; letter-spacing: .08em; text-transform: uppercase;
+    background: transparent; color: var(--ink); border: 1px solid var(--line);
+    border-radius: 999px; padding: .3rem .7rem; cursor: pointer;
+  }
+  .chip:hover { border-color: var(--ink); }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .chip.saved[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); }
+  .dots { display: flex; gap: .4rem; align-items: center; margin-left: .25rem; }
+  .dot {
+    width: 1rem; height: 1rem; border-radius: 50%; border: 1px solid rgba(0,0,0,.25);
+    cursor: pointer; padding: 0;
+  }
+  .dot[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .spacer { flex: 1; }
+
+  main {
+    padding: 1.5rem clamp(1.25rem, 4vw, 4rem) 4rem;
+    display: grid; gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: .65rem;
+    overflow: hidden; display: flex; flex-direction: column;
+    animation: rise .45s backwards;
+    transition: box-shadow .25s, translate .25s;
+  }
+  .card:hover { box-shadow: 0 12px 28px -14px rgba(29,26,22,.35); translate: 0 -2px; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+
+  .bands { display: flex; height: 8.5rem; }
+  .band {
+    flex: 1 1 0; min-width: 0; border: none; cursor: copy; padding: .4rem .3rem;
+    display: flex; align-items: flex-start; justify-content: center;
+    transition: flex-grow .28s;
+  }
+  .band span {
+    font-family: var(--mono); font-size: .62rem; letter-spacing: .03em;
+    opacity: 0; transition: opacity .2s; white-space: nowrap;
+  }
+  .band:hover, .band:focus-visible { flex-grow: 3; }
+  .band:hover span, .band:focus-visible span { opacity: 1; }
+  .bands.many .band span { writing-mode: vertical-rl; }
+  .band.lt span { color: rgba(255,255,255,.95); }
+  .band.dk span { color: rgba(20,18,15,.85); }
+
+  .card footer { padding: .7rem .9rem .8rem; border-top: 1px solid var(--line); }
+  .card .row1 { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
+  .card h3 { font-size: 1.05rem; font-weight: 560; font-style: italic; }
+  .card .page { font-family: var(--mono); font-size: .65rem; color: var(--mut); }
+  .card .row2 { margin-top: .45rem; display: flex; justify-content: space-between; align-items: center; }
+  .card .sec {
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--mut);
+  }
+  .acts { display: flex; gap: .7rem; }
+  .acts button {
+    font-family: var(--mono); font-size: .62rem; letter-spacing: .08em; text-transform: uppercase;
+    background: none; border: none; padding: 0; cursor: pointer; color: var(--ink);
+  }
+  .acts button:hover { color: var(--accent); }
+  .acts .save[aria-pressed="true"] { color: var(--accent); }
+
+  .empty { grid-column: 1 / -1; text-align: center; padding: 5rem 1rem; font-style: italic; color: var(--mut); font-size: 1.2rem; }
+
+  .colophon {
+    border-top: 1px solid var(--line); margin: 0 clamp(1.25rem, 4vw, 4rem); padding: 1.2rem 0 3rem;
+    font-family: var(--mono); font-size: .65rem; letter-spacing: .1em; text-transform: uppercase; color: var(--mut);
+  }
+
+  dialog {
+    margin: auto; /* the * reset above removes the UA centering */
+    background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: .75rem;
+    padding: 0; width: min(34rem, calc(100vw - 2rem));
+  }
+  dialog::backdrop { background: rgba(29,26,22,.45); }
+  dialog header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem .6rem; }
+  dialog h3 { font-style: italic; font-weight: 560; font-size: 1.3rem; }
+  dialog header button { background: none; border: none; font-size: 1rem; cursor: pointer; color: var(--mut); }
+  dialog nav { display: flex; gap: .4rem; padding: 0 1.25rem .8rem; flex-wrap: wrap; }
+  dialog pre {
+    margin: 0 1.25rem; padding: 1rem; background: var(--paper); border: 1px solid var(--line);
+    border-radius: .5rem; font-family: var(--mono); font-size: .72rem; line-height: 1.6;
+    max-height: 40vh; overflow: auto;
+  }
+  dialog footer { display: flex; gap: .5rem; justify-content: flex-end; padding: 1rem 1.25rem 1.25rem; }
+  dialog footer button {
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .08em; text-transform: uppercase;
+    border: 1px solid var(--ink); background: var(--ink); color: var(--paper);
+    border-radius: 999px; padding: .45rem 1rem; cursor: pointer;
+  }
+  dialog footer button.ghost { background: transparent; color: var(--ink); }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 1.5rem; translate: -50% 0; z-index: 50;
+    background: var(--ink); color: var(--paper); font-family: var(--mono); font-size: .7rem;
+    letter-spacing: .06em; padding: .55rem 1rem; border-radius: 999px;
+    opacity: 0; pointer-events: none; transition: opacity .25s, translate .25s;
+  }
+  #toast.show { opacity: 1; translate: -50% -4px; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <h1>COLOUR<em>BOOK</em></h1>
+  <p class="sub">A working library of brand-ready colour — every palette in the book, filterable and one click from your clipboard.</p>
+  <div class="meta"><span id="meta">—</span><span>V1.0 — 2026</span></div>
+</header>
+
+<div class="toolbar">
+  <input id="q" type="search" placeholder="Search name, section, hex…" aria-label="Search palettes">
+  <div id="sections"></div>
+  <div class="dots" id="dots" role="group" aria-label="Filter by hue"></div>
+  <span class="spacer"></span>
+  <button class="chip saved" id="savedChip" aria-pressed="false">♥ Saved <span id="savedCount"></span></button>
+</div>
+
+<main id="grid"></main>
+
+<footer class="colophon">Extracted from COLOURBOOK-V1.0_2026.pdf · regenerate with scripts/extract.py · saves live in this browser</footer>
+
+<dialog id="dlg">
+  <header><h3 id="dlgTitle"></h3><button id="dlgClose" aria-label="Close">✕</button></header>
+  <nav id="dlgTabs"></nav>
+  <pre id="dlgCode"></pre>
+  <footer>
+    <button class="ghost" id="dlgDl">Download</button>
+    <button id="dlgCopy">Copy</button>
+  </footer>
+</dialog>
+
+<div id="toast" role="status"></div>
+
+<script src="colors.js"></script>
+<script>
+const $ = (s) => document.querySelector(s);
+
+/* ---------- color math ---------- */
+const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+const lum = (hex) => { const [r, g, b] = rgb(hex); return (0.299 * r + 0.587 * g + 0.114 * b) / 255; };
+function hsl(hex) {
+  const [r, g, b] = rgb(hex).map((v) => v / 255);
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  let h = 0;
+  if (d) {
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h = (h * 60 + 360) % 360;
+  }
+  const l = (max + min) / 2;
+  const s = d ? d / (1 - Math.abs(2 * l - 1)) : 0;
+  return [h, s, l];
+}
+const HUES = [
+  ["red", "#D33F2C"], ["orange", "#E8871E"], ["yellow", "#F2C230"],
+  ["green", "#4C9A4C"], ["teal", "#2E8C8C"], ["blue", "#3767C8"],
+  ["purple", "#7A4FBF"], ["pink", "#D96BB8"], ["neutral", "#9A9285"],
+];
+function hueFamily(hex) {
+  const [h, s, l] = hsl(hex);
+  if (s < 0.12 || l > 0.96 || l < 0.05) return "neutral";
+  if (h < 15 || h >= 345) return "red";
+  if (h < 45) return "orange";
+  if (h < 70) return "yellow";
+  if (h < 165) return "green";
+  if (h < 200) return "teal";
+  if (h < 255) return "blue";
+  if (h < 290) return "purple";
+  return "pink";
+}
+PALETTES.forEach((p) => (p.hues = new Set(p.colors.map(hueFamily))));
+
+/* ---------- state ---------- */
+const saved = new Set(JSON.parse(localStorage.getItem("colorbook-saved") || "[]"));
+const state = { q: "", section: null, hue: null, savedOnly: false };
+const persist = () => localStorage.setItem("colorbook-saved", JSON.stringify([...saved]));
+
+/* ---------- toolbar ---------- */
+const sections = [...new Set(PALETTES.map((p) => p.section))];
+$("#sections").append(...["All", ...sections].map((s) => {
+  const b = document.createElement("button");
+  b.className = "chip"; b.textContent = s;
+  b.setAttribute("aria-pressed", s === "All");
+  b.onclick = () => { state.section = s === "All" ? null : s; render(); };
+  return b;
+}));
+$("#dots").append(...HUES.map(([name, swatch]) => {
+  const b = document.createElement("button");
+  b.className = "dot"; b.title = name; b.setAttribute("aria-label", "hue: " + name);
+  b.setAttribute("aria-pressed", "false"); b.style.background = swatch;
+  b.onclick = () => { state.hue = state.hue === name ? null : name; render(); };
+  return b;
+}));
+$("#q").oninput = (e) => { state.q = e.target.value.trim().toLowerCase(); render(); };
+$("#savedChip").onclick = () => { state.savedOnly = !state.savedOnly; render(); };
+
+/* ---------- render ---------- */
+function render() {
+  document.querySelectorAll("#sections .chip").forEach((b) =>
+    b.setAttribute("aria-pressed", b.textContent === (state.section ?? "All")));
+  document.querySelectorAll(".dot").forEach((b) =>
+    b.setAttribute("aria-pressed", String(b.title === state.hue)));
+  $("#savedChip").setAttribute("aria-pressed", String(state.savedOnly));
+  $("#savedCount").textContent = saved.size || "";
+
+  const list = PALETTES.filter((p) =>
+    (!state.section || p.section === state.section) &&
+    (!state.hue || p.hues.has(state.hue)) &&
+    (!state.savedOnly || saved.has(p.page)) &&
+    (!state.q || (p.name + " " + p.section + " " + p.colors.join(" ")).toLowerCase().includes(state.q)));
+
+  const grid = $("#grid");
+  grid.innerHTML = list.length ? "" : '<p class="empty">No palettes match — loosen a filter.</p>';
+  list.forEach((p, i) => {
+    const card = document.createElement("article");
+    card.className = "card";
+    card.style.animationDelay = Math.min(i, 16) * 30 + "ms";
+    const bands = p.colors.map((c) =>
+      `<button class="band ${lum(c) > 0.55 ? "dk" : "lt"}" style="background:${c}" data-hex="${c}" aria-label="Copy ${c}"><span>${c}</span></button>`).join("");
+    card.innerHTML = `
+      <div class="bands ${p.colors.length > 12 ? "many" : ""}">${bands}</div>
+      <footer>
+        <div class="row1"><h3>${p.name}</h3><span class="page">p. ${p.page}</span></div>
+        <div class="row2">
+          <span class="sec">${p.section}</span>
+          <span class="acts">
+            <button class="save" aria-pressed="${saved.has(p.page)}" aria-label="Save palette">${saved.has(p.page) ? "♥ saved" : "♡ save"}</button>
+            <button class="cpy">copy</button>
+            <button class="exp">export</button>
+          </span>
+        </div>
+      </footer>`;
+    card.querySelectorAll(".band").forEach((b) => (b.onclick = () => copy(b.dataset.hex, b.dataset.hex + " copied")));
+    card.querySelector(".save").onclick = () => { saved.has(p.page) ? saved.delete(p.page) : saved.add(p.page); persist(); render(); };
+    card.querySelector(".cpy").onclick = () => copy(p.colors.join(", "), "palette copied");
+    card.querySelector(".exp").onclick = () => openExport(p);
+    grid.append(card);
+  });
+  $("#meta").textContent = `${list.length} of ${PALETTES.length} palettes · ${sections.length} sections · ${PALETTES.reduce((n, p) => n + p.colors.length, 0)} colours`;
+}
+
+/* ---------- copy + toast ---------- */
+let toastTimer;
+function toast(msg) {
+  $("#toast").textContent = msg;
+  $("#toast").classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $("#toast").classList.remove("show"), 1400);
+}
+function copy(text, msg) {
+  (navigator.clipboard?.writeText(text) || Promise.reject()).catch(() => {
+    const t = document.createElement("textarea");
+    t.value = text; document.body.append(t); t.select();
+    document.execCommand("copy"); t.remove();
+  });
+  toast(msg || "copied");
+}
+
+/* ---------- export ---------- */
+const slug = (p) => p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+const FORMATS = {
+  hex:  { ext: "txt",  make: (p) => p.colors.join("\n") },
+  css:  { ext: "css",  make: (p) => `:root {\n${p.colors.map((c, i) => `  --${slug(p)}-${i + 1}: ${c};`).join("\n")}\n}` },
+  scss: { ext: "scss", make: (p) => p.colors.map((c, i) => `$${slug(p)}-${i + 1}: ${c};`).join("\n") },
+  tailwind: { ext: "js", make: (p) => `colors: {\n  "${slug(p)}": {\n${p.colors.map((c, i) => `    ${i + 1}: "${c}",`).join("\n")}\n  },\n},` },
+  json: { ext: "json", make: (p) => JSON.stringify({ name: p.name, section: p.section, page: p.page, colors: p.colors }, null, 2) },
+};
+let dlgPalette, dlgFormat = "hex";
+function openExport(p) {
+  dlgPalette = p;
+  $("#dlgTitle").textContent = p.name;
+  setFormat(dlgFormat);
+  $("#dlg").showModal();
+}
+function setFormat(f) {
+  dlgFormat = f;
+  $("#dlgTabs").innerHTML = "";
+  $("#dlgTabs").append(...Object.keys(FORMATS).map((k) => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.textContent = k; b.setAttribute("aria-pressed", k === f);
+    b.onclick = () => setFormat(k);
+    return b;
+  }));
+  $("#dlgCode").textContent = FORMATS[f].make(dlgPalette);
+}
+$("#dlgClose").onclick = () => $("#dlg").close();
+$("#dlg").onclick = (e) => { if (e.target === $("#dlg")) $("#dlg").close(); };
+$("#dlgCopy").onclick = () => copy($("#dlgCode").textContent, dlgFormat + " copied");
+$("#dlgDl").onclick = () => {
+  const f = FORMATS[dlgFormat];
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([f.make(dlgPalette)]));
+  a.download = `${slug(dlgPalette)}.${f.ext}`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+render();
+
+/* ponytail: self-check — fails loudly in console if the data or color math breaks */
+console.assert(PALETTES.length > 100, "palette count suspicious", PALETTES.length);
+console.assert(hueFamily("#FF0000") === "red" && hueFamily("#808080") === "neutral" && hueFamily("#0185FF") === "blue", "hueFamily broken");
+</script>
+</body>
+</html>
