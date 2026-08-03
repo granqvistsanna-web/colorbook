@@ -158,6 +158,8 @@
   #builder { display: none; padding: 0 1.5rem .5rem; }
   #dlgLink { display: none; }
   #dlg.build #builder, #dlg.build #dlgLink { display: block; }
+  /* in builder mode the code pane is a preview of the export, not the task — the dialog is height-bound */
+  #dlg.build pre { max-height: 12vh; }
   .blab {
     font-weight: 500; font-size: .575rem; letter-spacing: .2em; text-transform: uppercase;
     color: var(--mut); margin: 1.1rem 0 .45rem;
@@ -190,17 +192,32 @@
     text-transform: uppercase; color: rgba(255,255,255,.9);
   }
 
-  .prev { border: 1px solid var(--line); padding: 1.1rem 1.2rem; background: var(--p-bg); color: var(--p-ink); }
+  /* unbuilt must look unbuilt — falling back to the app's own greys rendered a finished-looking card */
+  .unbuilt {
+    border: 1px dashed var(--line); padding: 1.7rem 1.2rem; text-align: center;
+    font-weight: 500; font-size: .575rem; letter-spacing: .2em; text-transform: uppercase; color: var(--mut);
+  }
+  /* bg, surface and border are meant to sit close together — they only read as three roles when adjacent */
+  .prev { border: 1px solid var(--p-line); background: var(--p-bg); color: var(--p-ink); }
+  .pnav {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--p-surface); border-bottom: 1px solid var(--p-line); padding: .5rem .8rem;
+    font-weight: 500; font-size: .55rem; letter-spacing: .18em; text-transform: uppercase; color: var(--p-mut);
+  }
+  .pbody { padding: 1.1rem 1.2rem; }
   .prev h4 { font-size: 1.15rem; font-weight: 500; letter-spacing: -.015em; }
-  .prev p { font-size: .8rem; line-height: 1.55; color: var(--p-mut); margin: .4rem 0 .9rem; }
-  .prow { display: flex; align-items: center; gap: .75rem; border-top: 1px solid var(--p-line); padding-top: .9rem; }
+  .prev p { font-size: .8rem; line-height: 1.55; margin: .4rem 0 .9rem; }
+  .prev .pcap { font-size: .7rem; color: var(--p-mut); margin: .9rem 0 0; }
+  .pcard {
+    background: var(--p-surface); border: 1px solid var(--p-line); padding: .9rem;
+    display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+  }
   .prev button {
     font-family: var(--sans); font-weight: 500; font-size: .625rem; letter-spacing: .16em; text-transform: uppercase;
     background: var(--p-core); color: var(--p-core-ink); border: none; padding: .6rem 1.3rem; cursor: default;
   }
-  .prev .tag {
-    font-family: var(--mono); font-size: .6rem; background: var(--p-acc); color: var(--p-acc-ink); padding: .3rem .6rem;
-  }
+  .ptags { display: flex; flex-wrap: wrap; gap: .3rem; }
+  .prev .tag { font-family: var(--mono); font-size: .6rem; padding: .3rem .6rem; }
 
   #toast {
     position: fixed; left: 50%; bottom: 1.75rem; translate: -50% 0; z-index: 50;
@@ -239,10 +256,18 @@
     <p class="blab">Neutral palette</p>
     <div class="neuts" id="bNeuts"></div>
     <p class="blab">Preview</p>
-    <div class="prev" id="bPrev">
-      <h4>Heading</h4>
-      <p>Body copy sits on the lightest neutral, set in the second-darkest step.</p>
-      <div class="prow"><button type="button">Primary action</button><span class="tag">Accent</span></div>
+    <p class="unbuilt" id="bBlank">Pick a core colour and a neutral palette</p>
+    <div class="prev" id="bPrev" hidden>
+      <div class="pnav"><span>Navigation</span><span>Surface</span></div>
+      <div class="pbody">
+        <h4>Heading</h4>
+        <p>Body copy sits on the background in the text colour.</p>
+        <div class="pcard">
+          <button type="button">Primary action</button>
+          <span class="ptags" id="bTags"></span>
+        </div>
+        <p class="pcap">Caption — muted text on the background.</p>
+      </div>
     </div>
   </section>
   <nav id="dlgTabs"></nav>
@@ -526,16 +551,31 @@ function renderBuild() {
     renderBuild();
   }));
 
+  paintPreview(p, b, b.neutral);
+
   dlgPalette = system(p, b);
-  const r = dlgPalette.roles;
-  $("#bPrev").style.cssText = [
-    `--p-bg:${r.bg || "var(--paper)"}`, `--p-ink:${r.text || "var(--ink)"}`,
-    `--p-mut:${r["text-muted"] || "var(--mut)"}`, `--p-line:${r.border || "var(--line)"}`,
-    `--p-core:${b.core || "var(--ink)"}`, `--p-core-ink:${r["core-ink"] || "var(--paper)"}`,
-    `--p-acc:${b.accent[0] || r.border || "var(--line)"}`, `--p-acc-ink:${r["accent-ink"] || "var(--ink)"}`,
-  ].join(";");
   $("#dlgCopy").disabled = $("#dlgDl").disabled = !dlgPalette.colors.length;
   setFormat(dlgFormat);
+}
+
+/* repaints #bPrev only — never touches dlgPalette or setFormat, so a hovered neutral can't flicker the code pane.
+   `neutral` is a parameter rather than b.neutral so an uncommitted hover can be previewed. */
+function paintPreview(p, b, neutral) {
+  /* the neutral supplies bg, surface, border and text — without one there is no system to look at */
+  const built = !!(b.core && neutral);
+  $("#bBlank").hidden = built;
+  $("#bPrev").hidden = !built;
+  if (!built) return;
+
+  const r = system(p, { ...b, neutral }).roles;
+  $("#bPrev").style.cssText = [
+    `--p-bg:${r.bg}`, `--p-surface:${r.surface}`, `--p-line:${r.border}`,
+    `--p-ink:${r.text}`, `--p-mut:${r["text-muted"]}`,
+    `--p-core:${b.core}`, `--p-core-ink:${r["core-ink"]}`,
+  ].join(";");
+  /* every accent, not just accent-1 — picking six and seeing one is how you ship a system you never saw */
+  $("#bTags").innerHTML = b.accent
+    .map((c, i) => `<span class="tag" style="background:${c};color:${ink(c)}">accent ${i + 1}</span>`).join("");
 }
 
 render();
@@ -567,6 +607,10 @@ console.assert(NEUTRALS.length === 5, "expected 5 neutral scales", NEUTRALS.leng
   console.assert(s.names.slice(0, 2).join() === "core,accent-1" && s.roleAt === 13, "system() shape", s);
   console.assert(FORMATS.css.make(s).includes("--neutral-11: #FAFAF9;"), "semantic export names broken");
   console.assert(s.roles.bg === "#FAFAF9" && s.roles.text !== s.roles.bg, "roles broken", s.roles);
+  console.assert(new Set([s.roles.bg, s.roles.surface, s.roles.border]).size === 3, "bg/surface/border collapsed", s.roles);
+  const many = system({ name: "T", section: "X", page: 0 },
+    { core: "#111111", accent: ["#211111", "#221111", "#231111", "#241111", "#251111", "#261111"], neutral: "Stone" });
+  console.assert(many.names.includes("accent-6") && many.roleAt === 18, "6-accent system shape", many);
   const h = FORMATS.hex.make(s).split("\n");
   console.assert(new Set(h).size === h.length && h.length === 13, "hex export repeats role colors", h);
   console.assert(JSON.parse(FORMATS.tokens.make(s))["core"]?.$value === "#111111", "tokens format broken");
