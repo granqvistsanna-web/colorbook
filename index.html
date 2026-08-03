@@ -163,7 +163,9 @@
   .blab {
     font-weight: 500; font-size: .575rem; letter-spacing: .2em; text-transform: uppercase;
     color: var(--mut); margin: 1.1rem 0 .45rem;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
   }
+  .themes { display: flex; gap: .9rem; }
 
   .picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(2.5rem, 1fr)); gap: 1px; }
   /* PDF p.5: a full-colour grid with the picks outlined and the eliminated simply unmarked.
@@ -255,7 +257,10 @@
     <div class="picks" id="bPicks"></div>
     <p class="blab">Neutral palette</p>
     <div class="neuts" id="bNeuts"></div>
-    <p class="blab">Preview</p>
+    <p class="blab">Preview<span class="themes">
+      <button class="chip" data-theme="light">Light</button>
+      <button class="chip" data-theme="dark">Dark</button>
+    </span></p>
     <p class="unbuilt" id="bBlank">Pick a core colour and a neutral palette</p>
     <div class="prev" id="bPrev" hidden>
       <div class="pnav"><span>Navigation</span><span>Surface</span></div>
@@ -475,6 +480,9 @@ const NEUTRALS = PALETTES.filter((p) => p.section === "Neutrals");
 const stripBg = (cs) =>
   `linear-gradient(90deg,${cs.map((c, i) => `${c} ${(i / cs.length) * 100}% ${((i + 1) / cs.length) * 100}%`).join(",")})`;
 
+/* which step of the 11-wide neutral ramp each role reads, in the light theme */
+const ROLE_STEP = { bg: 10, surface: 9, border: 8, "text-muted": 5, text: 1 };
+
 function system(p, b) {
   const n = NEUTRALS.find((x) => x.name === b.neutral);
   const colors = [], names = [];
@@ -483,7 +491,10 @@ function system(p, b) {
   n?.colors.forEach((c, i) => { colors.push(c); names.push(`neutral-${i + 1}`); });
   /* semantic roles — the same hexes again, named for the job they do; neutrals run dark→light, 11 steps */
   const roleAt = colors.length;
-  const roles = n ? { bg: n.colors[10], surface: n.colors[9], border: n.colors[8], "text-muted": n.colors[5], text: n.colors[1] } : {};
+  /* every Neutrals scale is 11 steps in identical positions, so dark is these indices mirrored.
+     The ramp itself never flips — only which end each role reads from. */
+  const roles = {};
+  if (n) Object.entries(ROLE_STEP).forEach(([k, i]) => (roles[k] = n.colors[b.dark ? 10 - i : i]));
   if (b.core) roles["core-ink"] = ink(b.core);
   if (b.accent[0]) roles["accent-ink"] = ink(b.accent[0]);
   Object.entries(roles).forEach(([k, c]) => { colors.push(c); names.push(k); });
@@ -505,14 +516,18 @@ function openBuild(p) {
 /* ---------- shareable build link: #b=<page>,<core>,<accent>…,<neutral> ---------- */
 /* hexes, not indices — colors.js is regenerated, and indices would repoint a shared link at other colours */
 const encodeBuild = (page, b) =>
-  "#b=" + [page, b.core || "-", ...b.accent, b.neutral || "-"].map((v) => String(v).replace("#", "")).join(",");
+  "#b=" + [page, b.core || "-", ...b.accent, b.neutral || "-", ...(b.dark ? ["d"] : [])]
+    .map((v) => String(v).replace("#", "")).join(",");
 function decodeBuild(hash) {
   const m = hash.match(/^#b=(.+)/);
   if (!m) return null;
   const [page, core, ...rest] = m[1].split(",");
+  /* trailing "d" is the dark flag — emitted only when set, so a light link is byte-identical to the old format */
+  let dark = false;
+  if (rest[rest.length - 1] === "d") { dark = true; rest.pop(); }
   const neutral = rest.pop();
   const un = (h) => (h === "-" ? null : "#" + h.toUpperCase());
-  return { page, core: un(core), accent: rest.map(un), neutral: neutral === "-" ? null : neutral };
+  return { page, core: un(core), accent: rest.map(un), neutral: neutral === "-" ? null : neutral, dark };
 }
 $("#dlgLink").onclick = () =>
   copy(location.origin + location.pathname + encodeBuild(dlgBuild.page, builds[dlgBuild.page]), "link copied");
@@ -551,6 +566,11 @@ function renderBuild() {
     renderBuild();
   }));
 
+  $("#builder").querySelectorAll(".themes .chip").forEach((el) => {
+    el.setAttribute("aria-pressed", String(!!b.dark === (el.dataset.theme === "dark")));
+    el.onclick = () => { b.dark = el.dataset.theme === "dark"; persistBuilds(); renderBuild(); };
+  });
+
   paintPreview(p, b, b.neutral);
 
   dlgPalette = system(p, b);
@@ -585,8 +605,9 @@ render();
   if (d) {
     history.replaceState(null, "", location.pathname + location.search);
     const p = PALETTES.find((x) => String(x.page) === d.page);
-    if (p && (!builds[p.page]?.core || confirm(`Replace your saved build on p. ${d.page}?`))) {
-      builds[p.page] = { core: d.core, accent: d.accent, neutral: d.neutral };
+    const had = builds[p?.page];
+    if (p && (!(had?.core || had?.accent.length || had?.neutral) || confirm(`Replace your saved build on p. ${d.page}?`))) {
+      builds[p.page] = { core: d.core, accent: d.accent, neutral: d.neutral, dark: d.dark };
       openBuild(p); /* re-validates the hexes against the current palette */
       persistBuilds();
     }
@@ -622,6 +643,16 @@ console.assert(NEUTRALS.length === 5, "expected 5 neutral scales", NEUTRALS.leng
   console.assert(d.page === "7" && d.core === b.core && d.accent.join() === b.accent.join() && d.neutral === b.neutral, "build link roundtrip", d);
   const e = decodeBuild(encodeBuild(7, { core: null, accent: [], neutral: null }));
   console.assert(e.core === null && e.neutral === null && !e.accent.length, "unset core/neutral roundtrip", e);
+  const dl = decodeBuild(encodeBuild(7, { ...b, dark: true }));
+  console.assert(dl.dark === true && dl.neutral === "Stone" && dl.accent.join() === b.accent.join(),
+    "dark flag roundtrip", dl);
+  console.assert(decodeBuild(encodeBuild(7, b)).dark === false, "light link gained a dark flag");
+
+  /* dark is the same role indices mirrored — the 11-step ramp itself never flips */
+  const dk = system({ name: "T", section: "X", page: 0 }, { core: "#111111", accent: ["#222222"], neutral: "Stone", dark: true });
+  console.assert(dk.roles.bg === "#0C0A09" && dk.roles.text === "#F5F5F4", "dark roles not mirrored", dk.roles);
+  console.assert(dk.roles.bg !== s.roles.bg && dk.roleAt === s.roleAt && dk.names.join() === s.names.join(),
+    "theme should change colours, not the export shape");
 }
 </script>
 </body>
