@@ -560,11 +560,17 @@ function renderBuild() {
 
   $("#bNeuts").innerHTML = NEUTRALS.map((n) =>
     `<button class="neut" aria-pressed="${b.neutral === n.name}" style="background:${stripBg(n.colors)}"><b>${n.name}</b></button>`).join("");
-  $("#bNeuts").querySelectorAll(".neut").forEach((el, i) => (el.onclick = () => {
-    b.neutral = b.neutral === NEUTRALS[i].name ? null : NEUTRALS[i].name;
-    persistBuilds();
-    renderBuild();
-  }));
+  $("#bNeuts").querySelectorAll(".neut").forEach((el, i) => {
+    el.onclick = () => {
+      b.neutral = b.neutral === NEUTRALS[i].name ? null : NEUTRALS[i].name;
+      persistBuilds();
+      renderBuild();
+    };
+    /* Stone/Zinc/Grey/Slate differ only by undertone and are near-indistinguishable as 1.5rem strips.
+       Repaint only — renderBuild() here would re-run setFormat and flicker the code pane on every hover. */
+    el.onpointerenter = () => paintPreview(p, b, NEUTRALS[i].name);
+    el.onpointerleave = () => paintPreview(p, b, b.neutral);
+  });
 
   $("#builder").querySelectorAll(".themes .chip").forEach((el) => {
     el.setAttribute("aria-pressed", String(!!b.dark === (el.dataset.theme === "dark")));
@@ -618,6 +624,8 @@ render();
 console.assert(PALETTES.length > 100, "palette count suspicious", PALETTES.length);
 console.assert(hueFamily("#FF0000") === "red" && hueFamily("#808080") === "neutral" && hueFamily("#0185FF") === "blue", "hueFamily broken");
 console.assert(NEUTRALS.length === 5, "expected 5 neutral scales", NEUTRALS.length);
+console.assert(NEUTRALS.every((n) => n.colors.length === 11 && lum(n.colors[0]) < lum(n.colors[10])),
+  "neutral scales must be 11 steps dark→light — the dark theme mirrors on that", NEUTRALS);
 { /* peeking at a palette writes an empty entry — it must not count as built */
   builds[-1] = { core: null, accent: [], neutral: "Stone" };
   console.assert(!isBuilt(-1), "empty build entry counts as built");
@@ -632,6 +640,10 @@ console.assert(NEUTRALS.length === 5, "expected 5 neutral scales", NEUTRALS.leng
   const many = system({ name: "T", section: "X", page: 0 },
     { core: "#111111", accent: ["#211111", "#221111", "#231111", "#241111", "#251111", "#261111"], neutral: "Stone" });
   console.assert(many.names.includes("accent-6") && many.roleAt === 18, "6-accent system shape", many);
+  /* hovering a neutral is only worth the lines if the strips actually resolve to different roles */
+  const t = { name: "T", section: "X", page: 0 }, bs = { core: "#111111", accent: [], neutral: "Stone" };
+  console.assert(system(t, { ...bs, neutral: "Zinc" }).roles.bg !== system(t, bs).roles.bg,
+    "neutral hover preview can't differ");
   const h = FORMATS.hex.make(s).split("\n");
   console.assert(new Set(h).size === h.length && h.length === 13, "hex export repeats role colors", h);
   console.assert(JSON.parse(FORMATS.tokens.make(s))["core"]?.$value === "#111111", "tokens format broken");
