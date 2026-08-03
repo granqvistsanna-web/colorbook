@@ -162,16 +162,21 @@
     font-weight: 500; font-size: .575rem; letter-spacing: .2em; text-transform: uppercase;
     color: var(--mut); margin: 1.1rem 0 .45rem;
   }
-  .blab span { text-transform: none; letter-spacing: .04em; font-family: var(--mono); margin-left: .5rem; }
 
   .picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(2.5rem, 1fr)); gap: 1px; }
+  /* PDF p.5: a full-colour grid with the picks outlined and the eliminated simply unmarked.
+     Never drain the swatch — you cannot choose a core colour from swatches that don't show the colour. */
   .pick {
     height: 3rem; border: none; padding: 0; cursor: pointer;
-    opacity: .22; transition: opacity .18s;
-    display: flex; align-items: center; justify-content: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .1rem;
   }
-  .pick.on, .pick:hover { opacity: 1; }
+  /* ring colour rides the lt/dk class the labels already use — a flat black ring vanishes on a near-black swatch */
+  .pick:hover { outline: 1px solid; outline-offset: -1px; }
+  .pick.on { outline: 2px solid; outline-offset: -2px; }
+  .pick.lt { outline-color: rgba(255,255,255,.95); }
+  .pick.dk { outline-color: rgba(0,0,0,.8); }
   .pick span { font-family: var(--mono); font-size: .55rem; letter-spacing: .06em; }
+  .pick .hx { font-size: .5rem; opacity: .75; }
   .pick.lt span { color: rgba(255,255,255,.95); }
   .pick.dk span { color: rgba(0,0,0,.8); }
 
@@ -229,7 +234,7 @@
 <dialog id="dlg">
   <header><h3 id="dlgTitle"></h3><button id="dlgClose" aria-label="Close">✕</button></header>
   <section id="builder">
-    <p class="blab">Core colour<span id="bHint"></span></p>
+    <p class="blab">Core colour</p>
     <div class="picks" id="bPicks"></div>
     <p class="blab">Neutral palette</p>
     <div class="neuts" id="bNeuts"></div>
@@ -487,6 +492,10 @@ function decodeBuild(hash) {
 $("#dlgLink").onclick = () =>
   copy(location.origin + location.pathname + encodeBuild(dlgBuild.page, builds[dlgBuild.page]), "link copied");
 
+/* the three states of PDF p.5: core, an accent ordinal, or "" for eliminated */
+const pickRole = (b, hex) =>
+  b.core === hex ? "core" : b.accent.includes(hex) ? String(b.accent.indexOf(hex) + 1) : "";
+
 /* first click = core, clicking core again releases it, any other click toggles accent */
 function pick(hex) {
   const b = builds[dlgBuild.page];
@@ -501,10 +510,11 @@ function renderBuild() {
   const p = dlgBuild, b = builds[p.page];
   /* ponytail: roles keyed by hex, so a palette listing the same hex twice lights up both — same colour, same role */
   $("#bPicks").innerHTML = p.colors.map((c) => {
-    const i = b.accent.indexOf(c);
-    const role = b.core === c ? "core" : i > -1 ? String(i + 1) : "";
+    const role = pickRole(b, c);
+    /* hex without the "#" — at 27 swatches a column is ~2.5rem and the full form doesn't fit */
     return `<button class="pick ${role ? "on" : ""} ${lum(c) > 0.55 ? "dk" : "lt"}" style="background:${c}"
-      data-hex="${c}" aria-label="${c} — ${role ? (role === "core" ? "core" : "accent " + role) : "eliminated"}"><span>${role}</span></button>`;
+      data-hex="${c}" aria-label="${c} — ${role ? (role === "core" ? "core" : "accent " + role) : "eliminated"}"
+      >${role ? `<span>${role}</span><span class="hx">${c.slice(1)}</span>` : ""}</button>`;
   }).join("");
   $("#bPicks").querySelectorAll(".pick").forEach((el) => (el.onclick = () => pick(el.dataset.hex)));
 
@@ -515,8 +525,6 @@ function renderBuild() {
     persistBuilds();
     renderBuild();
   }));
-
-  $("#bHint").textContent = b.core ? `— ${b.core}` : "— click a swatch";
 
   dlgPalette = system(p, b);
   const r = dlgPalette.roles;
@@ -564,6 +572,8 @@ console.assert(NEUTRALS.length === 5, "expected 5 neutral scales", NEUTRALS.leng
   console.assert(JSON.parse(FORMATS.tokens.make(s))["core"]?.$value === "#111111", "tokens format broken");
 
   const b = { core: "#111111", accent: ["#333333", "#222222"], neutral: "Stone" };
+  console.assert(pickRole(b, "#111111") === "core" && pickRole(b, "#222222") === "2" && pickRole(b, "#999999") === "",
+    "pickRole broken", [pickRole(b, "#111111"), pickRole(b, "#222222"), pickRole(b, "#999999")]);
   const d = decodeBuild(encodeBuild(7, b));
   console.assert(d.page === "7" && d.core === b.core && d.accent.join() === b.accent.join() && d.neutral === b.neutral, "build link roundtrip", d);
   const e = decodeBuild(encodeBuild(7, { core: null, accent: [], neutral: null }));
