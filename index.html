@@ -255,6 +255,7 @@ const $ = (s) => document.querySelector(s);
 /* ---------- color math ---------- */
 const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 const lum = (hex) => { const [r, g, b] = rgb(hex); return (0.299 * r + 0.587 * g + 0.114 * b) / 255; };
+const ink = (c) => (lum(c) > 0.55 ? "#0A0A0A" : "#FFFFFF");
 function hsl(hex) {
   const [r, g, b] = rgb(hex).map((v) => v / 255);
   const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
@@ -383,12 +384,18 @@ function copy(text, msg) {
 const slug = (p) => p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 /* a built system carries p.names — semantic keys (core, accent-1, neutral-1) instead of ordinals */
 const key = (p, i) => p.names?.[i] ?? `${slug(p)}-${i + 1}`;
+/* PDF p.4 — what each tier is for; only meaningful on a built system */
+const GUIDE = ["core — key brand moments, used with discipline", "accent — sparingly, for emphasis", "neutral — structure, backgrounds and body copy"];
+const guide = (p, open, close = "") => (p.names ? GUIDE.map((l) => `${open}${l}${close}\n`).join("") : "");
 const FORMATS = {
-  hex:  { ext: "txt",  make: (p) => p.colors.join("\n") },
-  css:  { ext: "css",  make: (p) => `:root {\n${p.colors.map((c, i) => `  --${key(p, i)}: ${c};`).join("\n")}\n}` },
-  scss: { ext: "scss", make: (p) => p.colors.map((c, i) => `$${key(p, i)}: ${c};`).join("\n") },
+  /* roles repeat hexes already listed above them — a flat hex dump stops at p.roleAt */
+  hex:  { ext: "txt",  make: (p) => p.colors.slice(0, p.roleAt).join("\n") },
+  css:  { ext: "css",  make: (p) => `${guide(p, "/* ", " */")}:root {\n${p.colors.map((c, i) => `  --${key(p, i)}: ${c};`).join("\n")}\n}` },
+  scss: { ext: "scss", make: (p) => guide(p, "// ") + p.colors.map((c, i) => `$${key(p, i)}: ${c};`).join("\n") },
   tailwind: { ext: "js", make: (p) => `colors: {\n  "${slug(p)}": {\n${p.colors.map((c, i) => `    "${p.names?.[i] ?? i + 1}": "${c}",`).join("\n")}\n  },\n},` },
   json: { ext: "json", make: (p) => JSON.stringify({ name: p.name, section: p.section, page: p.page, colors: p.colors, ...(p.names && { names: p.names }) }, null, 2) },
+  /* W3C design tokens — what Tokens Studio, Style Dictionary and Figma variable importers eat */
+  tokens: { ext: "json", make: (p) => JSON.stringify(Object.fromEntries(p.colors.map((c, i) => [key(p, i), { $type: "color", $value: c }])), null, 2) },
 };
 let dlgPalette, dlgFormat = "hex", dlgBuild = null;
 function openExport(p) {
@@ -435,7 +442,13 @@ function system(p, b) {
   if (b.core) { colors.push(b.core); names.push("core"); }
   b.accent.forEach((c, i) => { colors.push(c); names.push(`accent-${i + 1}`); });
   n?.colors.forEach((c, i) => { colors.push(c); names.push(`neutral-${i + 1}`); });
-  return { name: `${p.name} system`, section: p.section, page: p.page, colors, names, neutral: n };
+  /* semantic roles — the same hexes again, named for the job they do; neutrals run dark→light, 11 steps */
+  const roleAt = colors.length;
+  const roles = n ? { bg: n.colors[10], surface: n.colors[9], border: n.colors[8], "text-muted": n.colors[5], text: n.colors[1] } : {};
+  if (b.core) roles["core-ink"] = ink(b.core);
+  if (b.accent[0]) roles["accent-ink"] = ink(b.accent[0]);
+  Object.entries(roles).forEach(([k, c]) => { colors.push(c); names.push(k); });
+  return { name: `${p.name} system`, section: p.section, page: p.page, colors, names, neutral: n, roles, roleAt };
 }
 
 function openBuild(p) {
@@ -480,17 +493,15 @@ function renderBuild() {
   }));
 
   $("#bHint").textContent = b.core ? `— ${b.core}` : "— click a swatch";
-  const n = NEUTRALS.find((x) => x.name === b.neutral);
-  const ink = (c) => (lum(c) > 0.55 ? "#0A0A0A" : "#FFFFFF");
-  $("#bPrev").style.cssText = [
-    `--p-bg:${n ? n.colors[10] : "var(--paper)"}`, `--p-ink:${n ? n.colors[1] : "var(--ink)"}`,
-    `--p-mut:${n ? n.colors[5] : "var(--mut)"}`, `--p-line:${n ? n.colors[8] : "var(--line)"}`,
-    `--p-core:${b.core || "var(--ink)"}`, `--p-core-ink:${b.core ? ink(b.core) : "var(--paper)"}`,
-    `--p-acc:${b.accent[0] || (n ? n.colors[8] : "var(--line)")}`,
-    `--p-acc-ink:${b.accent[0] ? ink(b.accent[0]) : "var(--ink)"}`,
-  ].join(";");
 
   dlgPalette = system(p, b);
+  const r = dlgPalette.roles;
+  $("#bPrev").style.cssText = [
+    `--p-bg:${r.bg || "var(--paper)"}`, `--p-ink:${r.text || "var(--ink)"}`,
+    `--p-mut:${r["text-muted"] || "var(--mut)"}`, `--p-line:${r.border || "var(--line)"}`,
+    `--p-core:${b.core || "var(--ink)"}`, `--p-core-ink:${r["core-ink"] || "var(--paper)"}`,
+    `--p-acc:${b.accent[0] || r.border || "var(--line)"}`, `--p-acc-ink:${r["accent-ink"] || "var(--ink)"}`,
+  ].join(";");
   $("#dlgCopy").disabled = $("#dlgDl").disabled = !dlgPalette.colors.length;
   setFormat(dlgFormat);
 }
@@ -503,8 +514,12 @@ console.assert(hueFamily("#FF0000") === "red" && hueFamily("#808080") === "neutr
 console.assert(NEUTRALS.length === 5, "expected 5 neutral scales", NEUTRALS.length);
 {
   const s = system({ name: "T", section: "X", page: 0 }, { core: "#111111", accent: ["#222222"], neutral: "Stone" });
-  console.assert(s.names.slice(0, 2).join() === "core,accent-1" && s.colors.length === 13, "system() shape", s);
+  console.assert(s.names.slice(0, 2).join() === "core,accent-1" && s.roleAt === 13, "system() shape", s);
   console.assert(FORMATS.css.make(s).includes("--neutral-11: #FAFAF9;"), "semantic export names broken");
+  console.assert(s.roles.bg === "#FAFAF9" && s.roles.text !== s.roles.bg, "roles broken", s.roles);
+  const h = FORMATS.hex.make(s).split("\n");
+  console.assert(new Set(h).size === h.length && h.length === 13, "hex export repeats role colors", h);
+  console.assert(JSON.parse(FORMATS.tokens.make(s))["core"]?.$value === "#111111", "tokens format broken");
 }
 </script>
 </body>
