@@ -1,1 +1,4 @@
 .playwright-mcp/
+.impeccable/live/sessions/
+.impeccable/live/inject-journal.json
+.impeccable/hook.cache.json
