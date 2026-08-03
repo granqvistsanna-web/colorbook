@@ -219,6 +219,7 @@
   <div class="dots" id="dots" role="group" aria-label="Filter by hue"></div>
   <span class="spacer"></span>
   <button class="chip saved" id="savedChip" aria-pressed="false">Saved <span id="savedCount"></span></button>
+  <button class="chip built" id="builtChip" aria-pressed="false">Built <span id="builtCount"></span></button>
 </div>
 
 <main id="grid"></main>
@@ -293,11 +294,13 @@ PALETTES.forEach((p) => (p.hues = new Set(p.colors.map(hueFamily))));
 
 /* ---------- state ---------- */
 const saved = new Set(JSON.parse(localStorage.getItem("colorbook-saved") || "[]"));
-const state = { q: "", section: null, hue: null, savedOnly: false };
+const state = { q: "", section: null, hue: null, savedOnly: false, builtOnly: false };
 const persist = () => localStorage.setItem("colorbook-saved", JSON.stringify([...saved]));
 /* builds[page] = { core: "#RRGGBB"|null, accent: ["#RRGGBB", …], neutral: "Stone"|null } */
 const builds = JSON.parse(localStorage.getItem("colorbook-builds") || "{}");
 const persistBuilds = () => localStorage.setItem("colorbook-builds", JSON.stringify(builds));
+/* openBuild() writes an entry just for peeking, so "has a build" means "has a core", not "has an entry" */
+const isBuilt = (page) => !!builds[page]?.core;
 
 /* ---------- toolbar ---------- */
 const sections = [...new Set(PALETTES.map((p) => p.section))];
@@ -317,6 +320,7 @@ $("#dots").append(...HUES.map(([name, swatch]) => {
 }));
 $("#q").oninput = (e) => { state.q = e.target.value.trim().toLowerCase(); render(); };
 $("#savedChip").onclick = () => { state.savedOnly = !state.savedOnly; render(); };
+$("#builtChip").onclick = () => { state.builtOnly = !state.builtOnly; render(); };
 
 /* ---------- render ---------- */
 function render() {
@@ -326,11 +330,14 @@ function render() {
     b.setAttribute("aria-pressed", String(b.title === state.hue)));
   $("#savedChip").setAttribute("aria-pressed", String(state.savedOnly));
   $("#savedCount").textContent = saved.size || "";
+  $("#builtChip").setAttribute("aria-pressed", String(state.builtOnly));
+  $("#builtCount").textContent = Object.values(builds).filter((b) => b.core).length || "";
 
   const list = PALETTES.filter((p) =>
     (!state.section || p.section === state.section) &&
     (!state.hue || p.hues.has(state.hue)) &&
     (!state.savedOnly || saved.has(p.page)) &&
+    (!state.builtOnly || isBuilt(p.page)) &&
     (!state.q || (p.name + " " + p.section + " " + p.colors.join(" ")).toLowerCase().includes(state.q)));
 
   const grid = $("#grid");
@@ -351,7 +358,7 @@ function render() {
             <button class="save" aria-pressed="${saved.has(p.page)}" aria-label="Save palette">${saved.has(p.page) ? "saved" : "save"}</button>
             <button class="cpy">copy</button>
             <button class="exp">export</button>
-            <button class="bld">${builds[p.page]?.core ? "built" : "build"}</button>
+            <button class="bld">${isBuilt(p.page) ? "built" : "build"}</button>
           </span>
         </div>
       </footer>`;
@@ -542,6 +549,11 @@ render();
 console.assert(PALETTES.length > 100, "palette count suspicious", PALETTES.length);
 console.assert(hueFamily("#FF0000") === "red" && hueFamily("#808080") === "neutral" && hueFamily("#0185FF") === "blue", "hueFamily broken");
 console.assert(NEUTRALS.length === 5, "expected 5 neutral scales", NEUTRALS.length);
+{ /* peeking at a palette writes an empty entry — it must not count as built */
+  builds[-1] = { core: null, accent: [], neutral: "Stone" };
+  console.assert(!isBuilt(-1), "empty build entry counts as built");
+  delete builds[-1];
+}
 {
   const s = system({ name: "T", section: "X", page: 0 }, { core: "#111111", accent: ["#222222"], neutral: "Stone" });
   console.assert(s.names.slice(0, 2).join() === "core,accent-1" && s.roleAt === 13, "system() shape", s);
