@@ -113,7 +113,7 @@
     font-family: var(--sans); font-weight: 500; font-size: .575rem; letter-spacing: .2em;
     text-transform: uppercase; color: var(--mut);
   }
-  .acts { display: flex; gap: .9rem; }
+  .acts { display: flex; flex-wrap: wrap; gap: .5rem .9rem; }
   .acts button {
     font-family: var(--sans); font-weight: 500; font-size: .6rem; letter-spacing: .14em; text-transform: uppercase;
     background: none; border: none; padding: 0; cursor: pointer; color: var(--ink);
@@ -133,6 +133,7 @@
     margin: auto; /* the * reset above removes the UA centering */
     background: var(--card); color: var(--ink); border: 1px solid var(--ink);
     padding: 0; width: min(34rem, calc(100vw - 2rem));
+    max-height: 92svh; overflow: auto;
   }
   dialog::backdrop { background: rgba(0,0,0,.4); }
   dialog header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem .75rem; }
@@ -151,6 +152,49 @@
     padding: .6rem 1.4rem; cursor: pointer;
   }
   dialog footer button.ghost { background: transparent; color: var(--ink); }
+  dialog footer button:disabled { opacity: .35; cursor: not-allowed; }
+
+  /* ---------- builder (PDF pp. 4–5: core + accent + neutral, eliminate the rest) ---------- */
+  #builder { display: none; padding: 0 1.5rem .5rem; }
+  #dlg.build #builder { display: block; }
+  .blab {
+    font-weight: 500; font-size: .575rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--mut); margin: 1.1rem 0 .45rem;
+  }
+  .blab span { text-transform: none; letter-spacing: .04em; font-family: var(--mono); margin-left: .5rem; }
+
+  .picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(2.5rem, 1fr)); gap: 1px; }
+  .pick {
+    height: 3rem; border: none; padding: 0; cursor: pointer;
+    opacity: .22; transition: opacity .18s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pick.on, .pick:hover { opacity: 1; }
+  .pick span { font-family: var(--mono); font-size: .55rem; letter-spacing: .06em; }
+  .pick.lt span { color: rgba(255,255,255,.95); }
+  .pick.dk span { color: rgba(0,0,0,.8); }
+
+  .neuts { display: flex; flex-direction: column; gap: 1px; }
+  /* outline, not border: a border shifts the gradient's origin box and tiles a dark sliver at the right edge */
+  .neut { border: none; height: 1.5rem; cursor: pointer; padding: 0; position: relative; }
+  .neut[aria-pressed="true"] { outline: 1px solid var(--ink); outline-offset: -1px; }
+  .neut b {
+    position: absolute; left: .45rem; top: 50%; translate: 0 -50%;
+    font-family: var(--sans); font-weight: 500; font-size: .55rem; letter-spacing: .16em;
+    text-transform: uppercase; color: rgba(255,255,255,.9);
+  }
+
+  .prev { border: 1px solid var(--line); padding: 1.1rem 1.2rem; background: var(--p-bg); color: var(--p-ink); }
+  .prev h4 { font-size: 1.15rem; font-weight: 500; letter-spacing: -.015em; }
+  .prev p { font-size: .8rem; line-height: 1.55; color: var(--p-mut); margin: .4rem 0 .9rem; }
+  .prow { display: flex; align-items: center; gap: .75rem; border-top: 1px solid var(--p-line); padding-top: .9rem; }
+  .prev button {
+    font-family: var(--sans); font-weight: 500; font-size: .625rem; letter-spacing: .16em; text-transform: uppercase;
+    background: var(--p-core); color: var(--p-core-ink); border: none; padding: .6rem 1.3rem; cursor: default;
+  }
+  .prev .tag {
+    font-family: var(--mono); font-size: .6rem; background: var(--p-acc); color: var(--p-acc-ink); padding: .3rem .6rem;
+  }
 
   #toast {
     position: fixed; left: 50%; bottom: 1.75rem; translate: -50% 0; z-index: 50;
@@ -182,6 +226,18 @@
 
 <dialog id="dlg">
   <header><h3 id="dlgTitle"></h3><button id="dlgClose" aria-label="Close">✕</button></header>
+  <section id="builder">
+    <p class="blab">Core colour<span id="bHint"></span></p>
+    <div class="picks" id="bPicks"></div>
+    <p class="blab">Neutral palette</p>
+    <div class="neuts" id="bNeuts"></div>
+    <p class="blab">Preview</p>
+    <div class="prev" id="bPrev">
+      <h4>Heading</h4>
+      <p>Body copy sits on the lightest neutral, set in the second-darkest step.</p>
+      <div class="prow"><button type="button">Primary action</button><span class="tag">Accent</span></div>
+    </div>
+  </section>
   <nav id="dlgTabs"></nav>
   <pre id="dlgCode"></pre>
   <footer>
@@ -236,6 +292,9 @@ PALETTES.forEach((p) => (p.hues = new Set(p.colors.map(hueFamily))));
 const saved = new Set(JSON.parse(localStorage.getItem("colorbook-saved") || "[]"));
 const state = { q: "", section: null, hue: null, savedOnly: false };
 const persist = () => localStorage.setItem("colorbook-saved", JSON.stringify([...saved]));
+/* builds[page] = { core: "#RRGGBB"|null, accent: ["#RRGGBB", …], neutral: "Stone"|null } */
+const builds = JSON.parse(localStorage.getItem("colorbook-builds") || "{}");
+const persistBuilds = () => localStorage.setItem("colorbook-builds", JSON.stringify(builds));
 
 /* ---------- toolbar ---------- */
 const sections = [...new Set(PALETTES.map((p) => p.section))];
@@ -289,6 +348,7 @@ function render() {
             <button class="save" aria-pressed="${saved.has(p.page)}" aria-label="Save palette">${saved.has(p.page) ? "saved" : "save"}</button>
             <button class="cpy">copy</button>
             <button class="exp">export</button>
+            <button class="bld">${builds[p.page]?.core ? "built" : "build"}</button>
           </span>
         </div>
       </footer>`;
@@ -296,6 +356,7 @@ function render() {
     card.querySelector(".save").onclick = () => { saved.has(p.page) ? saved.delete(p.page) : saved.add(p.page); persist(); render(); };
     card.querySelector(".cpy").onclick = () => copy(p.colors.join(", "), "palette copied");
     card.querySelector(".exp").onclick = () => openExport(p);
+    card.querySelector(".bld").onclick = () => openBuild(p);
     grid.append(card);
   });
   $("#meta").textContent = `${list.length} of ${PALETTES.length} palettes · ${sections.length} sections · ${PALETTES.reduce((n, p) => n + p.colors.length, 0)} colours`;
@@ -320,17 +381,22 @@ function copy(text, msg) {
 
 /* ---------- export ---------- */
 const slug = (p) => p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+/* a built system carries p.names — semantic keys (core, accent-1, neutral-1) instead of ordinals */
+const key = (p, i) => p.names?.[i] ?? `${slug(p)}-${i + 1}`;
 const FORMATS = {
   hex:  { ext: "txt",  make: (p) => p.colors.join("\n") },
-  css:  { ext: "css",  make: (p) => `:root {\n${p.colors.map((c, i) => `  --${slug(p)}-${i + 1}: ${c};`).join("\n")}\n}` },
-  scss: { ext: "scss", make: (p) => p.colors.map((c, i) => `$${slug(p)}-${i + 1}: ${c};`).join("\n") },
-  tailwind: { ext: "js", make: (p) => `colors: {\n  "${slug(p)}": {\n${p.colors.map((c, i) => `    ${i + 1}: "${c}",`).join("\n")}\n  },\n},` },
-  json: { ext: "json", make: (p) => JSON.stringify({ name: p.name, section: p.section, page: p.page, colors: p.colors }, null, 2) },
+  css:  { ext: "css",  make: (p) => `:root {\n${p.colors.map((c, i) => `  --${key(p, i)}: ${c};`).join("\n")}\n}` },
+  scss: { ext: "scss", make: (p) => p.colors.map((c, i) => `$${key(p, i)}: ${c};`).join("\n") },
+  tailwind: { ext: "js", make: (p) => `colors: {\n  "${slug(p)}": {\n${p.colors.map((c, i) => `    "${p.names?.[i] ?? i + 1}": "${c}",`).join("\n")}\n  },\n},` },
+  json: { ext: "json", make: (p) => JSON.stringify({ name: p.name, section: p.section, page: p.page, colors: p.colors, ...(p.names && { names: p.names }) }, null, 2) },
 };
-let dlgPalette, dlgFormat = "hex";
+let dlgPalette, dlgFormat = "hex", dlgBuild = null;
 function openExport(p) {
   dlgPalette = p;
+  dlgBuild = null;
   $("#dlgTitle").textContent = p.name;
+  $("#dlg").classList.remove("build");
+  $("#dlgCopy").disabled = $("#dlgDl").disabled = false;
   setFormat(dlgFormat);
   $("#dlg").showModal();
 }
@@ -347,6 +413,7 @@ function setFormat(f) {
 }
 $("#dlgClose").onclick = () => $("#dlg").close();
 $("#dlg").onclick = (e) => { if (e.target === $("#dlg")) $("#dlg").close(); };
+$("#dlg").addEventListener("close", () => { if (dlgBuild) { dlgBuild = null; render(); } });
 $("#dlgCopy").onclick = () => copy($("#dlgCode").textContent, dlgFormat + " copied");
 $("#dlgDl").onclick = () => {
   const f = FORMATS[dlgFormat];
@@ -357,11 +424,88 @@ $("#dlgDl").onclick = () => {
   URL.revokeObjectURL(a.href);
 };
 
+/* ---------- build a system (PDF pp. 4–5) ---------- */
+const NEUTRALS = PALETTES.filter((p) => p.section === "Neutrals");
+const stripBg = (cs) =>
+  `linear-gradient(90deg,${cs.map((c, i) => `${c} ${(i / cs.length) * 100}% ${((i + 1) / cs.length) * 100}%`).join(",")})`;
+
+function system(p, b) {
+  const n = NEUTRALS.find((x) => x.name === b.neutral);
+  const colors = [], names = [];
+  if (b.core) { colors.push(b.core); names.push("core"); }
+  b.accent.forEach((c, i) => { colors.push(c); names.push(`accent-${i + 1}`); });
+  n?.colors.forEach((c, i) => { colors.push(c); names.push(`neutral-${i + 1}`); });
+  return { name: `${p.name} system`, section: p.section, page: p.page, colors, names, neutral: n };
+}
+
+function openBuild(p) {
+  const b = (builds[p.page] ||= { core: null, accent: [], neutral: null });
+  /* colors.js can be regenerated under a saved build — drop hexes the palette no longer has */
+  b.accent = b.accent.filter((c) => p.colors.includes(c));
+  if (!p.colors.includes(b.core)) b.core = null;
+  dlgBuild = p;
+  $("#dlgTitle").textContent = `${p.name} — system`;
+  $("#dlg").classList.add("build");
+  renderBuild();
+  $("#dlg").showModal();
+}
+
+/* first click = core, clicking core again releases it, any other click toggles accent */
+function pick(hex) {
+  const b = builds[dlgBuild.page];
+  if (b.core === hex) b.core = null;
+  else if (!b.core) { b.core = hex; b.accent = b.accent.filter((c) => c !== hex); }
+  else b.accent = b.accent.includes(hex) ? b.accent.filter((c) => c !== hex) : [...b.accent, hex];
+  persistBuilds();
+  renderBuild();
+}
+
+function renderBuild() {
+  const p = dlgBuild, b = builds[p.page];
+  /* ponytail: roles keyed by hex, so a palette listing the same hex twice lights up both — same colour, same role */
+  $("#bPicks").innerHTML = p.colors.map((c) => {
+    const i = b.accent.indexOf(c);
+    const role = b.core === c ? "core" : i > -1 ? String(i + 1) : "";
+    return `<button class="pick ${role ? "on" : ""} ${lum(c) > 0.55 ? "dk" : "lt"}" style="background:${c}"
+      data-hex="${c}" aria-label="${c} — ${role ? (role === "core" ? "core" : "accent " + role) : "eliminated"}"><span>${role}</span></button>`;
+  }).join("");
+  $("#bPicks").querySelectorAll(".pick").forEach((el) => (el.onclick = () => pick(el.dataset.hex)));
+
+  $("#bNeuts").innerHTML = NEUTRALS.map((n) =>
+    `<button class="neut" aria-pressed="${b.neutral === n.name}" style="background:${stripBg(n.colors)}"><b>${n.name}</b></button>`).join("");
+  $("#bNeuts").querySelectorAll(".neut").forEach((el, i) => (el.onclick = () => {
+    b.neutral = b.neutral === NEUTRALS[i].name ? null : NEUTRALS[i].name;
+    persistBuilds();
+    renderBuild();
+  }));
+
+  $("#bHint").textContent = b.core ? `— ${b.core}` : "— click a swatch";
+  const n = NEUTRALS.find((x) => x.name === b.neutral);
+  const ink = (c) => (lum(c) > 0.55 ? "#0A0A0A" : "#FFFFFF");
+  $("#bPrev").style.cssText = [
+    `--p-bg:${n ? n.colors[10] : "var(--paper)"}`, `--p-ink:${n ? n.colors[1] : "var(--ink)"}`,
+    `--p-mut:${n ? n.colors[5] : "var(--mut)"}`, `--p-line:${n ? n.colors[8] : "var(--line)"}`,
+    `--p-core:${b.core || "var(--ink)"}`, `--p-core-ink:${b.core ? ink(b.core) : "var(--paper)"}`,
+    `--p-acc:${b.accent[0] || (n ? n.colors[8] : "var(--line)")}`,
+    `--p-acc-ink:${b.accent[0] ? ink(b.accent[0]) : "var(--ink)"}`,
+  ].join(";");
+
+  dlgPalette = system(p, b);
+  $("#dlgCopy").disabled = $("#dlgDl").disabled = !dlgPalette.colors.length;
+  setFormat(dlgFormat);
+}
+
 render();
 
 /* ponytail: self-check — fails loudly in console if the data or color math breaks */
 console.assert(PALETTES.length > 100, "palette count suspicious", PALETTES.length);
 console.assert(hueFamily("#FF0000") === "red" && hueFamily("#808080") === "neutral" && hueFamily("#0185FF") === "blue", "hueFamily broken");
+console.assert(NEUTRALS.length === 5, "expected 5 neutral scales", NEUTRALS.length);
+{
+  const s = system({ name: "T", section: "X", page: 0 }, { core: "#111111", accent: ["#222222"], neutral: "Stone" });
+  console.assert(s.names.slice(0, 2).join() === "core,accent-1" && s.colors.length === 13, "system() shape", s);
+  console.assert(FORMATS.css.make(s).includes("--neutral-11: #FAFAF9;"), "semantic export names broken");
+}
 </script>
 </body>
 </html>
