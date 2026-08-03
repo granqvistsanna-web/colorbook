@@ -18,6 +18,7 @@
     --accent: #0A0A0A;
     --sans: "Geist", "Helvetica Neue", sans-serif;
     --mono: "Geist Mono", ui-monospace, monospace;
+    --rail: 27rem;
   }
   * { box-sizing: border-box; margin: 0; }
   body {
@@ -26,8 +27,19 @@
     font-family: var(--sans);
     -webkit-font-smoothing: antialiased;
   }
+  /* the padding snaps; only the rail animates. Transitioning body padding reflowed all 202 cards
+     every frame for the length of the ease — the grid gets one reflow, the panel gets the motion. */
+  body.rail { padding-right: var(--rail); }
+  @keyframes railin { from { opacity: 0; translate: 1.5rem 0; } }
   ::selection { background: var(--ink); color: var(--paper); }
   :focus-visible { outline: 1px solid var(--accent); outline-offset: 3px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  /* one micro-label voice for the whole app — tracked, uppercase, 500 */
+  .lab, .chip, .acts button, .card .sec, .neut b, .pnav, dialog footer button, #toast, .colophon {
+    font-family: var(--sans); font-weight: 500; letter-spacing: .18em; text-transform: uppercase;
+  }
+
   header.masthead { padding: clamp(3.5rem, 9vw, 7rem) clamp(1.5rem, 5vw, 5rem) 2.5rem; }
   .masthead h1 {
     font-size: clamp(3.2rem, 11vw, 9.5rem);
@@ -59,7 +71,7 @@
   .toolbar input::placeholder { color: var(--mut); }
   #sections { display: flex; flex-wrap: wrap; gap: .3rem 1.2rem; }
   .chip {
-    font-family: var(--sans); font-weight: 500; font-size: .625rem; letter-spacing: .18em; text-transform: uppercase;
+    font-size: .625rem;
     background: none; border: none; padding: .25rem 0; cursor: pointer; color: var(--mut);
     text-underline-offset: 5px; text-decoration-thickness: 1px;
   }
@@ -86,6 +98,7 @@
     transition: border-color .3s;
   }
   .card:hover { border-color: var(--ink); }
+  .card.drawing { border-color: var(--ink); outline: 1px solid var(--ink); outline-offset: 2px; }
   @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
 
   .bands { display: flex; height: 10rem; }
@@ -101,32 +114,35 @@
   .band:hover, .band:focus-visible { flex-grow: 3; }
   .band:hover span, .band:focus-visible span { opacity: 1; }
   .bands.many .band span { writing-mode: vertical-rl; }
-  .band.lt span { color: rgba(255,255,255,.95); }
-  .band.dk span { color: rgba(0,0,0,.8); }
+  .band.lt { color: rgba(255,255,255,.95); }
+  .band.dk { color: rgba(0,0,0,.8); }
+  .band span { color: currentColor; }
+  /* while drawing accents from this card the bands stop being copy targets and start being picks */
+  .card.drawing .band { cursor: pointer; }
+  .card.drawing .band.on { outline: 2px solid currentColor; outline-offset: -2px; }
+  .card.drawing .band span { opacity: 1; }
 
   .card footer { padding: .9rem 1rem 1rem; border-top: 1px solid var(--line); }
   .card .row1 { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
   .card h3 { font-size: 1rem; font-weight: 500; letter-spacing: -.01em; }
   .card .page { font-family: var(--sans); font-size: .6rem; letter-spacing: .14em; color: var(--mut); }
-  .card .row2 { margin-top: .6rem; display: flex; justify-content: space-between; align-items: center; }
-  .card .sec {
-    font-family: var(--sans); font-weight: 500; font-size: .575rem; letter-spacing: .2em;
-    text-transform: uppercase; color: var(--mut);
-  }
+  .card .row2 { margin-top: .6rem; display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+  .card .sec { font-size: .575rem; letter-spacing: .2em; color: var(--mut); }
   .acts { display: flex; flex-wrap: wrap; gap: .5rem .9rem; }
   .acts button {
-    font-family: var(--sans); font-weight: 500; font-size: .6rem; letter-spacing: .14em; text-transform: uppercase;
+    font-size: .6rem; letter-spacing: .14em;
     background: none; border: none; padding: 0; cursor: pointer; color: var(--ink);
     text-underline-offset: 4px; text-decoration-thickness: 1px;
   }
   .acts button:hover { text-decoration: underline; }
   .acts .save[aria-pressed="true"] { color: var(--accent); text-decoration: underline; }
+  .acts .draw[aria-pressed="true"] { text-decoration: underline; }
 
   .empty { grid-column: 1 / -1; text-align: center; padding: 6rem 1rem; color: var(--mut); font-size: 1.1rem; }
 
   .colophon {
     border-top: 1px solid var(--line); margin: 0 clamp(1.5rem, 5vw, 5rem); padding: 1.2rem 0 3.5rem;
-    font-family: var(--sans); font-weight: 500; font-size: .6rem; letter-spacing: .18em; text-transform: uppercase; color: var(--mut);
+    font-size: .6rem; color: var(--mut);
   }
 
   dialog {
@@ -143,101 +159,219 @@
   dialog pre {
     margin: 0 1.5rem; padding: 1rem; background: var(--paper); border: 1px solid var(--line);
     font-family: var(--mono); font-size: .72rem; line-height: 1.6;
-    max-height: 40vh; overflow: auto;
+    max-height: 46vh; overflow: auto;
   }
   dialog footer { display: flex; gap: .75rem; justify-content: flex-end; padding: 1.25rem 1.5rem 1.5rem; }
-  dialog footer button {
+  .btn {
     font-family: var(--sans); font-weight: 500; font-size: .625rem; letter-spacing: .16em; text-transform: uppercase;
     border: 1px solid var(--ink); background: var(--ink); color: var(--paper);
     padding: .6rem 1.4rem; cursor: pointer;
   }
-  dialog footer button.ghost { background: transparent; color: var(--ink); }
-  dialog footer button:disabled { opacity: .35; cursor: not-allowed; }
+  .btn.ghost { background: transparent; color: var(--ink); }
+  .btn:disabled { opacity: .35; cursor: not-allowed; }
 
-  /* ---------- builder (PDF pp. 4–5: core + accent + neutral, eliminate the rest) ---------- */
-  #builder { display: none; padding: 0 1.5rem .5rem; }
-  #dlgLink { display: none; }
-  #dlg.build #builder, #dlg.build #dlgLink { display: block; }
-  /* in builder mode the code pane is a preview of the export, not the task — the dialog is height-bound */
-  #dlg.build pre { max-height: 12vh; }
-  .blab {
-    font-weight: 500; font-size: .575rem; letter-spacing: .2em; text-transform: uppercase;
-    color: var(--mut); margin: 1.1rem 0 .45rem;
-    display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+  /* ================= the rail — where a system is built (book pp. 4–5) ================= */
+  #rail {
+    position: fixed; inset: 0 0 0 auto; width: var(--rail); z-index: 40;
+    background: var(--card); border-left: 1px solid var(--ink);
+    display: none; flex-direction: column;
   }
+  body.rail #rail { display: flex; animation: railin .28s cubic-bezier(.2,.6,.2,1); }
+  .rhead { flex: none; padding: 1rem 1.15rem .8rem; border-bottom: 1px solid var(--line); }
+  .rtop { display: flex; align-items: center; gap: .6rem; }
+  #rname {
+    flex: 1; min-width: 0; font-family: var(--sans); font-size: 1.05rem; font-weight: 500; letter-spacing: -.01em;
+    background: none; border: none; border-bottom: 1px solid transparent; color: var(--ink);
+    padding: .1rem 0; outline: none;
+  }
+  #rname:hover { border-bottom-color: var(--line); }
+  #rname:focus { border-bottom-color: var(--accent); }
+  .rhead .src { display: block; margin-top: .3rem; font-size: .575rem; letter-spacing: .18em; text-transform: uppercase; color: var(--mut); }
+  .rtabs { display: flex; gap: 1.1rem; margin-top: .7rem; }
+  .ricon { background: none; border: none; padding: .1rem .2rem; cursor: pointer; color: var(--mut); font-size: .9rem; line-height: 1; }
+  .ricon:hover { color: var(--ink); }
+
+  .rbody { flex: 1; overflow: auto; padding: 0 1.15rem 1.4rem; }
+  .rbody.export { display: flex; flex-direction: column; padding-bottom: 0; }
+  .ract { flex: none; border-top: 1px solid var(--line); padding: .85rem 1.15rem; display: flex; gap: .55rem; }
+  .ract .btn { flex: 1; padding: .6rem .5rem; text-align: center; }
+
+  .lab {
+    font-size: .575rem; letter-spacing: .2em; color: var(--mut);
+    margin: 1.2rem 0 .45rem;
+    display: flex; align-items: baseline; justify-content: space-between; gap: .75rem;
+  }
+  .lab .act { font-size: .575rem; letter-spacing: .16em; color: var(--ink); background: none; border: none; padding: 0; cursor: pointer; font-family: inherit; font-weight: inherit; text-transform: inherit; }
+  .lab .act:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .lab .tally { color: var(--mut); font-family: var(--mono); letter-spacing: .06em; text-transform: none; }
   .themes { display: flex; gap: .9rem; }
 
-  /* the one thing the app cannot derive — so it gets a field, and everything else gets computed */
-  .note input {
-    flex: 1; min-width: 0;
-    font-family: var(--mono); font-size: .68rem; letter-spacing: 0; text-transform: none;
-    color: var(--ink); background: none; border: none; border-bottom: 1px solid var(--line);
-    padding: 0 0 .3rem;
+  /* ---- ramp board: the palette regrouped into the tint/shade columns the book prints ----
+     Columns run to a common height and their cells share it, so a two-step ramp and a five-step
+     ramp both read as ramps instead of leaving a staircase of holes down the right of the rail. */
+  .board { display: flex; gap: 1px; height: calc(var(--rows) * 2.35rem); }
+  .col { flex: 1 1 0; min-width: 0; height: 100%; display: flex; flex-direction: column; gap: 1px; }
+  .cell {
+    position: relative; border: none; padding: 0; cursor: pointer; flex: 1 1 0; min-height: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .05rem;
+    transition: flex-grow .18s;
   }
-  .note input::placeholder { color: var(--mut); }
-  .note input:focus { outline: none; border-bottom-color: var(--ink); }
-
-  .picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(2.5rem, 1fr)); gap: 1px; }
-  /* PDF p.5: a full-colour grid with the picks outlined and the eliminated simply unmarked.
-     Never drain the swatch — you cannot choose a core colour from swatches that don't show the colour. */
-  .pick {
-    height: 3rem; border: none; padding: 0; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .1rem;
+  .cell.lt { color: rgba(255,255,255,.95); }
+  .cell.dk { color: rgba(0,0,0,.8); }
+  .cell.core { flex-grow: 1.7; }
+  .cell span { font-family: var(--mono); font-size: .5rem; letter-spacing: .04em; color: currentColor; }
+  .cell .rl { font-family: var(--sans); font-weight: 500; font-size: .45rem; letter-spacing: .16em; text-transform: uppercase; }
+  .cell.on { outline: 2px solid currentColor; outline-offset: -2px; z-index: 1; }
+  /* the top 40% of a cell sets the core; a hairline draws the split on hover so the two targets are visible */
+  .cell::before {
+    content: ""; position: absolute; inset: 0 0 60% 0; pointer-events: none;
+    border-bottom: 1px solid currentColor; opacity: 0; transition: opacity .15s;
   }
-  /* ring colour rides the lt/dk class the labels already use — a flat black ring vanishes on a near-black swatch */
-  .pick:hover { outline: 1px solid; outline-offset: -1px; }
-  .pick.on { outline: 2px solid; outline-offset: -2px; }
-  .pick.lt { outline-color: rgba(255,255,255,.95); }
-  .pick.dk { outline-color: rgba(0,0,0,.8); }
-  .pick span { font-family: var(--mono); font-size: .55rem; letter-spacing: .06em; }
-  .pick .hx { font-size: .5rem; opacity: .75; }
-  .pick.lt span { color: rgba(255,255,255,.95); }
-  .pick.dk span { color: rgba(0,0,0,.8); }
+  .cell:hover::before, .cell:focus-visible::before { opacity: .8; }
+  .cell.core::before, .cell.flat::before { display: none; }
+  /* eliminated stays in full colour and gets struck — you cannot judge a colour you cannot see */
+  .cell.out { opacity: .72; }
+  .cell.out::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .75;
+    background: linear-gradient(to top right, transparent calc(50% - .5px), currentColor calc(50% - .5px), currentColor calc(50% + .5px), transparent calc(50% + .5px));
+  }
 
-  .neuts { display: flex; flex-direction: column; gap: 1px; }
-  /* outline, not border: a border shifts the gradient's origin box and tiles a dark sliver at the right edge */
-  .neut { border: none; height: 1.5rem; cursor: pointer; padding: 0; position: relative; }
-  .neut[aria-pressed="true"] { outline: 1px solid var(--ink); outline-offset: -1px; }
+  /* Five 1.5rem ramp strips were near-indistinguishable, and Neutral and Zinc genuinely share their
+     light bg (#FAFAFA) — a plain colour field could not tell those two apart at all. So each scale is
+     shown as the page it makes: surface, border and text carry the undertone the ramp hides. */
+  .neuts {
+    display: grid; grid-auto-flow: column; grid-auto-columns: minmax(4.5rem, 1fr);
+    gap: 1px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: thin;
+  }
+  /* flex, not block: a button with a fixed height centres its content box, which floats the nav bar
+     off the top edge and stops the tile reading as a page */
+  .neut {
+    border: none; padding: 0; cursor: pointer; scroll-snap-align: start; text-align: left;
+    height: 7rem; display: flex; flex-direction: column; align-items: stretch;
+    background: var(--t-bg); outline-offset: -2px;
+  }
+  .neut > * { flex: none; }
+  .neut:hover { outline: 1px solid var(--ink); outline-offset: -1px; }
+  .neut[aria-pressed="true"] { outline: 2px solid var(--ink); }
+  /* the name rides the nav bar in the scale's own text colour — the label is itself a text-on-surface sample */
   .neut b {
-    position: absolute; left: .45rem; top: 50%; translate: 0 -50%;
-    font-family: var(--sans); font-weight: 500; font-size: .55rem; letter-spacing: .16em;
-    text-transform: uppercase; color: rgba(255,255,255,.9);
+    display: block; background: var(--t-surface); border-bottom: 1px solid var(--t-line); color: var(--t-ink);
+    padding: .3rem .4rem; font-size: .5rem; letter-spacing: .08em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
+  /* bars, not copy: at 4.5rem wide real text is illegible, and the undertone is what's being judged */
+  .neut i { display: block; height: .18rem; background: var(--t-mut); margin: .28rem .4rem 0; }
+  .neut i.h { height: .3rem; width: 62%; background: var(--t-ink); margin-top: .5rem; }
+  .neut i.s { width: 68%; }
+  .neut i.c { height: .62rem; width: 58%; background: var(--t-core); margin-top: .5rem; }
 
-  /* unbuilt must look unbuilt — falling back to the app's own greys rendered a finished-looking card */
+  /* ---- role ladder: which of the 11 steps each role reads, and what that costs in contrast ---- */
+  .lad { display: grid; grid-template-columns: 4.6rem 1fr; gap: .35rem .6rem; align-items: center; }
+  .lad > .rn { font-size: .55rem; letter-spacing: .13em; text-transform: uppercase; font-weight: 500; color: var(--mut); }
+  .lad > .rn.moved { color: var(--ink); }
+  .steps { display: flex; gap: 1px; }
+  .step { flex: 1 1 0; height: 1.15rem; border: none; padding: 0; cursor: pointer; position: relative; }
+  .step[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: -2px; z-index: 2; }
+  /* ghost mark — the nearest step that clears AA, shown before you click it */
+  .step.fix::after {
+    content: ""; position: absolute; inset: auto .18rem .18rem .18rem; height: 2px;
+    background: var(--ink); box-shadow: 0 0 0 1px rgba(255,255,255,.55);
+  }
+  .lad .rd { grid-column: 2; margin: -.15rem 0 .15rem; font-family: var(--mono); font-size: .58rem; letter-spacing: .02em; color: var(--mut); }
+  .lad .rd.bad { color: var(--ink); font-weight: 500; }
+  .lad .rd.bad::before { content: "⚠ "; }
+
+  /* ---- preview: a page, not a card — several surfaces, a dense area and a sparse one ---- */
   .unbuilt {
     border: 1px dashed var(--line); padding: 1.7rem 1.2rem; text-align: center;
     font-weight: 500; font-size: .575rem; letter-spacing: .2em; text-transform: uppercase; color: var(--mut);
   }
   /* bg, surface and border are meant to sit close together — they only read as three roles when adjacent */
-  .prev { border: 1px solid var(--p-line); background: var(--p-bg); color: var(--p-ink); }
+  .prev { border: 1px solid var(--p-line); background: var(--p-bg); color: var(--p-ink); container-type: inline-size; }
+  .prev * { border-color: var(--p-line); }
   .pnav {
-    display: flex; justify-content: space-between; align-items: center;
-    background: var(--p-surface); border-bottom: 1px solid var(--p-line); padding: .5rem .8rem;
-    font-weight: 500; font-size: .55rem; letter-spacing: .18em; text-transform: uppercase; color: var(--p-mut);
+    display: flex; justify-content: space-between; align-items: center; gap: .5rem;
+    background: var(--p-surface); border-bottom: 1px solid var(--p-line); padding: .55rem .8rem;
+    font-size: .55rem; color: var(--p-mut);
   }
-  .pbody { padding: 1.1rem 1.2rem; }
-  .prev h4 { font-size: 1.15rem; font-weight: 500; letter-spacing: -.015em; }
-  .prev p { font-size: .8rem; line-height: 1.55; margin: .4rem 0 .9rem; }
-  .prev .pcap { font-size: .7rem; color: var(--p-mut); margin: .9rem 0 0; }
-  .pcard {
-    background: var(--p-surface); border: 1px solid var(--p-line); padding: .9rem;
-    display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+  .pnav .brand { color: var(--p-ink); }
+  .pnav .pill { background: var(--p-core); color: var(--p-core-ink); padding: .3rem .6rem; }
+  .pbody { padding: 1.1rem 1rem; }
+  .prev h4 { font-size: 1.1rem; font-weight: 500; letter-spacing: -.015em; line-height: 1.15; }
+  .prev p { font-size: .78rem; line-height: 1.6; margin: .5rem 0 0; }
+  .prev .pcap, .prev .pmut { color: var(--p-mut); }
+  .prow { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-top: .9rem; }
+  .prev .pbtn {
+    font-family: var(--sans); font-weight: 500; font-size: .6rem; letter-spacing: .16em; text-transform: uppercase;
+    background: var(--p-core); color: var(--p-core-ink); border: 1px solid var(--p-core); padding: .55rem 1.1rem; cursor: default;
   }
-  .prev button {
-    font-family: var(--sans); font-weight: 500; font-size: .625rem; letter-spacing: .16em; text-transform: uppercase;
-    background: var(--p-core); color: var(--p-core-ink); border: none; padding: .6rem 1.3rem; cursor: default;
-  }
+  .prev .pbtn.sec { background: transparent; color: var(--p-ink); border-color: var(--p-line); }
   .ptags { display: flex; flex-wrap: wrap; gap: .3rem; }
-  .prev .tag { font-family: var(--mono); font-size: .6rem; padding: .3rem .6rem; }
+  .prev .tag { font-family: var(--mono); font-size: .58rem; padding: .25rem .5rem; }
+  .psec { border-top: 1px solid var(--p-line); padding: 1rem; }
+  .ptitle { font-size: .55rem; letter-spacing: .18em; text-transform: uppercase; font-weight: 500; color: var(--p-mut); margin-bottom: .6rem; }
+  .prev table { width: 100%; border-collapse: collapse; font-size: .7rem; }
+  .prev th { text-align: left; font-weight: 500; font-size: .55rem; letter-spacing: .14em; text-transform: uppercase; color: var(--p-mut); padding: .35rem .4rem; border-bottom: 1px solid var(--p-line); }
+  .prev td { padding: .4rem; border-bottom: 1px solid var(--p-line); }
+  .prev tbody tr:nth-child(even) { background: var(--p-surface); }
+  .prev .dot2 { display: inline-block; width: .5rem; height: .5rem; vertical-align: middle; margin-right: .35rem; }
+  .prev blockquote { font-size: .95rem; line-height: 1.4; letter-spacing: -.01em; border-left: 2px solid var(--p-core); padding-left: .75rem; }
+  .pfield { background: var(--p-surface); border: 1px solid var(--p-line); padding: .5rem .6rem; font-size: .72rem; color: var(--p-mut); margin-top: .35rem; }
+  .pfield.focus { outline: 2px solid var(--p-core); outline-offset: 1px; color: var(--p-ink); }
+  .plabel { font-size: .55rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 500; color: var(--p-mut); }
+  .pfoot { border-top: 1px solid var(--p-line); background: var(--p-surface); padding: .7rem .8rem; font-size: .58rem; color: var(--p-mut); display: flex; justify-content: space-between; gap: .5rem; }
+
+  /* ---- export owns the rail floor when export is the task ---- */
+  .rbody.export nav { display: flex; gap: .2rem 1.05rem; flex-wrap: wrap; padding: 1rem 0 .7rem; flex: none; }
+  .rbody.export pre {
+    flex: 1; min-height: 18rem; margin: 0 0 1.15rem; padding: .9rem;
+    background: var(--paper); border: 1px solid var(--line);
+    font-family: var(--mono); font-size: .68rem; line-height: 1.6; overflow: auto;
+  }
+  .exsum { margin-top: 1.2rem; border: 1px solid var(--line); padding: .75rem .85rem; cursor: pointer; background: var(--paper); width: 100%; text-align: left; }
+  .exsum:hover { border-color: var(--ink); }
+  .exsum b { display: block; font-size: .575rem; letter-spacing: .2em; text-transform: uppercase; font-weight: 500; color: var(--mut); }
+  .exsum code { display: block; margin-top: .35rem; font-family: var(--mono); font-size: .64rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---- shelf: how you recognise a system three weeks later ---- */
+  .shelf .card footer { border-top: none; }
+  .shelfstrip { display: flex; height: 5rem; }
+  .shelfstrip i { flex: 1 1 0; }
+  .shelf .card.pin { border-color: var(--ink); outline: 1px solid var(--ink); outline-offset: 2px; }
+
+  /* ---- compare tray: candidates side by side on one scroll ---- */
+  #cmp { position: fixed; inset: 0; z-index: 60; background: var(--paper); display: none; flex-direction: column; }
+  body.cmp #cmp { display: flex; }
+  body.cmp { overflow: hidden; }
+  .cmphead { flex: none; border-bottom: 1px solid var(--ink); padding: .9rem clamp(1rem, 3vw, 2rem); display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+  .cmphead h2 { font-size: .625rem; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; }
+  .cmpbody { flex: 1; overflow: auto; display: flex; align-items: flex-start; background: var(--paper); }
+  .cmpcol { flex: 1 1 0; min-width: 17rem; background: var(--paper); }
+  .cmpcol + .cmpcol { border-left: 1px solid var(--line); }
+  .cmpname { padding: .7rem .8rem; border-bottom: 1px solid var(--line); background: var(--card); position: sticky; top: 0; z-index: 1; }
+  .cmpname b { display: block; font-size: .8rem; font-weight: 500; letter-spacing: -.01em; }
+  .cmpname span { font-size: .55rem; letter-spacing: .16em; text-transform: uppercase; color: var(--mut); }
 
   #toast {
-    position: fixed; left: 50%; bottom: 1.75rem; translate: -50% 0; z-index: 50;
-    background: var(--ink); color: var(--paper); font-family: var(--sans); font-weight: 500; font-size: .625rem;
-    letter-spacing: .14em; text-transform: uppercase; padding: .6rem 1.2rem;
+    position: fixed; left: 50%; bottom: 1.75rem; translate: -50% 0; z-index: 70;
+    background: var(--ink); color: var(--paper); font-size: .625rem; letter-spacing: .14em;
+    padding: .6rem 1.2rem;
     opacity: 0; pointer-events: none; transition: opacity .25s, translate .25s;
   }
   #toast.show { opacity: 1; translate: -50% -4px; }
+
+  @media (max-width: 900px) {
+    body.rail { padding-right: 0; padding-bottom: 52svh; }
+    #rail { inset: auto 0 0 0; width: auto; max-height: 80svh; border-left: none; border-top: 1px solid var(--ink); }
+    @keyframes railin { from { opacity: 0; translate: 0 1.5rem; } }
+    .board { height: calc(var(--rows) * 3rem); }
+    .cmpcol { min-width: 82vw; }
+    .cmpbody { scroll-snap-type: x mandatory; }
+    .cmpcol { scroll-snap-align: start; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
 </style>
 </head>
 <body>
@@ -253,47 +387,51 @@
   <div class="dots" id="dots" role="group" aria-label="Filter by hue"></div>
   <span class="spacer"></span>
   <button class="chip saved" id="savedChip" aria-pressed="false">Saved <span id="savedCount"></span></button>
-  <button class="chip built" id="builtChip" aria-pressed="false">Built <span id="builtCount"></span></button>
+  <button class="chip built" id="shelfChip" aria-pressed="false">Systems <span id="builtCount"></span></button>
 </div>
 
 <main id="grid"></main>
 
 <footer class="colophon">Extracted from COLOURBOOK-V1.0_2026.pdf · regenerate with scripts/extract.py · saves live in this browser</footer>
 
+<!-- the rail: a system is built here, and building never closes the grid -->
+<aside id="rail" aria-label="System builder">
+  <div class="rhead">
+    <div class="rtop">
+      <input id="rname" aria-label="System name" spellcheck="false">
+      <button class="ricon" id="rDup" title="Duplicate this system" aria-label="Duplicate this system">⧉</button>
+      <button class="ricon" id="rDel" title="Delete this system" aria-label="Delete this system">⌫</button>
+      <button class="ricon" id="rClose" title="Close" aria-label="Close the builder">✕</button>
+    </div>
+    <span class="src" id="rSrc"></span>
+    <nav class="rtabs">
+      <button class="chip" data-tab="build">Build</button>
+      <button class="chip" data-tab="export">Export</button>
+    </nav>
+  </div>
+  <div class="rbody" id="rBody"></div>
+  <div class="ract" id="rAct"></div>
+</aside>
+
+<!-- compare tray: two or three candidates on one shared scroll -->
+<div id="cmp">
+  <div class="cmphead">
+    <h2 id="cmpTitle">Compare</h2>
+    <div style="display:flex;gap:.6rem">
+      <button class="btn ghost" id="cmpTheme">Flip theme</button>
+      <button class="btn" id="cmpClose">Done</button>
+    </div>
+  </div>
+  <div class="cmpbody" id="cmpBody"></div>
+</div>
+
 <dialog id="dlg">
   <header><h3 id="dlgTitle"></h3><button id="dlgClose" aria-label="Close">✕</button></header>
-  <section id="builder">
-    <p class="blab">Core colour</p>
-    <div class="picks" id="bPicks"></div>
-    <p class="blab">Neutral palette</p>
-    <div class="neuts" id="bNeuts"></div>
-    <p class="blab">Preview<span class="themes">
-      <button class="chip" data-theme="light">Light</button>
-      <button class="chip" data-theme="dark">Dark</button>
-    </span></p>
-    <p class="unbuilt" id="bBlank">Pick a core colour and a neutral palette</p>
-    <div class="prev" id="bPrev" hidden>
-      <div class="pnav"><span>Navigation</span><span>Surface</span></div>
-      <div class="pbody">
-        <h4>Heading</h4>
-        <p>Body copy sits on the background in the text colour.</p>
-        <div class="pcard">
-          <button type="button">Primary action</button>
-          <span class="ptags" id="bTags"></span>
-        </div>
-        <p class="pcap">Caption — muted text on the background.</p>
-      </div>
-    </div>
-    <label class="blab note" id="bNoteRow" hidden>Why this one
-      <input id="bNote" type="text" maxlength="120" placeholder="why this core — and what the accents mean">
-    </label>
-  </section>
   <nav id="dlgTabs"></nav>
   <pre id="dlgCode"></pre>
   <footer>
-    <button class="ghost" id="dlgLink">Link</button>
-    <button class="ghost" id="dlgDl">Download</button>
-    <button id="dlgCopy">Copy</button>
+    <button class="btn ghost" id="dlgDl">Download</button>
+    <button class="btn" id="dlgCopy">Copy</button>
   </footer>
 </dialog>
 
@@ -302,6 +440,7 @@
 <script src="colors.js"></script>
 <script>
 const $ = (s) => document.querySelector(s);
+const el = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
 
 /* ---------- color math ---------- */
 const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
@@ -312,10 +451,8 @@ const ink = (c) => (lum(c) > 0.55 ? "#0A0A0A" : "#FFFFFF");
 const rl = (hex) => rgb(hex).map((v) => v / 255)
   .reduce((a, v, i) => a + (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4) * [0.2126, 0.7152, 0.0722][i], 0);
 const ratio = (a, b) => { const [hi, lo] = [rl(a), rl(b)].sort((m, n) => n - m); return (hi + 0.05) / (lo + 0.05); };
-const contrast = (a, b) => {
-  const r = ratio(a, b);
-  return `${r.toFixed(1)}:1 ${r >= 7 ? "AAA" : r >= 4.5 ? "AA" : r >= 3 ? "large text only" : "fails"}`;
-};
+const grade = (r) => (r >= 7 ? "AAA" : r >= 4.5 ? "AA" : r >= 3 ? "large text only" : "fails");
+const contrast = (a, b) => { const r = ratio(a, b); return `${r.toFixed(1)}:1 ${grade(r)}`; };
 function hsl(hex) {
   const [r, g, b] = rgb(hex).map((v) => v / 255);
   const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
@@ -335,6 +472,7 @@ const HUES = [
   ["green", "#4C9A4C"], ["teal", "#2E8C8C"], ["blue", "#3767C8"],
   ["purple", "#7A4FBF"], ["pink", "#D96BB8"], ["neutral", "#9A9285"],
 ];
+const HUE_ORDER = HUES.map(([n]) => n);
 function hueFamily(hex) {
   const [h, s, l] = hsl(hex);
   if (s < 0.12 || l > 0.96 || l < 0.05) return "neutral";
@@ -348,36 +486,81 @@ function hueFamily(hex) {
   return "pink";
 }
 PALETTES.forEach((p) => (p.hues = new Set(p.colors.map(hueFamily))));
+const byPage = new Map(PALETTES.map((p) => [p.page, p]));
+
+/* ---------- ramps: the book prints tints/shades in columns, extract.py flattens them ----------
+   p.colors is pdftotext's reading order, which is NOT the printed grid — p.71 and p.72 disagree
+   on structure. So column order has to be derived from the colours themselves: hue family for the
+   column, luminance for the step. That makes accent-1 a fact about the colour, not about the mouse. */
+const MAX_ROWS = 8; /* ponytail: past this a column is taller than the rail — fall back to flat */
+function ramps(colors) {
+  const g = new Map();
+  colors.forEach((c) => { const f = hueFamily(c); (g.get(f) || g.set(f, []).get(f)).push(c); });
+  const cols = [...g.entries()]
+    /* neutral last (it is the palette's own greys, not a hue), then biggest column first */
+    .sort((a, b) => (a[0] === "neutral") - (b[0] === "neutral") || b[1].length - a[1].length ||
+      HUE_ORDER.indexOf(a[0]) - HUE_ORDER.indexOf(b[0]))
+    .map(([fam, cs]) => ({ fam, cs: cs.slice().sort((x, y) => lum(x) - lum(y)) }));
+  const tallest = Math.max(...cols.map((c) => c.cs.length));
+  return { cols, flat: tallest > MAX_ROWS };
+}
+/* a hex's rank in the board: column index, then step. Unplaced (drawn from another page) sorts last. */
+function rankIn(cols, hex) {
+  for (let i = 0; i < cols.length; i++) {
+    const j = cols[i].cs.indexOf(hex);
+    if (j >= 0) return i * 100 + j;
+  }
+  return 9999 + HUE_ORDER.indexOf(hueFamily(hex)) * 100 + lum(hex) * 10;
+}
 
 /* ---------- state ---------- */
 const saved = new Set(JSON.parse(localStorage.getItem("colorbook-saved") || "[]"));
-const state = { q: "", section: null, hue: null, savedOnly: false, builtOnly: false };
 const persist = () => localStorage.setItem("colorbook-saved", JSON.stringify([...saved]));
-/* builds[page] = { core: "#RRGGBB"|null, accent: ["#RRGGBB", …], neutral: "Stone"|null } */
-const builds = JSON.parse(localStorage.getItem("colorbook-builds") || "{}");
-const persistBuilds = () => localStorage.setItem("colorbook-builds", JSON.stringify(builds));
-/* openBuild() writes an entry just for peeking, so "has a build" means "has a core", not "has an entry" */
-const isBuilt = (page) => !!builds[page]?.core;
+const state = { q: "", section: null, hue: null, savedOnly: false, view: "grid" };
+
+/* A system is a named record, not a slot on a page: one palette can carry three candidates.
+   { id, page, name, core, accent[], src{hex:page}, out[], neutral, dark, roles{role:step}, at } */
+const SYS_KEY = "colorbook-systems";
+const uid = () => Math.random().toString(36).slice(2, 8);
+const blank = (page, name) => ({
+  id: uid(), page, name: name || byPage.get(page)?.name || `p. ${page}`,
+  core: null, accent: [], src: {}, out: [], neutral: null, dark: false, roles: {}, at: new Date().toISOString().slice(0, 10),
+});
+let systems = JSON.parse(localStorage.getItem(SYS_KEY) || "null");
+if (!systems) {
+  /* v1 kept one build per palette page. Every core-bearing entry becomes a named system. */
+  const v1 = JSON.parse(localStorage.getItem("colorbook-builds") || "{}");
+  systems = Object.entries(v1).filter(([, b]) => b && b.core).map(([page, b]) =>
+    Object.assign(blank(+page), { core: b.core, accent: b.accent || [], neutral: b.neutral || null, dark: !!b.dark }));
+}
+const persistSystems = () => localStorage.setItem(SYS_KEY, JSON.stringify(systems));
+const sysById = (id) => systems.find((s) => s.id === id);
+const sysOf = (page) => systems.filter((s) => s.page === page);
+const pinned = new Set();
+
+let open = null;      /* the system in the rail */
+let tab = "build";
+let drawFrom = null;  /* page whose card is currently lending accents to the open system */
+let boardFlat = false;
 
 /* ---------- toolbar ---------- */
 const sections = [...new Set(PALETTES.map((p) => p.section))];
 $("#sections").append(...["All", ...sections].map((s) => {
-  const b = document.createElement("button");
-  b.className = "chip"; b.textContent = s;
+  const b = el("button", "chip"); b.textContent = s;
   b.setAttribute("aria-pressed", s === "All");
-  b.onclick = () => { state.section = s === "All" ? null : s; render(); };
+  b.onclick = () => { state.section = s === "All" ? null : s; state.view = "grid"; render(); };
   return b;
 }));
 $("#dots").append(...HUES.map(([name, swatch]) => {
-  const b = document.createElement("button");
-  b.className = "dot"; b.title = name; b.setAttribute("aria-label", "hue: " + name);
+  const b = el("button", "dot");
+  b.title = name; b.setAttribute("aria-label", "hue: " + name);
   b.setAttribute("aria-pressed", "false"); b.style.background = swatch;
-  b.onclick = () => { state.hue = state.hue === name ? null : name; render(); };
+  b.onclick = () => { state.hue = state.hue === name ? null : name; state.view = "grid"; render(); };
   return b;
 }));
-$("#q").oninput = (e) => { state.q = e.target.value.trim().toLowerCase(); render(); };
-$("#savedChip").onclick = () => { state.savedOnly = !state.savedOnly; render(); };
-$("#builtChip").onclick = () => { state.builtOnly = !state.builtOnly; render(); };
+$("#q").oninput = (e) => { state.q = e.target.value.trim().toLowerCase(); state.view = "grid"; render(); };
+$("#savedChip").onclick = () => { state.savedOnly = !state.savedOnly; state.view = "grid"; render(); };
+$("#shelfChip").onclick = () => { state.view = state.view === "shelf" ? "grid" : "shelf"; render(); };
 
 /* ---------- render ---------- */
 function render() {
@@ -387,24 +570,32 @@ function render() {
     b.setAttribute("aria-pressed", String(b.title === state.hue)));
   $("#savedChip").setAttribute("aria-pressed", String(state.savedOnly));
   $("#savedCount").textContent = saved.size || "";
-  $("#builtChip").setAttribute("aria-pressed", String(state.builtOnly));
-  $("#builtCount").textContent = Object.values(builds).filter((b) => b.core).length || "";
+  $("#shelfChip").setAttribute("aria-pressed", String(state.view === "shelf"));
+  $("#builtCount").textContent = systems.length || "";
+  state.view === "shelf" ? renderShelf() : renderGrid();
+  renderRail();
+}
 
+function renderGrid() {
   const list = PALETTES.filter((p) =>
     (!state.section || p.section === state.section) &&
     (!state.hue || p.hues.has(state.hue)) &&
     (!state.savedOnly || saved.has(p.page)) &&
-    (!state.builtOnly || isBuilt(p.page)) &&
     (!state.q || (p.name + " " + p.section + " " + p.colors.join(" ")).toLowerCase().includes(state.q)));
 
   const grid = $("#grid");
+  grid.className = "";
   grid.innerHTML = list.length ? "" : '<p class="empty">No palettes match — loosen a filter.</p>';
   list.forEach((p, i) => {
-    const card = document.createElement("article");
-    card.className = "card";
+    const drawing = drawFrom === p.page;
+    const n = sysOf(p.page).length;
+    const card = el("article", "card" + (drawing ? " drawing" : ""));
     card.style.animationDelay = Math.min(i, 16) * 30 + "ms";
-    const bands = p.colors.map((c) =>
-      `<button class="band ${lum(c) > 0.55 ? "dk" : "lt"}" style="background:${c}" data-hex="${c}" aria-label="Copy ${c}"><span>${c}</span></button>`).join("");
+    const bands = p.colors.map((c) => {
+      const on = drawing && open && (open.accent.includes(c) || open.core === c);
+      return `<button class="band ${lum(c) > 0.55 ? "dk" : "lt"}${on ? " on" : ""}" style="background:${c}"
+        data-hex="${c}" aria-label="${drawing ? "Add " + c + " to " + open.name : "Copy " + c}"><span>${c}</span></button>`;
+    }).join("");
     card.innerHTML = `
       <div class="bands ${p.colors.length > 12 ? "many" : ""}">${bands}</div>
       <footer>
@@ -415,18 +606,77 @@ function render() {
             <button class="save" aria-pressed="${saved.has(p.page)}" aria-label="Save palette">${saved.has(p.page) ? "saved" : "save"}</button>
             <button class="cpy">copy</button>
             <button class="exp">export</button>
-            <button class="bld">${isBuilt(p.page) ? "built" : "build"}</button>
+            ${open && open.page !== p.page
+              ? `<button class="draw" aria-pressed="${drawing}">${drawing ? "done" : "draw from"}</button>`
+              : `<button class="bld">${n ? `build (${n})` : "build"}</button>`}
           </span>
         </div>
       </footer>`;
-    card.querySelectorAll(".band").forEach((b) => (b.onclick = () => copy(b.dataset.hex, b.dataset.hex + " copied")));
+    card.querySelectorAll(".band").forEach((b) => (b.onclick = () =>
+      drawing ? drawAccent(b.dataset.hex, p.page) : copy(b.dataset.hex, b.dataset.hex + " copied")));
     card.querySelector(".save").onclick = () => { saved.has(p.page) ? saved.delete(p.page) : saved.add(p.page); persist(); render(); };
     card.querySelector(".cpy").onclick = () => copy(p.colors.join(", "), "palette copied");
     card.querySelector(".exp").onclick = () => openExport(p);
-    card.querySelector(".bld").onclick = () => openBuild(p);
+    card.querySelector(".bld")?.addEventListener("click", () => openFor(p));
+    card.querySelector(".draw")?.addEventListener("click", () => { drawFrom = drawing ? null : p.page; render(); });
     grid.append(card);
   });
   $("#meta").textContent = `${list.length} of ${PALETTES.length} palettes · ${sections.length} sections · ${PALETTES.reduce((n, p) => n + p.colors.length, 0)} colours`;
+}
+
+/* ---------- the shelf: systems, recognisable by their colours and their name ---------- */
+function renderShelf() {
+  const grid = $("#grid");
+  grid.className = "shelf";
+  if (!systems.length) {
+    grid.innerHTML = '<p class="empty">No systems yet — open a palette and press build.</p>';
+    $("#meta").textContent = `0 systems`;
+    return;
+  }
+  grid.innerHTML = "";
+  systems.forEach((s, i) => {
+    const p = byPage.get(s.page);
+    const n = NEUTRALS.find((x) => x.name === s.neutral);
+    /* the brand colours, then the three neutral steps that actually build the page — without them
+       two candidates that differ only by neutral are the reason you pinned them and look identical */
+    const strip = [s.core, ...ordered(s)].filter(Boolean).slice(0, 4)
+      .concat(n ? ["bg", "surface", "text"].map((r) => n.colors[readStep(s, r)]) : []);
+    const card = el("article", "card" + (pinned.has(s.id) ? " pin" : ""));
+    card.style.animationDelay = Math.min(i, 16) * 30 + "ms";
+    card.innerHTML = `
+      <div class="shelfstrip">${strip.length
+        ? strip.map((c) => `<i style="background:${c}"></i>`).join("")
+        : '<i style="background:var(--line)"></i>'}</div>
+      <footer>
+        <div class="row1"><h3>${s.name}</h3><span class="page">${s.at}</span></div>
+        <div class="row2">
+          <span class="sec">${p ? p.name + " · p. " + s.page : "p. " + s.page}${s.neutral ? " · " + s.neutral : ""} · ${s.dark ? "dark" : "light"}</span>
+        </div>
+        <div class="row2">
+          <span class="acts">
+            <button class="op">open</button>
+            <button class="pn" aria-pressed="${pinned.has(s.id)}">${pinned.has(s.id) ? "pinned" : "pin"}</button>
+            <button class="dl">delete</button>
+          </span>
+          ${pinned.size > 1 ? '<button class="cmpBtn acts" style="font:inherit;background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:4px;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;font-weight:500">compare ' + pinned.size + '</button>' : ""}
+        </div>
+      </footer>`;
+    card.querySelector(".op").onclick = () => { open = s; tab = "build"; state.view = "grid"; render(); };
+    card.querySelector(".pn").onclick = () => {
+      pinned.has(s.id) ? pinned.delete(s.id) : pinned.size < 3 ? pinned.add(s.id) : toast("three is the ceiling — unpin one");
+      render();
+    };
+    card.querySelector(".dl").onclick = () => {
+      if (!confirm(`Delete “${s.name}”?`)) return;
+      systems = systems.filter((x) => x.id !== s.id);
+      pinned.delete(s.id);
+      if (open?.id === s.id) open = null;
+      persistSystems(); render();
+    };
+    card.querySelector(".cmpBtn")?.addEventListener("click", openCompare);
+    grid.append(card);
+  });
+  $("#meta").textContent = `${systems.length} system${systems.length === 1 ? "" : "s"} · ${pinned.size} pinned`;
 }
 
 /* ---------- copy + toast ---------- */
@@ -435,7 +685,7 @@ function toast(msg) {
   $("#toast").textContent = msg;
   $("#toast").classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => $("#toast").classList.remove("show"), 1400);
+  toastTimer = setTimeout(() => $("#toast").classList.remove("show"), 1600);
 }
 function copy(text, msg) {
   (navigator.clipboard?.writeText(text) || Promise.reject()).catch(() => {
@@ -453,35 +703,31 @@ const key = (p, i) => p.names?.[i] ?? `${slug(p)}-${i + 1}`;
 /* PDF p.4 — what each tier is for; only meaningful on a built system */
 const GUIDE = ["core — key brand moments, used with discipline", "accent — sparingly, for emphasis", "neutral — structure, backgrounds and body copy"];
 /* The header is the only part of a build that survives into a meeting three weeks later — the CSS file is
-   what's open in the room, not this app. So it carries where it came from, why, and the contrast answers. */
-const guide = (p, open, close = "") =>
+   what's open in the room, not this app. So it carries where it came from, what was ruled out, and the
+   contrast answers, including which ramp step each role reads. */
+const guide = (p, o, c = "") =>
   (p.names ? [
-    `${p.name} · Colourbook V1.0 p. ${p.page} · ${p.dark ? "dark" : "light"} theme`,
-    ...(p.note ? [`Why: ${p.note}`] : []),
+    `${p.name} · ${p.src} · ${p.dark ? "dark" : "light"} theme`,
+    ...(p.tally ? [p.tally] : []),
     ...(p.checks.length ? [p.checks.join(" · ")] : []),
+    ...(p.stepline ? [p.stepline] : []),
     ...GUIDE,
-  ].map((l) => `${open}${l}${close}\n`).join("") : "");
+  ].map((l) => `${o}${l}${c}\n`).join("") : "");
 const FORMATS = {
   /* roles repeat hexes already listed above them — a flat hex dump stops at p.roleAt */
   hex:  { ext: "txt",  make: (p) => p.colors.slice(0, p.roleAt).join("\n") },
   css:  { ext: "css",  make: (p) => `${guide(p, "/* ", " */")}:root {\n${p.colors.map((c, i) => `  --${key(p, i)}: ${c};`).join("\n")}\n}` },
   scss: { ext: "scss", make: (p) => guide(p, "// ") + p.colors.map((c, i) => `$${key(p, i)}: ${c};`).join("\n") },
   tailwind: { ext: "js", make: (p) => `colors: {\n  "${slug(p)}": {\n${p.colors.map((c, i) => `    "${p.names?.[i] ?? i + 1}": "${c}",`).join("\n")}\n  },\n},` },
-  json: { ext: "json", make: (p) => JSON.stringify({ name: p.name, section: p.section, page: p.page, colors: p.colors, ...(p.names && { theme: p.dark ? "dark" : "light", names: p.names, note: p.note, contrast: p.checks }) }, null, 2) },
-  /* W3C design tokens — what Tokens Studio, Style Dictionary and Figma variable importers eat.
-     $description is spec'd at group level, so the note rides into Figma rather than being lost at the border. */
-  tokens: { ext: "json", make: (p) => JSON.stringify({
-    ...(p.note && { $description: p.note }),
-    ...Object.fromEntries(p.colors.map((c, i) => [key(p, i), { $type: "color", $value: c }])),
-  }, null, 2) },
+  json: { ext: "json", make: (p) => JSON.stringify({ name: p.name, section: p.section, page: p.page, colors: p.colors,
+    ...(p.names && { theme: p.dark ? "dark" : "light", source: p.src, names: p.names, contrast: p.checks, steps: p.steps, eliminated: p.eliminated }) }, null, 2) },
+  /* W3C design tokens — what Tokens Studio, Style Dictionary and Figma variable importers eat */
+  tokens: { ext: "json", make: (p) => JSON.stringify(Object.fromEntries(p.colors.map((c, i) => [key(p, i), { $type: "color", $value: c }])), null, 2) },
 };
-let dlgPalette, dlgFormat = "hex", dlgBuild = null;
+let dlgPalette, dlgFormat = "hex";
 function openExport(p) {
   dlgPalette = p;
-  dlgBuild = null;
   $("#dlgTitle").textContent = p.name;
-  $("#dlg").classList.remove("build");
-  $("#dlgCopy").disabled = $("#dlgDl").disabled = false;
   setFormat(dlgFormat);
   $("#dlg").showModal();
 }
@@ -489,8 +735,8 @@ function setFormat(f) {
   dlgFormat = f;
   $("#dlgTabs").innerHTML = "";
   $("#dlgTabs").append(...Object.keys(FORMATS).map((k) => {
-    const b = document.createElement("button");
-    b.className = "chip"; b.textContent = k; b.setAttribute("aria-pressed", k === f);
+    const b = el("button", "chip"); b.textContent = k;
+    b.setAttribute("aria-pressed", k === f);
     b.onclick = () => setFormat(k);
     return b;
   }));
@@ -498,249 +744,619 @@ function setFormat(f) {
 }
 $("#dlgClose").onclick = () => $("#dlg").close();
 $("#dlg").onclick = (e) => { if (e.target === $("#dlg")) $("#dlg").close(); };
-$("#dlg").addEventListener("close", () => { if (dlgBuild) { dlgBuild = null; render(); } });
 $("#dlgCopy").onclick = () => copy($("#dlgCode").textContent, dlgFormat + " copied");
-$("#dlgDl").onclick = () => {
-  const f = FORMATS[dlgFormat];
+$("#dlgDl").onclick = () => download(dlgPalette, dlgFormat);
+function download(p, f) {
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([f.make(dlgPalette)]));
-  a.download = `${slug(dlgPalette)}.${f.ext}`;
+  a.href = URL.createObjectURL(new Blob([FORMATS[f].make(p)]));
+  a.download = `${slug(p)}.${FORMATS[f].ext}`;
   a.click();
   URL.revokeObjectURL(a.href);
-};
+}
 
 /* ---------- build a system (PDF pp. 4–5) ---------- */
 const NEUTRALS = PALETTES.filter((p) => p.section === "Neutrals");
-const stripBg = (cs) =>
-  `linear-gradient(90deg,${cs.map((c, i) => `${c} ${(i / cs.length) * 100}% ${((i + 1) / cs.length) * 100}%`).join(",")})`;
 
-/* which step of the 11-wide neutral ramp each role reads, in the light theme */
-const ROLE_STEP = { bg: 10, surface: 9, border: 8, "text-muted": 5, text: 1 };
+/* Which step of the 11-wide neutral ramp each role reads, in the light theme.
+   text-muted sits at 4, not 5: every scale lands 4.35–4.39 at step 5, which the grader above
+   calls "large text only". Step 4 reads 6.9–7.2 in light and — because dark is these indices
+   mirrored — 6.8–6.9 in dark. One number, both themes. The role ladder can move any of these. */
+const ROLE_STEP = { bg: 10, surface: 9, border: 8, "text-muted": 4, text: 1 };
+const ROLES = Object.keys(ROLE_STEP);
+/* the pairing each role is judged on, and whether WCAG text rules apply to it.
+   Moving either member of a pair changes both rows — seeing it twice is feedback, not noise. */
+const PAIR = {
+  bg: ["text", "text on bg", true], surface: ["text-muted", "muted on surface", true],
+  border: ["surface", "border on surface", false],
+  "text-muted": ["surface", "muted on surface", true], text: ["bg", "text on bg", true],
+};
+const stepOf = (s, role) => s.roles?.[role] ?? ROLE_STEP[role];
+/* dark is the same role indices mirrored — the 11-step ramp itself never flips */
+const readStep = (s, role) => (s.dark ? 10 - stepOf(s, role) : stepOf(s, role));
 
-function system(p, b) {
-  const n = NEUTRALS.find((x) => x.name === b.neutral);
+/* accent order is derived — board column, then step. Never click order: the ordinal ends up
+   in a CSS file where it looks semantic, so it has to be a fact about the colour. */
+function ordered(s) {
+  const p = byPage.get(s.page);
+  const { cols } = ramps(p ? p.colors : s.accent);
+  return s.accent.slice().sort((a, b) => rankIn(cols, a) - rankIn(cols, b));
+}
+/* every page this system drew from, in the order it drew from them */
+function sources(s) {
+  const p = byPage.get(s.page);
+  const out = [p ? `${p.name} p. ${s.page}` : `p. ${s.page}`];
+  const extra = [...new Set(s.accent.map((c) => s.src[c]).filter((pg) => pg && pg !== s.page))];
+  extra.forEach((pg) => out.push(byPage.get(pg) ? `${byPage.get(pg).name} p. ${pg}` : `p. ${pg}`));
+  if (s.neutral) { const n = NEUTRALS.find((x) => x.name === s.neutral); out.push(`${s.neutral} p. ${n ? n.page : "?"}`); }
+  return out.join(" + ");
+}
+
+function system(p, s) {
+  const n = NEUTRALS.find((x) => x.name === s.neutral);
   const colors = [], names = [];
-  if (b.core) { colors.push(b.core); names.push("core"); }
-  b.accent.forEach((c, i) => { colors.push(c); names.push(`accent-${i + 1}`); });
+  if (s.core) { colors.push(s.core); names.push("core"); }
+  ordered(s).forEach((c, i) => { colors.push(c); names.push(`accent-${i + 1}`); });
   n?.colors.forEach((c, i) => { colors.push(c); names.push(`neutral-${i + 1}`); });
   /* semantic roles — the same hexes again, named for the job they do; neutrals run dark→light, 11 steps */
   const roleAt = colors.length;
-  /* every Neutrals scale is 11 steps in identical positions, so dark is these indices mirrored.
-     The ramp itself never flips — only which end each role reads from. */
-  const roles = {};
-  if (n) Object.entries(ROLE_STEP).forEach(([k, i]) => (roles[k] = n.colors[b.dark ? 10 - i : i]));
-  if (b.core) roles["core-ink"] = ink(b.core);
-  if (b.accent[0]) roles["accent-ink"] = ink(b.accent[0]);
+  const roles = {}, steps = {};
+  if (n) ROLES.forEach((r) => { const i = readStep(s, r); roles[r] = n.colors[i]; steps[r] = `neutral-${i + 1}`; });
+  if (s.core) roles["core-ink"] = ink(s.core);
+  if (ordered(s)[0]) roles["accent-ink"] = ink(ordered(s)[0]);
   Object.entries(roles).forEach(([k, c]) => { colors.push(c); names.push(k); });
   /* the contrast question gets asked in every room and is pure arithmetic — compute it, never ask her to record it */
   const checks = [];
   if (n) checks.push(`text on bg ${contrast(roles.text, roles.bg)}`, `muted on surface ${contrast(roles["text-muted"], roles.surface)}`);
-  if (b.core) checks.push(`ink on core ${contrast(roles["core-ink"], b.core)}`);
-  return { name: `${p.name} system`, section: p.section, page: p.page, colors, names, neutral: n, roles, roleAt, dark: !!b.dark, note: b.note || "", checks };
+  if (s.core) checks.push(`ink on core ${contrast(roles["core-ink"], s.core)}`);
+  const chosen = (s.core ? 1 : 0) + s.accent.length;
+  const pool = p ? p.colors.length : chosen;
+  return {
+    name: s.name, section: p?.section ?? "", page: s.page, colors, names, neutral: n, roles, steps, roleAt,
+    dark: !!s.dark, checks, src: sources(s), eliminated: s.out.length,
+    tally: p ? `${chosen} of ${pool} chosen · ${s.out.length} eliminated` : "",
+    stepline: n ? "roles read " + ROLES.map((r) => `${r}=${steps[r]}`).join(" ") : "",
+  };
 }
 
-function openBuild(p) {
-  const b = (builds[p.page] ||= { core: null, accent: [], neutral: null });
-  /* colors.js can be regenerated under a saved build — drop hexes the palette no longer has */
-  b.accent = b.accent.filter((c) => p.colors.includes(c));
-  if (!p.colors.includes(b.core)) b.core = null;
-  dlgBuild = p;
-  $("#dlgTitle").textContent = `${p.name} — system`;
-  $("#dlg").classList.add("build");
-  renderBuild();
-  $("#dlg").showModal();
-}
-
-/* ---------- shareable build link: #b=<page>,<core>,<accent>…,<neutral> ---------- */
-/* hexes, not indices — colors.js is regenerated, and indices would repoint a shared link at other colours */
-/* the note rides last, prefixed "n:" — one Neutrals scale is literally named "Neutral", so a bare "n" collides.
-   encodeURIComponent escapes "," ":" and "#", so the segment can never break the split or the hex strip. */
-const encodeBuild = (page, b) =>
-  "#b=" + [page, b.core || "-", ...b.accent, b.neutral || "-", ...(b.dark ? ["d"] : []),
-           ...(b.note ? ["n:" + encodeURIComponent(b.note)] : [])]
-    .map((v) => String(v).replace("#", "")).join(",");
-function decodeBuild(hash) {
+/* ---------- shareable build link ----------
+   v2 carries the name, the role overrides and what was eliminated, so a link reproduces the export
+   byte for byte. v1's readable #b= is still decoded — links already in the wild have to keep working. */
+const b64 = (s) => btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const unb64 = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)));
+const encodeSys = (s) =>
+  "#b2=" + b64(JSON.stringify([s.page, s.name, s.core, s.accent, s.neutral, s.dark ? 1 : 0, s.roles, s.out, s.src]));
+function decodeSys(hash) {
+  const m2 = hash.match(/^#b2=(.+)/);
+  if (m2) {
+    try {
+      const [page, name, core, accent, neutral, dark, roles, out, src] = JSON.parse(unb64(m2[1]));
+      return Object.assign(blank(page, name), { core, accent, neutral, dark: !!dark, roles: roles || {}, out: out || [], src: src || {} });
+    } catch { return null; }
+  }
   const m = hash.match(/^#b=(.+)/);
   if (!m) return null;
   const [page, core, ...rest] = m[1].split(",");
-  let note = "", dark = false;
-  if (rest[rest.length - 1]?.startsWith("n:")) note = decodeURIComponent(rest.pop().slice(2));
-  /* trailing "d" is the dark flag — emitted only when set, so a light link is byte-identical to the old format */
+  let dark = false;
   if (rest[rest.length - 1] === "d") { dark = true; rest.pop(); }
   const neutral = rest.pop();
   const un = (h) => (h === "-" ? null : "#" + h.toUpperCase());
-  return { page, core: un(core), accent: rest.map(un), neutral: neutral === "-" ? null : neutral, dark, note };
-}
-$("#dlgLink").onclick = () =>
-  copy(location.origin + location.pathname + encodeBuild(dlgBuild.page, builds[dlgBuild.page]), "link copied");
-
-/* the three states of PDF p.5: core, an accent ordinal, or "" for eliminated */
-const pickRole = (b, hex) =>
-  b.core === hex ? "core" : b.accent.includes(hex) ? String(b.accent.indexOf(hex) + 1) : "";
-
-/* first click = core, clicking core again releases it, any other click toggles accent */
-function pick(hex) {
-  const b = builds[dlgBuild.page];
-  if (b.core === hex) b.core = null;
-  else if (!b.core) { b.core = hex; b.accent = b.accent.filter((c) => c !== hex); }
-  else b.accent = b.accent.includes(hex) ? b.accent.filter((c) => c !== hex) : [...b.accent, hex];
-  persistBuilds();
-  renderBuild();
+  return Object.assign(blank(+page), { core: un(core), accent: rest.map(un), neutral: neutral === "-" ? null : neutral, dark });
 }
 
-function renderBuild() {
-  const p = dlgBuild, b = builds[p.page];
-  /* ponytail: roles keyed by hex, so a palette listing the same hex twice lights up both — same colour, same role */
-  $("#bPicks").innerHTML = p.colors.map((c) => {
-    const role = pickRole(b, c);
-    /* hex without the "#" — at 27 swatches a column is ~2.5rem and the full form doesn't fit */
-    return `<button class="pick ${role ? "on" : ""} ${lum(c) > 0.55 ? "dk" : "lt"}" style="background:${c}"
-      data-hex="${c}" aria-label="${c} — ${role ? (role === "core" ? "core" : "accent " + role) : "eliminated"}"
-      >${role ? `<span>${role}</span><span class="hx">${c.slice(1)}</span>` : ""}</button>`;
-  }).join("");
-  $("#bPicks").querySelectorAll(".pick").forEach((el) => (el.onclick = () => pick(el.dataset.hex)));
+/* ---------- opening, duplicating, closing ---------- */
+function openFor(p) {
+  const mine = sysOf(p.page);
+  open = mine[mine.length - 1] || (systems.push(blank(p.page)), persistSystems(), systems[systems.length - 1]);
+  tab = "build"; drawFrom = null; boardFlat = false;
+  render();
+}
+$("#rClose").onclick = () => { open = null; drawFrom = null; render(); };
+$("#rDup").onclick = () => {
+  if (!open) return;
+  const c = Object.assign(structuredClone(open), { id: uid(), name: open.name + " copy", at: new Date().toISOString().slice(0, 10) });
+  systems.splice(systems.indexOf(open) + 1, 0, c);
+  open = c; persistSystems(); render();
+  $("#rname").select();
+};
+$("#rDel").onclick = () => {
+  if (!open || !confirm(`Delete “${open.name}”?`)) return;
+  systems = systems.filter((x) => x.id !== open.id);
+  pinned.delete(open.id); open = null;
+  persistSystems(); render();
+};
+$("#rname").oninput = (e) => { if (open) { open.name = e.target.value; persistSystems(); } };
+$("#rname").onblur = () => {
+  if (open && !open.name.trim()) { open.name = byPage.get(open.page)?.name || `p. ${open.page}`; persistSystems(); }
+  render();
+};
+document.querySelectorAll(".rtabs .chip").forEach((b) =>
+  (b.onclick = () => { tab = b.dataset.tab; renderRail(); }));
 
-  $("#bNeuts").innerHTML = NEUTRALS.map((n) =>
-    `<button class="neut" aria-pressed="${b.neutral === n.name}" style="background:${stripBg(n.colors)}"><b>${n.name}</b></button>`).join("");
-  $("#bNeuts").querySelectorAll(".neut").forEach((el, i) => {
-    el.onclick = () => {
-      b.neutral = b.neutral === NEUTRALS[i].name ? null : NEUTRALS[i].name;
-      persistBuilds();
-      renderBuild();
-    };
-    /* Stone/Zinc/Grey/Slate differ only by undertone and are near-indistinguishable as 1.5rem strips.
-       Repaint only — renderBuild() here would re-run setFormat and flicker the code pane on every hover. */
-    el.onpointerenter = () => paintPreview(p, b, NEUTRALS[i].name);
-    el.onpointerleave = () => paintPreview(p, b, b.neutral);
+/* ---------- the three swatch states of PDF p.5 ---------- */
+const roleOf = (s, hex) => (s.core === hex ? "core" : s.accent.includes(hex) ? "accent" : s.out.includes(hex) ? "out" : "open");
+
+/* first click sets the core; after that the cap (or C) moves it and the old core falls back to an
+   accent, in place. No release step, so the preview never collapses between two clicks. */
+function setCore(hex) {
+  if (open.core === hex) return;
+  const prev = open.core;
+  open.core = hex;
+  open.accent = open.accent.filter((c) => c !== hex);
+  open.out = open.out.filter((c) => c !== hex);
+  if (prev && !open.accent.includes(prev)) open.accent.push(prev);
+  persistSystems(); renderRail();
+  toast(prev ? `core → ${hex} · ${prev} kept as accent` : `core → ${hex}`);
+}
+function toggleAccent(hex) {
+  if (!open.core) return setCore(hex); /* the book's order: core first, then a few tints and shades */
+  if (open.core === hex) return;
+  open.out = open.out.filter((c) => c !== hex);
+  if (open.accent.includes(hex)) { open.accent = open.accent.filter((c) => c !== hex); delete open.src[hex]; }
+  else open.accent.push(hex);
+  persistSystems(); renderRail();
+}
+function toggleOut(hex) {
+  if (open.core === hex) return;
+  open.accent = open.accent.filter((c) => c !== hex);
+  delete open.src[hex];
+  open.out = open.out.includes(hex) ? open.out.filter((c) => c !== hex) : [...open.out, hex];
+  persistSystems(); renderRail();
+}
+/* an accent drawn from another palette page — the export header cites every page it came from */
+function drawAccent(hex, page) {
+  if (!open) return;
+  if (open.accent.includes(hex)) { open.accent = open.accent.filter((c) => c !== hex); delete open.src[hex]; }
+  else { open.accent.push(hex); open.src[hex] = page; }
+  persistSystems(); render();
+}
+
+/* ---------- the rail ---------- */
+function renderRail() {
+  document.body.classList.toggle("rail", !!open);
+  if (!open) { $("#rBody").innerHTML = ""; $("#rAct").innerHTML = ""; return; }
+  const s = open, p = byPage.get(s.page);
+  if ($("#rname").value !== s.name) $("#rname").value = s.name;
+  $("#rSrc").textContent = sources(s);
+  document.querySelectorAll(".rtabs .chip").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.tab === tab)));
+
+  /* focus survives a rebuild — the board is keyboard-driven and losing the cell mid-edit is unusable */
+  const held = document.activeElement?.dataset?.hex;
+  const body = $("#rBody");
+  body.className = "rbody" + (tab === "export" ? " export" : "");
+  body.innerHTML = "";
+  tab === "export" ? buildExportTab(body, p, s) : buildBuildTab(body, p, s);
+  if (held) body.querySelector(`[data-hex="${CSS.escape(held)}"]`)?.focus();
+}
+
+function buildBuildTab(body, p, s) {
+  /* --- ramp board --- */
+  const { cols, flat } = p ? ramps(p.colors) : { cols: [], flat: false };
+  const useFlat = flat || boardFlat;
+  const chosen = (s.core ? 1 : 0) + s.accent.length;
+  const lab = el("p", "lab", `<span>Core &amp; accents</span>`);
+  const tally = el("span", "tally");
+  tally.textContent = p ? `${chosen}/${p.colors.length} · ${s.out.length} out` : "";
+  lab.append(tally);
+  if (p) {
+    const t = el("button", "act");
+    t.textContent = useFlat ? "columns" : "flat";
+    t.onclick = () => { boardFlat = !boardFlat; renderRail(); };
+    if (!flat) lab.append(t);
+  }
+  body.append(lab);
+  body.append(el("p", "sr", "Click a swatch to toggle it as an accent, or its top edge to make it the core. With a swatch focused: C sets the core, Enter toggles an accent, X eliminates it."));
+
+  const board = el("div", "board");
+  const groups = useFlat ? chunk(p ? p.colors : [], Math.ceil((p?.colors.length || 1) / 9)) : cols.map((c) => c.cs);
+  board.style.setProperty("--rows", Math.max(1, ...groups.map((g) => g.length)));
+  groups.forEach((cs) => {
+    const col = el("div", "col");
+    cs.forEach((c) => col.append(cellFor(s, c, useFlat)));
+    board.append(col);
   });
+  body.append(board);
 
-  $("#builder").querySelectorAll(".themes .chip").forEach((el) => {
-    el.setAttribute("aria-pressed", String(!!b.dark === (el.dataset.theme === "dark")));
-    el.onclick = () => { b.dark = el.dataset.theme === "dark"; persistBuilds(); renderBuild(); };
-  });
-
-  paintPreview(p, b, b.neutral);
-
-  /* assigning an identical value still collapses the caret in some browsers — only write when it actually changed */
-  if ($("#bNote").value !== (b.note || "")) $("#bNote").value = b.note || "";
-  $("#bNote").oninput = (e) => {
-    b.note = e.target.value.trim();
-    persistBuilds();
-    /* repaint the pane, not the tabs — the note is only real once she watches it land in the export */
-    dlgPalette = system(p, b);
-    $("#dlgCode").textContent = FORMATS[dlgFormat].make(dlgPalette);
+  const acts = el("p", "lab", "<span></span>");
+  const elim = el("button", "act");
+  const openCount = p ? p.colors.filter((c) => roleOf(s, c) === "open").length : 0;
+  elim.textContent = openCount ? `Eliminate the rest (${openCount})` : s.out.length ? "Restore eliminated" : "";
+  elim.onclick = () => {
+    if (openCount) open.out = [...new Set([...s.out, ...p.colors.filter((c) => roleOf(s, c) === "open")])];
+    else open.out = [];
+    persistSystems(); renderRail();
   };
+  if (elim.textContent) { acts.append(elim); body.append(acts); }
 
-  dlgPalette = system(p, b);
-  $("#dlgCopy").disabled = $("#dlgDl").disabled = !dlgPalette.colors.length;
-  setFormat(dlgFormat);
+  /* --- neutral: five live pages, not five strips. Each tile is this system in that scale —
+     her role overrides and her theme, so what she compares is what she would ship. --- */
+  body.append(el("p", "lab", "<span>Neutral palette</span>"));
+  const neuts = el("div", "neuts");
+  NEUTRALS.forEach((n) => {
+    const r = system(p, { ...s, neutral: n.name }).roles;
+    const b = el("button", "neut",
+      `<b>${n.name}</b><i class="h"></i><i></i><i class="s"></i>${s.core ? '<i class="c"></i>' : ""}`);
+    b.style.cssText = `--t-bg:${r.bg};--t-surface:${r.surface};--t-line:${r.border};` +
+      `--t-ink:${r.text};--t-mut:${r["text-muted"]}` + (s.core ? `;--t-core:${s.core}` : "");
+    b.setAttribute("aria-pressed", String(s.neutral === n.name));
+    /* no deselect: a system without a neutral has nothing to look at, so "none" is only ever a start state */
+    b.onclick = () => { s.neutral = n.name; persistSystems(); renderRail(); };
+    neuts.append(b);
+  });
+  body.append(neuts);
+
+  /* --- role ladder --- */
+  if (s.neutral) {
+    const l = el("p", "lab", "<span>Roles</span>");
+    if (Object.keys(s.roles).length) {
+      const r = el("button", "act"); r.textContent = "reset";
+      r.onclick = () => { s.roles = {}; persistSystems(); renderRail(); };
+      l.append(r);
+    }
+    body.append(l, ladder(s));
+  }
+
+  /* --- theme + preview --- */
+  const pl = el("p", "lab", "<span>Preview</span>");
+  const th = el("span", "themes");
+  ["light", "dark"].forEach((t) => {
+    const b = el("button", "chip"); b.textContent = t;
+    b.setAttribute("aria-pressed", String(!!s.dark === (t === "dark")));
+    b.onclick = () => { s.dark = t === "dark"; persistSystems(); renderRail(); };
+    th.append(b);
+  });
+  pl.append(th);
+  body.append(pl);
+
+  if (s.core && s.neutral) {
+    const prev = previewNode();
+    prev.id = "rPrev";
+    body.append(prev);
+    paintPreview(prev, p, s);
+  } else {
+    body.append(el("p", "unbuilt", "Pick a core colour and a neutral palette"));
+  }
+
+  /* --- export, collapsed to its first line until export is the task --- */
+  const sys = system(p, s);
+  const sum = el("button", "exsum", `<b>Export · ${dlgFormat}</b><code>${
+    (FORMATS[dlgFormat].make(sys).split("\n").find((l) => l.trim()) || "—").replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]))
+  }</code>`);
+  sum.onclick = () => { tab = "export"; renderRail(); };
+  body.append(sum);
+
+  $("#rAct").innerHTML = "";
+  const link = el("button", "btn ghost"); link.textContent = "Link";
+  link.onclick = () => copy(location.origin + location.pathname + encodeSys(s), "link copied");
+  const exp = el("button", "btn"); exp.textContent = "Export";
+  exp.onclick = () => { tab = "export"; renderRail(); };
+  exp.disabled = !sys.colors.length;
+  $("#rAct").append(link, exp);
 }
 
-/* repaints #bPrev only — never touches dlgPalette or setFormat, so a hovered neutral can't flicker the code pane.
-   `neutral` is a parameter rather than b.neutral so an uncommitted hover can be previewed. */
-function paintPreview(p, b, neutral) {
-  /* the neutral supplies bg, surface, border and text — without one there is no system to look at */
-  const built = !!(b.core && neutral);
-  $("#bBlank").hidden = built;
-  $("#bPrev").hidden = !built;
-  /* "why this one" above nothing is a question about nothing — the field arrives with the system it explains */
-  $("#bNoteRow").hidden = !built;
-  if (!built) return;
+function chunk(arr, n) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
+  return out;
+}
 
-  const r = system(p, { ...b, neutral }).roles;
-  $("#bPrev").style.cssText = [
+function cellFor(s, c, flat) {
+  const role = roleOf(s, c);
+  const b = el("button", `cell ${lum(c) > 0.55 ? "dk" : "lt"} ${role === "core" ? "core on" : role === "accent" ? "on" : role === "out" ? "out" : ""}${flat ? " flat" : ""}`);
+  b.style.background = c;
+  b.dataset.hex = c;
+  b.setAttribute("aria-label", `${c} — ${role === "open" ? "not chosen" : role}`);
+  if (role === "core") b.innerHTML = `<span class="rl">core</span><span>${c.slice(1)}</span>`;
+  else if (role === "accent") b.innerHTML = `<span>${c.slice(1)}</span>`;
+  b.onclick = (e) => {
+    /* the top 40% of the cell is the core target — clientY, not offsetY, because the spans are children */
+    const r = b.getBoundingClientRect();
+    !flat && role !== "core" && e.clientY - r.top < r.height * 0.4 ? setCore(c) : toggleAccent(c);
+  };
+  b.onkeydown = (e) => {
+    const k = e.key.toLowerCase();
+    if (k === "c") { e.preventDefault(); setCore(c); }
+    else if (k === "x") { e.preventDefault(); toggleOut(c); }
+  };
+  return b;
+}
+
+/* the ladder: five roles, eleven steps each, the live ratio, and a ghost mark on the nearest step
+   that clears AA. A failing pairing used to be a dead end in a string; here the fix is one click. */
+function ladder(s) {
+  const n = NEUTRALS.find((x) => x.name === s.neutral);
+  const wrap = el("div", "lad");
+  ROLES.forEach((role) => {
+    const [other, phrase, isText] = PAIR[role];
+    const mine = n.colors[readStep(s, role)], theirs = n.colors[readStep(s, other)];
+    const r = ratio(mine, theirs);
+    const bad = isText && r < 4.5;
+
+    const name = el("span", `rn${s.roles[role] != null ? " moved" : ""}`);
+    name.textContent = role;
+    const steps = el("div", "steps");
+    /* the ramp always reads dark→light; in dark theme the marker sits at the mirrored position */
+    const eff = readStep(s, role);
+    /* only the text roles get the ghost mark. bg and surface report the same failing ratio, but
+       moving the ground to fix a text colour is the wrong lever — and it drags border with it. */
+    const fixAt = bad && role.startsWith("text") ? nearestFix(n.colors, eff, theirs) : -1;
+    n.colors.forEach((c, j) => {
+      const b = el("button", "step" + (j === fixAt ? " fix" : ""));
+      b.style.background = c;
+      b.setAttribute("aria-pressed", String(j === eff));
+      b.setAttribute("aria-label", `${role} reads neutral-${j + 1} (${c})`);
+      b.onclick = () => {
+        const light = s.dark ? 10 - j : j;
+        light === ROLE_STEP[role] ? delete s.roles[role] : (s.roles[role] = light);
+        persistSystems(); renderRail();
+      };
+      steps.append(b);
+    });
+    const read = el("p", `rd${bad ? " bad" : ""}`);
+    read.textContent = `${phrase} ${r.toFixed(1)}:1${isText ? " " + grade(r) : ""}` +
+      (fixAt >= 0 ? ` — marked step clears ${ratio(n.colors[fixAt], theirs).toFixed(1)}:1` : "");
+    wrap.append(name, steps, read);
+  });
+  return wrap;
+}
+/* nearest step to `from` whose contrast against `against` reaches AA — the mark the row shows */
+function nearestFix(ramp, from, against) {
+  let best = -1, dist = 99;
+  ramp.forEach((c, i) => {
+    if (ratio(c, against) >= 4.5 && Math.abs(i - from) < dist) { dist = Math.abs(i - from); best = i; }
+  });
+  return best;
+}
+
+function buildExportTab(body, p, s) {
+  const sys = system(p, s);
+  const nav = el("nav");
+  nav.append(...Object.keys(FORMATS).map((k) => {
+    const b = el("button", "chip"); b.textContent = k;
+    b.setAttribute("aria-pressed", k === dlgFormat);
+    b.onclick = () => { dlgFormat = k; renderRail(); };
+    return b;
+  }));
+  const pre = el("pre");
+  pre.textContent = FORMATS[dlgFormat].make(sys);
+  body.append(nav, pre);
+
+  $("#rAct").innerHTML = "";
+  const back = el("button", "btn ghost"); back.textContent = "Build";
+  back.onclick = () => { tab = "build"; renderRail(); };
+  const dl = el("button", "btn ghost"); dl.textContent = "Download";
+  dl.onclick = () => download(sys, dlgFormat);
+  const cp = el("button", "btn"); cp.textContent = "Copy";
+  cp.onclick = () => copy(pre.textContent, dlgFormat + " copied");
+  cp.disabled = dl.disabled = !sys.colors.length;
+  $("#rAct").append(back, dl, cp);
+}
+
+/* ---------- preview: a page, because a colour system is judged across one ---------- */
+function previewNode() {
+  return el("div", "prev", `
+    <div class="pnav"><span class="brand">Acme</span><span>Work · Studio · Journal</span><span class="pill">Contact</span></div>
+    <div class="pbody">
+      <h4>A colour system is judged across a page, not on a single card</h4>
+      <p>Body copy sits on the background in the text colour, at a length long enough to show what
+         reading it actually feels like — two lines is the shortest honest test.</p>
+      <div class="prow"><span class="pbtn">Primary action</span><span class="pbtn sec">Secondary</span></div>
+      <div class="prow ptags"></div>
+    </div>
+    <div class="psec">
+      <p class="ptitle">Dense</p>
+      <table><thead><tr><th>Project</th><th>Owner</th><th>Status</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="psec">
+      <p class="ptitle">Sparse</p>
+      <blockquote>Colour is the first thing people notice about a design, and the last thing they forget.</blockquote>
+      <p class="pcap" style="margin-top:.6rem">Caption — muted text on the background.</p>
+    </div>
+    <div class="psec">
+      <p class="plabel">Email</p>
+      <div class="pfield focus">you@studio.com</div>
+      <p class="pcap" style="font-size:.68rem">Enter an address we can reach you at.</p>
+    </div>
+    <div class="pfoot"><span>© 2026 Acme</span><span>Privacy · Terms</span></div>`);
+}
+
+/* repaints a preview node only — never touches the export pane, so the rail's own re-render can't flicker it */
+function paintPreview(node, p, s) {
+  if (!node || !s.core || !s.neutral) return;
+  const r = system(p, s).roles;
+  node.style.cssText = [
     `--p-bg:${r.bg}`, `--p-surface:${r.surface}`, `--p-line:${r.border}`,
     `--p-ink:${r.text}`, `--p-mut:${r["text-muted"]}`,
-    `--p-core:${b.core}`, `--p-core-ink:${r["core-ink"]}`,
+    `--p-core:${s.core}`, `--p-core-ink:${r["core-ink"]}`,
   ].join(";");
   /* every accent, not just accent-1 — picking six and seeing one is how you ship a system you never saw */
-  $("#bTags").innerHTML = b.accent
+  const acc = ordered(s);
+  node.querySelector(".ptags").innerHTML = acc
     .map((c, i) => `<span class="tag" style="background:${c};color:${ink(c)}">accent ${i + 1}</span>`).join("");
+  /* the dense area is where accents earn their keep — status dots exercise the whole set */
+  const rows = [["Wayfinding", "S. Granqvist", "Live"], ["Identity", "Studio", "In review"],
+    ["Packaging", "S. Granqvist", "Draft"], ["Signage", "Contractor", "Blocked"],
+    ["Site", "Studio", "Live"], ["Report", "S. Granqvist", "Archived"]];
+  node.querySelector("tbody").innerHTML = rows.map(([a, b, c], i) =>
+    `<tr><td>${a}</td><td class="pmut">${b}</td><td><i class="dot2" style="background:${acc[i % acc.length] || r["text-muted"]}"></i>${c}</td></tr>`).join("");
+}
+
+/* ---------- compare tray ---------- */
+function openCompare() {
+  const list = systems.filter((s) => pinned.has(s.id));
+  if (list.length < 2) return toast("pin two or three systems");
+  $("#cmpTitle").textContent = `Compare — ${list.map((s) => s.name).join(" · ")}`;
+  const body = $("#cmpBody");
+  body.innerHTML = "";
+  list.forEach((s) => {
+    const p = byPage.get(s.page);
+    const col = el("div", "cmpcol");
+    const head = el("div", "cmpname", `<b>${s.name}</b><span>${sources(s)} · ${s.dark ? "dark" : "light"}</span>`);
+    col.append(head);
+    if (s.core && s.neutral) {
+      const prev = previewNode();
+      prev.style.border = "none";
+      col.append(prev);
+      paintPreview(prev, p, s);
+    } else col.append(el("p", "unbuilt", "unbuilt — needs a core and a neutral"));
+    body.append(col);
+  });
+  document.body.classList.add("cmp");
+}
+$("#cmpClose").onclick = () => document.body.classList.remove("cmp");
+/* one flip for the whole tray — "is this system calmer" is a different question in each theme */
+$("#cmpTheme").onclick = () => {
+  systems.filter((s) => pinned.has(s.id)).forEach((s) => (s.dark = !s.dark));
+  persistSystems(); openCompare(); render();
+};
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  if (document.body.classList.contains("cmp")) document.body.classList.remove("cmp");
+  else if (drawFrom) { drawFrom = null; render(); }
+});
+
+/* The book's order opens on its five Neutrals scales — five grey ramps before any colour, every load.
+   Shuffled here and nowhere earlier: the section chips (sections) and the builder's ramp list (NEUTRALS)
+   are both captured above, in book order, and byPage looks up by page rather than position.
+   Fisher–Yates, not sort(() => Math.random() - .5) — a comparator shuffle leaves items near where they
+   started, which is the exact thing being fixed. */
+for (let i = PALETTES.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1));
+  [PALETTES[i], PALETTES[j]] = [PALETTES[j], PALETTES[i]];
 }
 
 render();
 
 { /* a shared link applies once, then leaves the URL clean so a reload doesn't re-apply it */
-  const d = decodeBuild(location.hash);
-  if (d) {
+  const d = decodeSys(location.hash);
+  if (d && byPage.has(+d.page)) {
     history.replaceState(null, "", location.pathname + location.search);
-    const p = PALETTES.find((x) => String(x.page) === d.page);
-    const had = builds[p?.page];
-    if (p && (!(had?.core || had?.accent.length || had?.neutral) || confirm(`Replace your saved build on p. ${d.page}?`))) {
-      builds[p.page] = { core: d.core, accent: d.accent, neutral: d.neutral, dark: d.dark, note: d.note };
-      openBuild(p); /* re-validates the hexes against the current palette */
-      persistBuilds();
-    }
+    d.page = +d.page;
+    const p = byPage.get(d.page);
+    /* colors.js can be regenerated under a shared link — drop hexes the palettes no longer have */
+    const known = (c) => p.colors.includes(c) || d.src[c];
+    d.accent = d.accent.filter(known);
+    d.out = d.out.filter((c) => p.colors.includes(c));
+    if (!p.colors.includes(d.core)) d.core = null;
+    systems.push(d);
+    persistSystems();
+    open = d; tab = "build";
+    render();
   }
 }
 
-/* ponytail: self-check — fails loudly in console if the data or color math breaks */
+/* ponytail: self-check — fails loudly in console if the data, the colour math or the record shape breaks */
 console.assert(PALETTES.length > 100, "palette count suspicious", PALETTES.length);
+/* a broken swap in the shuffle drops or duplicates a palette — silently, and only sometimes */
+console.assert(new Set(PALETTES.map((p) => p.page)).size === PALETTES.length, "shuffle lost or duplicated a palette");
+console.assert(NEUTRALS.every((n, i) => i === 0 || n.page > NEUTRALS[i - 1].page),
+  "the builder's neutral ramps got shuffled — they must stay in book order", NEUTRALS.map((n) => n.name));
 console.assert(hueFamily("#FF0000") === "red" && hueFamily("#808080") === "neutral" && hueFamily("#0185FF") === "blue", "hueFamily broken");
 console.assert(NEUTRALS.length === 5, "expected 5 neutral scales", NEUTRALS.length);
 console.assert(NEUTRALS.every((n) => n.colors.length === 11 && lum(n.colors[0]) < lum(n.colors[10])),
   "neutral scales must be 11 steps dark→light — the dark theme mirrors on that", NEUTRALS);
-{ /* peeking at a palette writes an empty entry — it must not count as built */
-  builds[-1] = { core: null, accent: [], neutral: "Stone" };
-  console.assert(!isBuilt(-1), "empty build entry counts as built");
-  delete builds[-1];
+{
+  /* the five tiles are only worth their lines if they render five different pages. Neutral and Zinc
+     share their light bg (#FAFAFA), so bg alone can't separate them — that is why the tile shows
+     surface, border and text too. Assert on the whole role set, in both themes. */
+  const t = Object.assign(blank(72, "T"), { core: "#FF7500" });
+  [false, true].forEach((dark) => {
+    const seen = NEUTRALS.map((n) => JSON.stringify(system(byPage.get(72), { ...t, dark, neutral: n.name }).roles));
+    console.assert(new Set(seen).size === 5, `two neutral tiles render identically (dark=${dark})`, seen);
+  });
+  console.assert(new Set(NEUTRALS.map((n) => n.colors[10])).size === 4,
+    "if every light bg became distinct, the tile could drop back to a plain colour field");
 }
 {
-  const s = system({ name: "T", section: "X", page: 0 }, { core: "#111111", accent: ["#222222"], neutral: "Stone" });
-  console.assert(s.names.slice(0, 2).join() === "core,accent-1" && s.roleAt === 13, "system() shape", s);
-  console.assert(FORMATS.css.make(s).includes("--neutral-11: #FAFAF9;"), "semantic export names broken");
-  console.assert(s.roles.bg === "#FAFAF9" && s.roles.text !== s.roles.bg, "roles broken", s.roles);
-  console.assert(new Set([s.roles.bg, s.roles.surface, s.roles.border]).size === 3, "bg/surface/border collapsed", s.roles);
-  const many = system({ name: "T", section: "X", page: 0 },
-    { core: "#111111", accent: ["#211111", "#221111", "#231111", "#241111", "#251111", "#261111"], neutral: "Stone" });
-  console.assert(many.names.includes("accent-6") && many.roleAt === 18, "6-accent system shape", many);
-  /* hovering a neutral is only worth the lines if the strips actually resolve to different roles */
-  const t = { name: "T", section: "X", page: 0 }, bs = { core: "#111111", accent: [], neutral: "Stone" };
-  console.assert(system(t, { ...bs, neutral: "Zinc" }).roles.bg !== system(t, bs).roles.bg,
-    "neutral hover preview can't differ");
-  const h = FORMATS.hex.make(s).split("\n");
-  console.assert(new Set(h).size === h.length && h.length === 13, "hex export repeats role colors", h);
-  console.assert(JSON.parse(FORMATS.tokens.make(s))["core"]?.$value === "#111111", "tokens format broken");
+  /* the board: columns are hue families, steps run dark→light, and no column outgrows the rail */
+  const r = ramps(byPage.get(72).colors);
+  console.assert(!r.flat && r.cols.length === 9 && r.cols.reduce((n, c) => n + c.cs.length, 0) === 27,
+    "p.72's 27 swatches should resolve to 9 hue columns", r.cols.map((c) => c.fam + ":" + c.cs.length));
+  console.assert(r.cols.every((c) => c.cs.every((x, i) => !i || lum(c.cs[i - 1]) <= lum(x))), "column not sorted dark→light");
+  console.assert(r.cols[r.cols.length - 1].fam === "neutral", "neutral column should sort last", r.cols.map((c) => c.fam));
+  console.assert(PALETTES.filter((p) => ramps(p.colors).flat).length <= 6,
+    "flat fallback should be rare — it is the escape hatch, not the norm");
+  console.assert(ramps(NEUTRALS[0].colors).flat, "an 11-step single ramp is taller than the rail — must fall back to flat");
+}
+{
+  /* the muted role: the shipped default has to clear AA on every scale, in both themes */
+  NEUTRALS.forEach((n) => {
+    const light = ratio(n.colors[ROLE_STEP["text-muted"]], n.colors[ROLE_STEP.surface]);
+    const dark = ratio(n.colors[10 - ROLE_STEP["text-muted"]], n.colors[10 - ROLE_STEP.surface]);
+    console.assert(light >= 4.5 && dark >= 4.5, `muted on surface fails AA on ${n.name}`, [light.toFixed(2), dark.toFixed(2)]);
+  });
+  const st = NEUTRALS.find((n) => n.name === "Stone").colors;
+  console.assert(nearestFix(st, 5, st[9]) === 4, "ghost mark should point one step darker", nearestFix(st, 5, st[9]));
+  console.assert(nearestFix(st, 10, st[10]) >= 0, "a clearing step must exist somewhere on the ramp");
+}
+{
+  const p = byPage.get(72);
+  const s = Object.assign(blank(72, "T"), { core: "#FF7500", accent: ["#FFE4AB", "#00C45B"], neutral: "Stone" });
+  const sys = system(p, s);
+  console.assert(sys.names.slice(0, 3).join() === "core,accent-1,accent-2" && sys.roleAt === 14, "system() shape", sys);
+  console.assert(FORMATS.css.make(sys).includes("--neutral-11: #FAFAF9;"), "semantic export names broken");
+  console.assert(sys.roles.bg === "#FAFAF9" && sys.roles.text !== sys.roles.bg, "roles broken", sys.roles);
+  console.assert(new Set([sys.roles.bg, sys.roles.surface, sys.roles.border]).size === 3, "bg/surface/border collapsed", sys.roles);
+  console.assert(FORMATS.css.make(sys).includes("23 eliminated") === false && FORMATS.css.make(sys).includes("3 of 27 chosen"),
+    "export header must state what was chosen out of what", sys.tally);
+  const h = FORMATS.hex.make(sys).split("\n");
+  console.assert(new Set(h).size === h.length && h.length === 14, "hex export repeats role colors", h);
+  console.assert(JSON.parse(FORMATS.tokens.make(sys))["core"]?.$value === "#FF7500", "tokens format broken");
 
-  const b = { core: "#111111", accent: ["#333333", "#222222"], neutral: "Stone" };
-  console.assert(pickRole(b, "#111111") === "core" && pickRole(b, "#222222") === "2" && pickRole(b, "#999999") === "",
-    "pickRole broken", [pickRole(b, "#111111"), pickRole(b, "#222222"), pickRole(b, "#999999")]);
-  const d = decodeBuild(encodeBuild(7, b));
-  console.assert(d.page === "7" && d.core === b.core && d.accent.join() === b.accent.join() && d.neutral === b.neutral, "build link roundtrip", d);
-  const e = decodeBuild(encodeBuild(7, { core: null, accent: [], neutral: null }));
-  console.assert(e.core === null && e.neutral === null && !e.accent.length, "unset core/neutral roundtrip", e);
-  const dl = decodeBuild(encodeBuild(7, { ...b, dark: true }));
-  console.assert(dl.dark === true && dl.neutral === "Stone" && dl.accent.join() === b.accent.join(),
-    "dark flag roundtrip", dl);
-  console.assert(decodeBuild(encodeBuild(7, b)).dark === false, "light link gained a dark flag");
-  /* the note is worthless if it cannot travel — commas, colons and hashes must all survive the hash format */
-  const nt = "warm on their photography, accent-2 = error: #F0F";
-  const dn = decodeBuild(encodeBuild(7, { ...b, dark: true, note: nt }));
-  console.assert(dn.note === nt && dn.dark === true && dn.neutral === "Stone" && dn.accent.join() === b.accent.join(),
-    "note link roundtrip", dn);
-  console.assert(decodeBuild(encodeBuild(7, { ...b, neutral: "Neutral" })).neutral === "Neutral",
-    'the scale named "Neutral" got eaten by the note prefix');
-  console.assert(decodeBuild(encodeBuild(7, b)).note === "", "empty note left a segment behind");
+  /* accent order is derived from the board, so click order cannot reach the export */
+  const rev = Object.assign(structuredClone(s), { accent: ["#00C45B", "#FFE4AB"] });
+  console.assert(system(p, rev).names.join() === sys.names.join() && system(p, rev).colors.join() === sys.colors.join(),
+    "accent order must not depend on click order", [ordered(s), ordered(rev)]);
+
+  /* elimination is a recorded decision — it reaches the artefact or it is decoration */
+  const e = Object.assign(structuredClone(s), { out: p.colors.filter((c) => c !== s.core && !s.accent.includes(c)) });
+  console.assert(system(p, e).tally === "3 of 27 chosen · 24 eliminated", "elimination tally wrong", system(p, e).tally);
+  console.assert(FORMATS.json.make(system(p, e)).includes('"eliminated": 24'), "json lost the elimination count");
+
+  /* moving a role step must move the colour, the check and the header line together */
+  const m = Object.assign(structuredClone(s), { roles: { "text-muted": 3 } });
+  const ms = system(p, m);
+  console.assert(ms.roles["text-muted"] === NEUTRALS[0].colors[3] && ms.steps["text-muted"] === "neutral-4" &&
+    ms.stepline.includes("text-muted=neutral-4"), "role override not applied", ms.steps);
+  console.assert(ratio(ms.roles["text-muted"], ms.roles.surface) > ratio(sys.roles["text-muted"], sys.roles.surface),
+    "a darker muted step must raise contrast");
+
+  /* dark is the same indices mirrored — the ramp never flips, only which end each role reads */
+  const dk = Object.assign(structuredClone(s), { dark: true });
+  const ds = system(p, dk);
+  console.assert(ds.roles.bg === "#0C0A09" && ds.roles.text === "#F5F5F4", "dark roles not mirrored", ds.roles);
+  console.assert(ds.roles.bg !== sys.roles.bg && ds.roleAt === sys.roleAt && ds.names.join() === sys.names.join(),
+    "theme should change colours, not the export shape");
+  console.assert(FORMATS.css.make(ds).includes("dark theme") && FORMATS.css.make(sys).includes("light theme"),
+    "export doesn't name its theme");
+  console.assert(JSON.parse(FORMATS.json.make(ds)).theme === "dark", "json theme field missing");
+
+  /* provenance: a system that draws across pages has to cite every page in the header */
+  const x = Object.assign(structuredClone(s), { accent: [...s.accent, "#FD6CFB"], src: { "#FD6CFB": 33 } });
+  console.assert(system(p, x).src.includes("p. 72") && system(p, x).src.includes("p. 33") && system(p, x).src.includes("Stone p. 7"),
+    "cross-page provenance missing", system(p, x).src);
+
+  /* the link has to reproduce the export byte for byte, or it is not the same system */
+  const round = decodeSys(encodeSys(x));
+  console.assert(system(p, round).colors.join() === system(p, x).colors.join() &&
+    FORMATS.css.make(system(p, round)) === FORMATS.css.make(system(p, x)), "v2 link roundtrip", round);
+  const withRoles = decodeSys(encodeSys(Object.assign(structuredClone(s), { roles: { border: 6 }, out: ["#292929"] })));
+  console.assert(withRoles.roles.border === 6 && withRoles.out.join() === "#292929", "v2 link lost roles or eliminations", withRoles);
+  /* v1 links are already in the wild */
+  const v1 = decodeSys("#b=72,FF7500,FFE4AB,Stone,d");
+  console.assert(v1.core === "#FF7500" && v1.accent.join() === "#FFE4AB" && v1.neutral === "Stone" && v1.dark === true,
+    "legacy #b= link no longer decodes", v1);
+  console.assert(decodeSys("#b2=not-base64") === null && decodeSys("#x=1") === null, "bad hash should not throw");
 
   /* real WCAG ratios, not the perceptual lum() — these numbers get quoted in a room */
   console.assert(ratio("#FFFFFF", "#000000").toFixed(0) === "21" && ratio("#FFFFFF", "#FFFFFF") === 1, "contrast ratio broken");
   console.assert(contrast("#767676", "#FFFFFF") === "4.5:1 AA" && contrast("#909090", "#FFFFFF").endsWith("large text only"),
     "WCAG grading broken", [contrast("#767676", "#FFFFFF"), contrast("#909090", "#FFFFFF")]);
-  const noted = system({ name: "T", section: "X", page: 42 }, { ...b, note: "because it is warm" });
-  console.assert(noted.checks.length === 3 && FORMATS.css.make(noted).includes("Why: because it is warm"),
-    "note missing from the export header", noted.checks);
-  console.assert(FORMATS.css.make(noted).includes("p. 42") && FORMATS.css.make(s).includes("Why:") === false,
-    "header provenance broken");
-  console.assert(JSON.parse(FORMATS.tokens.make(noted)).$description === "because it is warm", "tokens lost the note");
 
-  /* dark is the same role indices mirrored — the 11-step ramp itself never flips */
-  const dk = system({ name: "T", section: "X", page: 0 }, { core: "#111111", accent: ["#222222"], neutral: "Stone", dark: true });
-  console.assert(dk.roles.bg === "#0C0A09" && dk.roles.text === "#F5F5F4", "dark roles not mirrored", dk.roles);
-  console.assert(dk.roles.bg !== s.roles.bg && dk.roleAt === s.roleAt && dk.names.join() === s.names.join(),
-    "theme should change colours, not the export shape");
-  console.assert(FORMATS.css.make(dk).includes("dark theme") && FORMATS.css.make(s).includes("light theme"),
-    "export doesn't name its theme");
-  console.assert(JSON.parse(FORMATS.json.make(dk)).theme === "dark", "json theme field missing");
+  /* v1 localStorage migrates to named records rather than being dropped */
+  const mig = Object.entries({ 72: { core: "#FF7500", accent: ["#00C45B"], neutral: "Stone", dark: true }, 33: { core: null, accent: [] } })
+    .filter(([, b]) => b && b.core).map(([page, b]) => Object.assign(blank(+page), b));
+  console.assert(mig.length === 1 && mig[0].name === "Bold 23" && mig[0].out.length === 0 && mig[0].id,
+    "v1 migration should name the record after its palette and skip empty entries", mig);
 }
 </script>
 </body>
