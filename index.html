@@ -167,6 +167,16 @@
   }
   .themes { display: flex; gap: .9rem; }
 
+  /* the one thing the app cannot derive — so it gets a field, and everything else gets computed */
+  .note input {
+    flex: 1; min-width: 0;
+    font-family: var(--mono); font-size: .68rem; letter-spacing: 0; text-transform: none;
+    color: var(--ink); background: none; border: none; border-bottom: 1px solid var(--line);
+    padding: 0 0 .3rem;
+  }
+  .note input::placeholder { color: var(--mut); }
+  .note input:focus { outline: none; border-bottom-color: var(--ink); }
+
   .picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(2.5rem, 1fr)); gap: 1px; }
   /* PDF p.5: a full-colour grid with the picks outlined and the eliminated simply unmarked.
      Never drain the swatch — you cannot choose a core colour from swatches that don't show the colour. */
@@ -274,6 +284,9 @@
         <p class="pcap">Caption — muted text on the background.</p>
       </div>
     </div>
+    <label class="blab note" id="bNoteRow" hidden>Why this one
+      <input id="bNote" type="text" maxlength="120" placeholder="why this core — and what the accents mean">
+    </label>
   </section>
   <nav id="dlgTabs"></nav>
   <pre id="dlgCode"></pre>
@@ -294,6 +307,15 @@ const $ = (s) => document.querySelector(s);
 const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 const lum = (hex) => { const [r, g, b] = rgb(hex); return (0.299 * r + 0.587 * g + 0.114 * b) / 255; };
 const ink = (c) => (lum(c) > 0.55 ? "#0A0A0A" : "#FFFFFF");
+/* WCAG relative luminance — lum() above is perceptual brightness for picking a label colour,
+   not a number anyone should quote to an engineer. A stated ratio has to be the real one. */
+const rl = (hex) => rgb(hex).map((v) => v / 255)
+  .reduce((a, v, i) => a + (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4) * [0.2126, 0.7152, 0.0722][i], 0);
+const ratio = (a, b) => { const [hi, lo] = [rl(a), rl(b)].sort((m, n) => n - m); return (hi + 0.05) / (lo + 0.05); };
+const contrast = (a, b) => {
+  const r = ratio(a, b);
+  return `${r.toFixed(1)}:1 ${r >= 7 ? "AAA" : r >= 4.5 ? "AA" : r >= 3 ? "large text only" : "fails"}`;
+};
 function hsl(hex) {
   const [r, g, b] = rgb(hex).map((v) => v / 255);
   const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
@@ -430,18 +452,28 @@ const slug = (p) => p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^
 const key = (p, i) => p.names?.[i] ?? `${slug(p)}-${i + 1}`;
 /* PDF p.4 — what each tier is for; only meaningful on a built system */
 const GUIDE = ["core — key brand moments, used with discipline", "accent — sparingly, for emphasis", "neutral — structure, backgrounds and body copy"];
-/* name the theme — a dark roles block otherwise reads as a light one someone broke */
+/* The header is the only part of a build that survives into a meeting three weeks later — the CSS file is
+   what's open in the room, not this app. So it carries where it came from, why, and the contrast answers. */
 const guide = (p, open, close = "") =>
-  (p.names ? [`${p.dark ? "dark" : "light"} theme`, ...GUIDE].map((l) => `${open}${l}${close}\n`).join("") : "");
+  (p.names ? [
+    `${p.name} · Colourbook V1.0 p. ${p.page} · ${p.dark ? "dark" : "light"} theme`,
+    ...(p.note ? [`Why: ${p.note}`] : []),
+    ...(p.checks.length ? [p.checks.join(" · ")] : []),
+    ...GUIDE,
+  ].map((l) => `${open}${l}${close}\n`).join("") : "");
 const FORMATS = {
   /* roles repeat hexes already listed above them — a flat hex dump stops at p.roleAt */
   hex:  { ext: "txt",  make: (p) => p.colors.slice(0, p.roleAt).join("\n") },
   css:  { ext: "css",  make: (p) => `${guide(p, "/* ", " */")}:root {\n${p.colors.map((c, i) => `  --${key(p, i)}: ${c};`).join("\n")}\n}` },
   scss: { ext: "scss", make: (p) => guide(p, "// ") + p.colors.map((c, i) => `$${key(p, i)}: ${c};`).join("\n") },
   tailwind: { ext: "js", make: (p) => `colors: {\n  "${slug(p)}": {\n${p.colors.map((c, i) => `    "${p.names?.[i] ?? i + 1}": "${c}",`).join("\n")}\n  },\n},` },
-  json: { ext: "json", make: (p) => JSON.stringify({ name: p.name, section: p.section, page: p.page, colors: p.colors, ...(p.names && { theme: p.dark ? "dark" : "light", names: p.names }) }, null, 2) },
-  /* W3C design tokens — what Tokens Studio, Style Dictionary and Figma variable importers eat */
-  tokens: { ext: "json", make: (p) => JSON.stringify(Object.fromEntries(p.colors.map((c, i) => [key(p, i), { $type: "color", $value: c }])), null, 2) },
+  json: { ext: "json", make: (p) => JSON.stringify({ name: p.name, section: p.section, page: p.page, colors: p.colors, ...(p.names && { theme: p.dark ? "dark" : "light", names: p.names, note: p.note, contrast: p.checks }) }, null, 2) },
+  /* W3C design tokens — what Tokens Studio, Style Dictionary and Figma variable importers eat.
+     $description is spec'd at group level, so the note rides into Figma rather than being lost at the border. */
+  tokens: { ext: "json", make: (p) => JSON.stringify({
+    ...(p.note && { $description: p.note }),
+    ...Object.fromEntries(p.colors.map((c, i) => [key(p, i), { $type: "color", $value: c }])),
+  }, null, 2) },
 };
 let dlgPalette, dlgFormat = "hex", dlgBuild = null;
 function openExport(p) {
@@ -500,7 +532,11 @@ function system(p, b) {
   if (b.core) roles["core-ink"] = ink(b.core);
   if (b.accent[0]) roles["accent-ink"] = ink(b.accent[0]);
   Object.entries(roles).forEach(([k, c]) => { colors.push(c); names.push(k); });
-  return { name: `${p.name} system`, section: p.section, page: p.page, colors, names, neutral: n, roles, roleAt, dark: !!b.dark };
+  /* the contrast question gets asked in every room and is pure arithmetic — compute it, never ask her to record it */
+  const checks = [];
+  if (n) checks.push(`text on bg ${contrast(roles.text, roles.bg)}`, `muted on surface ${contrast(roles["text-muted"], roles.surface)}`);
+  if (b.core) checks.push(`ink on core ${contrast(roles["core-ink"], b.core)}`);
+  return { name: `${p.name} system`, section: p.section, page: p.page, colors, names, neutral: n, roles, roleAt, dark: !!b.dark, note: b.note || "", checks };
 }
 
 function openBuild(p) {
@@ -517,19 +553,23 @@ function openBuild(p) {
 
 /* ---------- shareable build link: #b=<page>,<core>,<accent>…,<neutral> ---------- */
 /* hexes, not indices — colors.js is regenerated, and indices would repoint a shared link at other colours */
+/* the note rides last, prefixed "n:" — one Neutrals scale is literally named "Neutral", so a bare "n" collides.
+   encodeURIComponent escapes "," ":" and "#", so the segment can never break the split or the hex strip. */
 const encodeBuild = (page, b) =>
-  "#b=" + [page, b.core || "-", ...b.accent, b.neutral || "-", ...(b.dark ? ["d"] : [])]
+  "#b=" + [page, b.core || "-", ...b.accent, b.neutral || "-", ...(b.dark ? ["d"] : []),
+           ...(b.note ? ["n:" + encodeURIComponent(b.note)] : [])]
     .map((v) => String(v).replace("#", "")).join(",");
 function decodeBuild(hash) {
   const m = hash.match(/^#b=(.+)/);
   if (!m) return null;
   const [page, core, ...rest] = m[1].split(",");
+  let note = "", dark = false;
+  if (rest[rest.length - 1]?.startsWith("n:")) note = decodeURIComponent(rest.pop().slice(2));
   /* trailing "d" is the dark flag — emitted only when set, so a light link is byte-identical to the old format */
-  let dark = false;
   if (rest[rest.length - 1] === "d") { dark = true; rest.pop(); }
   const neutral = rest.pop();
   const un = (h) => (h === "-" ? null : "#" + h.toUpperCase());
-  return { page, core: un(core), accent: rest.map(un), neutral: neutral === "-" ? null : neutral, dark };
+  return { page, core: un(core), accent: rest.map(un), neutral: neutral === "-" ? null : neutral, dark, note };
 }
 $("#dlgLink").onclick = () =>
   copy(location.origin + location.pathname + encodeBuild(dlgBuild.page, builds[dlgBuild.page]), "link copied");
@@ -581,6 +621,16 @@ function renderBuild() {
 
   paintPreview(p, b, b.neutral);
 
+  /* assigning an identical value still collapses the caret in some browsers — only write when it actually changed */
+  if ($("#bNote").value !== (b.note || "")) $("#bNote").value = b.note || "";
+  $("#bNote").oninput = (e) => {
+    b.note = e.target.value.trim();
+    persistBuilds();
+    /* repaint the pane, not the tabs — the note is only real once she watches it land in the export */
+    dlgPalette = system(p, b);
+    $("#dlgCode").textContent = FORMATS[dlgFormat].make(dlgPalette);
+  };
+
   dlgPalette = system(p, b);
   $("#dlgCopy").disabled = $("#dlgDl").disabled = !dlgPalette.colors.length;
   setFormat(dlgFormat);
@@ -593,6 +643,8 @@ function paintPreview(p, b, neutral) {
   const built = !!(b.core && neutral);
   $("#bBlank").hidden = built;
   $("#bPrev").hidden = !built;
+  /* "why this one" above nothing is a question about nothing — the field arrives with the system it explains */
+  $("#bNoteRow").hidden = !built;
   if (!built) return;
 
   const r = system(p, { ...b, neutral }).roles;
@@ -615,7 +667,7 @@ render();
     const p = PALETTES.find((x) => String(x.page) === d.page);
     const had = builds[p?.page];
     if (p && (!(had?.core || had?.accent.length || had?.neutral) || confirm(`Replace your saved build on p. ${d.page}?`))) {
-      builds[p.page] = { core: d.core, accent: d.accent, neutral: d.neutral, dark: d.dark };
+      builds[p.page] = { core: d.core, accent: d.accent, neutral: d.neutral, dark: d.dark, note: d.note };
       openBuild(p); /* re-validates the hexes against the current palette */
       persistBuilds();
     }
@@ -661,6 +713,25 @@ console.assert(NEUTRALS.every((n) => n.colors.length === 11 && lum(n.colors[0]) 
   console.assert(dl.dark === true && dl.neutral === "Stone" && dl.accent.join() === b.accent.join(),
     "dark flag roundtrip", dl);
   console.assert(decodeBuild(encodeBuild(7, b)).dark === false, "light link gained a dark flag");
+  /* the note is worthless if it cannot travel — commas, colons and hashes must all survive the hash format */
+  const nt = "warm on their photography, accent-2 = error: #F0F";
+  const dn = decodeBuild(encodeBuild(7, { ...b, dark: true, note: nt }));
+  console.assert(dn.note === nt && dn.dark === true && dn.neutral === "Stone" && dn.accent.join() === b.accent.join(),
+    "note link roundtrip", dn);
+  console.assert(decodeBuild(encodeBuild(7, { ...b, neutral: "Neutral" })).neutral === "Neutral",
+    'the scale named "Neutral" got eaten by the note prefix');
+  console.assert(decodeBuild(encodeBuild(7, b)).note === "", "empty note left a segment behind");
+
+  /* real WCAG ratios, not the perceptual lum() — these numbers get quoted in a room */
+  console.assert(ratio("#FFFFFF", "#000000").toFixed(0) === "21" && ratio("#FFFFFF", "#FFFFFF") === 1, "contrast ratio broken");
+  console.assert(contrast("#767676", "#FFFFFF") === "4.5:1 AA" && contrast("#909090", "#FFFFFF").endsWith("large text only"),
+    "WCAG grading broken", [contrast("#767676", "#FFFFFF"), contrast("#909090", "#FFFFFF")]);
+  const noted = system({ name: "T", section: "X", page: 42 }, { ...b, note: "because it is warm" });
+  console.assert(noted.checks.length === 3 && FORMATS.css.make(noted).includes("Why: because it is warm"),
+    "note missing from the export header", noted.checks);
+  console.assert(FORMATS.css.make(noted).includes("p. 42") && FORMATS.css.make(s).includes("Why:") === false,
+    "header provenance broken");
+  console.assert(JSON.parse(FORMATS.tokens.make(noted)).$description === "because it is warm", "tokens lost the note");
 
   /* dark is the same role indices mirrored — the 11-step ramp itself never flips */
   const dk = system({ name: "T", section: "X", page: 0 }, { core: "#111111", accent: ["#222222"], neutral: "Stone", dark: true });
