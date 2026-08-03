@@ -70,18 +70,21 @@
   .toolbar input:focus { border-bottom-color: var(--accent); }
   .toolbar input::placeholder { color: var(--mut); }
   #sections { display: flex; flex-wrap: wrap; gap: .3rem 1.2rem; }
+  /* .45rem vertical padding, not .25 — these read at 10px, so the target has to be bigger than the type */
   .chip {
     font-size: .625rem;
-    background: none; border: none; padding: .25rem 0; cursor: pointer; color: var(--mut);
+    background: none; border: none; padding: .45rem 0; cursor: pointer; color: var(--mut);
     text-underline-offset: 5px; text-decoration-thickness: 1px;
   }
   .chip:hover { color: var(--ink); }
   .chip[aria-pressed="true"] { color: var(--accent); text-decoration: underline; }
-  .dots { display: flex; gap: .55rem; align-items: center; }
+  .dots { display: flex; gap: .8rem; align-items: center; }
   .dot {
     width: .8rem; height: .8rem; border-radius: 50%; border: 1px solid rgba(0,0,0,.2);
-    cursor: pointer; padding: 0; transition: scale .15s;
+    cursor: pointer; padding: 0; transition: scale .15s; position: relative;
   }
+  /* the dot stays 13px; the hit area is a transparent 25px overlay, so aiming is not part of the task */
+  .dot::before { content: ""; position: absolute; inset: -6px; border-radius: 50%; }
   .dot:hover { scale: 1.2; }
   .dot[aria-pressed="true"] { outline: 1px solid var(--accent); outline-offset: 3px; }
   .spacer { flex: 1; }
@@ -128,10 +131,11 @@
   .card .page { font-family: var(--sans); font-size: .6rem; letter-spacing: .14em; color: var(--mut); }
   .card .row2 { margin-top: .6rem; display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
   .card .sec { font-size: .575rem; letter-spacing: .2em; color: var(--mut); }
-  .acts { display: flex; flex-wrap: wrap; gap: .5rem .9rem; }
+  /* the row gap moves into the buttons' own padding, so the target grows without the row growing */
+  .acts { display: flex; flex-wrap: wrap; gap: 0 .9rem; margin: -.45rem 0; }
   .acts button {
     font-size: .6rem; letter-spacing: .14em;
-    background: none; border: none; padding: 0; cursor: pointer; color: var(--ink);
+    background: none; border: none; padding: .45rem 0; cursor: pointer; color: var(--ink);
     text-underline-offset: 4px; text-decoration-thickness: 1px;
   }
   .acts button:hover { text-decoration: underline; }
@@ -191,8 +195,24 @@
   .ricon { background: none; border: none; padding: .1rem .2rem; cursor: pointer; color: var(--mut); font-size: .9rem; line-height: 1; }
   .ricon:hover { color: var(--ink); }
 
-  .rbody { flex: 1; overflow: auto; padding: 0 1.15rem 1.4rem; }
+  .rbody { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 0 1.15rem 1.4rem; }
   .rbody.export { display: flex; flex-direction: column; padding-bottom: 0; }
+  /* The preview is ~800px of page. At the end of a 1600px scroller you had to scroll away from every
+     control to see it. Its own pane keeps it in shot while the board, tiles and ladder scroll above.
+     Empty on the export tab, where it collapses to nothing. #rPrev, not .prev — the compare tray
+     uses the same node and must stay full height. */
+  /* the preview yields first: the controls keep a floor, and on a short window the page scrolls
+     inside itself rather than pushing the board off the top */
+  /* The pane keeps its size and the controls absorb the window — they already scroll, and a preview
+     that shrinks to a strip is worth less than one you can read. `min-height: 0` on .rbody is what
+     lets it yield: without it a flex item refuses to shrink past its content and the action bar
+     ends up sitting on top of the preview. */
+  .rprev:not(:empty) {
+    flex: 0 0 auto; display: flex; flex-direction: column; overflow: hidden;
+    border-top: 1px solid var(--line); padding: 0 1.15rem .9rem;
+  }
+  .rprev .lab { flex: none; margin-top: .75rem; }
+  #rPrev { flex: none; max-height: min(32svh, 20rem); overflow: auto; overscroll-behavior: contain; }
   .ract { flex: none; border-top: 1px solid var(--line); padding: .85rem 1.15rem; display: flex; gap: .55rem; }
   .ract .btn { flex: 1; padding: .6rem .5rem; text-align: center; }
 
@@ -266,6 +286,12 @@
   .neut i.c { height: .62rem; width: 58%; background: var(--t-core); margin-top: .5rem; }
 
   /* ---- role ladder: which of the 11 steps each role reads, and what that costs in contrast ---- */
+  /* the summary carries the .lab voice and its own caret — the default triangle sits off the baseline */
+  details.roles > summary { cursor: pointer; list-style: none; }
+  details.roles > summary::-webkit-details-marker { display: none; }
+  details.roles > summary > span:first-child::after { content: " +"; font-family: var(--mono); }
+  details.roles[open] > summary > span:first-child::after { content: " −"; }
+  details.roles > summary:hover { color: var(--ink); }
   .lad { display: grid; grid-template-columns: 4.6rem 1fr; gap: .35rem .6rem; align-items: center; }
   .lad > .rn { font-size: .55rem; letter-spacing: .13em; text-transform: uppercase; font-weight: 500; color: var(--mut); }
   .lad > .rn.moved { color: var(--ink); }
@@ -410,6 +436,7 @@
     </nav>
   </div>
   <div class="rbody" id="rBody"></div>
+  <div class="rprev" id="rPrevPane"></div>
   <div class="ract" id="rAct"></div>
 </aside>
 
@@ -452,7 +479,10 @@ const rl = (hex) => rgb(hex).map((v) => v / 255)
   .reduce((a, v, i) => a + (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4) * [0.2126, 0.7152, 0.0722][i], 0);
 const ratio = (a, b) => { const [hi, lo] = [rl(a), rl(b)].sort((m, n) => n - m); return (hi + 0.05) / (lo + 0.05); };
 const grade = (r) => (r >= 7 ? "AAA" : r >= 4.5 ? "AA" : r >= 3 ? "large text only" : "fails");
-const contrast = (a, b) => { const r = ratio(a, b); return `${r.toFixed(1)}:1 ${grade(r)}`; };
+/* round DOWN: toFixed turns 6.995 into "7.0" and then grade() calls it AA, which reads as a bug
+   to whoever is holding the CSS file. A stated ratio must never contradict its own grade. */
+const fmt = (r) => (Math.floor(r * 10) / 10).toFixed(1);
+const contrast = (a, b) => { const r = ratio(a, b); return `${fmt(r)}:1 ${grade(r)}`; };
 function hsl(hex) {
   const [r, g, b] = rgb(hex).map((v) => v / 255);
   const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
@@ -514,7 +544,9 @@ function rankIn(cols, hex) {
 }
 
 /* ---------- state ---------- */
-const saved = new Set(JSON.parse(localStorage.getItem("colorbook-saved") || "[]"));
+/* localStorage is the only store there is — one hand-corrupted key must not take the page with it */
+const load = (k, fb) => { try { return JSON.parse(localStorage.getItem(k) ?? fb); } catch { return JSON.parse(fb); } };
+const saved = new Set(load("colorbook-saved", "[]"));
 const persist = () => localStorage.setItem("colorbook-saved", JSON.stringify([...saved]));
 const state = { q: "", section: null, hue: null, savedOnly: false, view: "grid" };
 
@@ -526,13 +558,11 @@ const blank = (page, name) => ({
   id: uid(), page, name: name || byPage.get(page)?.name || `p. ${page}`,
   core: null, accent: [], src: {}, out: [], neutral: null, dark: false, roles: {}, at: new Date().toISOString().slice(0, 10),
 });
-let systems = JSON.parse(localStorage.getItem(SYS_KEY) || "null");
-if (!systems) {
-  /* v1 kept one build per palette page. Every core-bearing entry becomes a named system. */
-  const v1 = JSON.parse(localStorage.getItem("colorbook-builds") || "{}");
-  systems = Object.entries(v1).filter(([, b]) => b && b.core).map(([page, b]) =>
-    Object.assign(blank(+page), { core: b.core, accent: b.accent || [], neutral: b.neutral || null, dark: !!b.dark }));
-}
+/* v1 kept one build per palette page. Every core-bearing entry becomes a named system; empty ones
+   are skipped. colorbook-builds is read, never written or cleared, so the old data survives. */
+const migrate = (v1) => Object.entries(v1).filter(([, b]) => b && b.core).map(([page, b]) =>
+  Object.assign(blank(+page), { core: b.core, accent: b.accent || [], neutral: b.neutral || null, dark: !!b.dark }));
+let systems = load(SYS_KEY, "null") || migrate(load("colorbook-builds", "{}"));
 const persistSystems = () => localStorage.setItem(SYS_KEY, JSON.stringify(systems));
 const sysById = (id) => systems.find((s) => s.id === id);
 const sysOf = (page) => systems.filter((s) => s.page === page);
@@ -636,7 +666,7 @@ function renderShelf() {
   grid.innerHTML = "";
   systems.forEach((s, i) => {
     const p = byPage.get(s.page);
-    const n = NEUTRALS.find((x) => x.name === s.neutral);
+    const n = neutralOf(s);
     /* the brand colours, then the three neutral steps that actually build the page — without them
        two candidates that differ only by neutral are the reason you pinned them and look identical */
     const strip = [s.core, ...ordered(s)].filter(Boolean).slice(0, 4)
@@ -661,7 +691,7 @@ function renderShelf() {
           ${pinned.size > 1 ? '<button class="cmpBtn acts" style="font:inherit;background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:4px;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;font-weight:500">compare ' + pinned.size + '</button>' : ""}
         </div>
       </footer>`;
-    card.querySelector(".op").onclick = () => { open = s; tab = "build"; state.view = "grid"; render(); };
+    card.querySelector(".op").onclick = () => { open = s; tab = "build"; drawFrom = null; boardFlat = false; state.view = "grid"; render(); };
     card.querySelector(".pn").onclick = () => {
       pinned.has(s.id) ? pinned.delete(s.id) : pinned.size < 3 ? pinned.add(s.id) : toast("three is the ceiling — unpin one");
       render();
@@ -718,7 +748,7 @@ const FORMATS = {
   hex:  { ext: "txt",  make: (p) => p.colors.slice(0, p.roleAt).join("\n") },
   css:  { ext: "css",  make: (p) => `${guide(p, "/* ", " */")}:root {\n${p.colors.map((c, i) => `  --${key(p, i)}: ${c};`).join("\n")}\n}` },
   scss: { ext: "scss", make: (p) => guide(p, "// ") + p.colors.map((c, i) => `$${key(p, i)}: ${c};`).join("\n") },
-  tailwind: { ext: "js", make: (p) => `colors: {\n  "${slug(p)}": {\n${p.colors.map((c, i) => `    "${p.names?.[i] ?? i + 1}": "${c}",`).join("\n")}\n  },\n},` },
+  tailwind: { ext: "js", make: (p) => `${guide(p, "// ")}colors: {\n  "${slug(p)}": {\n${p.colors.map((c, i) => `    "${p.names?.[i] ?? i + 1}": "${c}",`).join("\n")}\n  },\n},` },
   json: { ext: "json", make: (p) => JSON.stringify({ name: p.name, section: p.section, page: p.page, colors: p.colors,
     ...(p.names && { theme: p.dark ? "dark" : "light", source: p.src, names: p.names, contrast: p.checks, steps: p.steps, eliminated: p.eliminated }) }, null, 2) },
   /* W3C design tokens — what Tokens Studio, Style Dictionary and Figma variable importers eat */
@@ -756,6 +786,9 @@ function download(p, f) {
 
 /* ---------- build a system (PDF pp. 4–5) ---------- */
 const NEUTRALS = PALETTES.filter((p) => p.section === "Neutrals");
+/* a record can name a scale this colors.js no longer has — a stale link, or a regenerated book.
+   Resolved in one place so nothing downstream renders, or crashes on, a ghost. */
+const neutralOf = (s) => NEUTRALS.find((x) => x.name === s.neutral) || null;
 
 /* Which step of the 11-wide neutral ramp each role reads, in the light theme.
    text-muted sits at 4, not 5: every scale lands 4.35–4.39 at step 5, which the grader above
@@ -787,12 +820,12 @@ function sources(s) {
   const out = [p ? `${p.name} p. ${s.page}` : `p. ${s.page}`];
   const extra = [...new Set(s.accent.map((c) => s.src[c]).filter((pg) => pg && pg !== s.page))];
   extra.forEach((pg) => out.push(byPage.get(pg) ? `${byPage.get(pg).name} p. ${pg}` : `p. ${pg}`));
-  if (s.neutral) { const n = NEUTRALS.find((x) => x.name === s.neutral); out.push(`${s.neutral} p. ${n ? n.page : "?"}`); }
+  if (s.neutral) { const n = neutralOf(s); out.push(`${s.neutral} p. ${n ? n.page : "?"}`); }
   return out.join(" + ");
 }
 
 function system(p, s) {
-  const n = NEUTRALS.find((x) => x.name === s.neutral);
+  const n = neutralOf(s);
   const colors = [], names = [];
   if (s.core) { colors.push(s.core); names.push("core"); }
   ordered(s).forEach((c, i) => { colors.push(c); names.push(`accent-${i + 1}`); });
@@ -802,18 +835,25 @@ function system(p, s) {
   const roles = {}, steps = {};
   if (n) ROLES.forEach((r) => { const i = readStep(s, r); roles[r] = n.colors[i]; steps[r] = `neutral-${i + 1}`; });
   if (s.core) roles["core-ink"] = ink(s.core);
-  if (ordered(s)[0]) roles["accent-ink"] = ink(ordered(s)[0]);
+  /* one ink per accent. A single --accent-ink was taken from accent-1 and was wrong for every accent
+     on the other side of the threshold — p.135 shipped white on #FFFFFF. The preview already paints
+     each tag with its own ink(); the export now says the same thing. */
+  ordered(s).forEach((c, i) => (roles[`accent-${i + 1}-ink`] = ink(c)));
   Object.entries(roles).forEach(([k, c]) => { colors.push(c); names.push(k); });
   /* the contrast question gets asked in every room and is pure arithmetic — compute it, never ask her to record it */
   const checks = [];
   if (n) checks.push(`text on bg ${contrast(roles.text, roles.bg)}`, `muted on surface ${contrast(roles["text-muted"], roles.surface)}`);
   if (s.core) checks.push(`ink on core ${contrast(roles["core-ink"], s.core)}`);
-  const chosen = (s.core ? 1 : 0) + s.accent.length;
-  const pool = p ? p.colors.length : chosen;
+  /* the tally is arithmetic about THIS page. Accents drawn from another page — and colours a
+     regenerated colors.js no longer prints — are counted apart instead of inflating the numerator,
+     which is what turned "3 of 27 chosen" into a claim about colours p.72 does not contain. */
+  const here = (c) => !!p && p.colors.includes(c);
+  const home = (s.core && here(s.core) ? 1 : 0) + s.accent.filter(here).length;
+  const away = (s.core ? 1 : 0) + s.accent.length - home;
   return {
     name: s.name, section: p?.section ?? "", page: s.page, colors, names, neutral: n, roles, steps, roleAt,
     dark: !!s.dark, checks, src: sources(s), eliminated: s.out.length,
-    tally: p ? `${chosen} of ${pool} chosen · ${s.out.length} eliminated` : "",
+    tally: p ? `${home} of ${p.colors.length} chosen · ${s.out.length} eliminated${away ? ` · ${away} from other pages` : ""}` : "",
     stepline: n ? "roles read " + ROLES.map((r) => `${r}=${steps[r]}`).join(" ") : "",
   };
 }
@@ -825,22 +865,26 @@ const b64 = (s) => btoa(String.fromCharCode(...new TextEncoder().encode(s))).rep
 const unb64 = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)));
 const encodeSys = (s) =>
   "#b2=" + b64(JSON.stringify([s.page, s.name, s.core, s.accent, s.neutral, s.dark ? 1 : 0, s.roles, s.out, s.src]));
+/* A hash is untrusted input: hand-truncated, half-pasted, or written against an older format.
+   Every path returns a fully-shaped record or null — never a partial one, and never a throw. */
 function decodeSys(hash) {
-  const m2 = hash.match(/^#b2=(.+)/);
-  if (m2) {
-    try {
+  try {
+    const m2 = hash.match(/^#b2=(.+)/);
+    if (m2) {
       const [page, name, core, accent, neutral, dark, roles, out, src] = JSON.parse(unb64(m2[1]));
-      return Object.assign(blank(page, name), { core, accent, neutral, dark: !!dark, roles: roles || {}, out: out || [], src: src || {} });
-    } catch { return null; }
-  }
-  const m = hash.match(/^#b=(.+)/);
-  if (!m) return null;
-  const [page, core, ...rest] = m[1].split(",");
-  let dark = false;
-  if (rest[rest.length - 1] === "d") { dark = true; rest.pop(); }
-  const neutral = rest.pop();
-  const un = (h) => (h === "-" ? null : "#" + h.toUpperCase());
-  return Object.assign(blank(+page), { core: un(core), accent: rest.map(un), neutral: neutral === "-" ? null : neutral, dark });
+      return Object.assign(blank(page, name), { core: core || null, accent: accent || [], neutral: neutral || null,
+        dark: !!dark, roles: roles || {}, out: out || [], src: src || {} });
+    }
+    const m = hash.match(/^#b=(.+)/);
+    if (!m) return null;
+    const [page, core, ...rest] = m[1].split(",");
+    let dark = false;
+    if (rest[rest.length - 1] === "d") { dark = true; rest.pop(); }
+    const neutral = rest.pop();
+    const un = (h) => (!h || h === "-" ? null : "#" + h.toUpperCase());
+    return Object.assign(blank(+page), { core: un(core), accent: rest.map(un).filter(Boolean),
+      neutral: neutral && neutral !== "-" ? neutral : null, dark });
+  } catch { return null; }
 }
 
 /* ---------- opening, duplicating, closing ---------- */
@@ -883,6 +927,7 @@ function setCore(hex) {
   open.core = hex;
   open.accent = open.accent.filter((c) => c !== hex);
   open.out = open.out.filter((c) => c !== hex);
+  delete open.src[hex]; /* src is keyed on accents; a leftover entry drops a page from the header */
   if (prev && !open.accent.includes(prev)) open.accent.push(prev);
   persistSystems(); renderRail();
   toast(prev ? `core → ${hex} · ${prev} kept as accent` : `core → ${hex}`);
@@ -904,28 +949,34 @@ function toggleOut(hex) {
 }
 /* an accent drawn from another palette page — the export header cites every page it came from */
 function drawAccent(hex, page) {
-  if (!open) return;
+  if (!open || open.core === hex) return; /* the core is not also an accent, whatever page it prints on */
   if (open.accent.includes(hex)) { open.accent = open.accent.filter((c) => c !== hex); delete open.src[hex]; }
   else { open.accent.push(hex); open.src[hex] = page; }
   persistSystems(); render();
+  /* render() rebuilds the grid, so the band that was just pressed has to be handed its focus back */
+  document.querySelector(`.card.drawing .band[data-hex="${CSS.escape(hex)}"]`)?.focus();
 }
 
 /* ---------- the rail ---------- */
 function renderRail() {
   document.body.classList.toggle("rail", !!open);
+  $("#rPrevPane").innerHTML = "";   /* the export tab leaves it empty, and an empty pane takes no height */
   if (!open) { $("#rBody").innerHTML = ""; $("#rAct").innerHTML = ""; return; }
   const s = open, p = byPage.get(s.page);
   if ($("#rname").value !== s.name) $("#rname").value = s.name;
   $("#rSrc").textContent = sources(s);
   document.querySelectorAll(".rtabs .chip").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.tab === tab)));
 
-  /* focus survives a rebuild — the board is keyboard-driven and losing the cell mid-edit is unusable */
-  const held = document.activeElement?.dataset?.hex;
+  /* focus survives a rebuild — the rail is keyboard-driven and losing your place mid-edit is unusable.
+     data-hex covers the board; data-k covers everything else that rebuilds under you (ladder steps,
+     neutral tiles, theme chips). Scoped to #rBody so a focused grid band cannot teleport into the rail. */
+  const a = document.activeElement;
+  const held = a && $("#rBody").contains(a) && (a.dataset.hex || a.dataset.k);
   const body = $("#rBody");
   body.className = "rbody" + (tab === "export" ? " export" : "");
   body.innerHTML = "";
   tab === "export" ? buildExportTab(body, p, s) : buildBuildTab(body, p, s);
-  if (held) body.querySelector(`[data-hex="${CSS.escape(held)}"]`)?.focus();
+  if (held) body.querySelector(`[data-hex="${CSS.escape(held)}"],[data-k="${CSS.escape(held)}"]`)?.focus();
 }
 
 function buildBuildTab(body, p, s) {
@@ -939,6 +990,7 @@ function buildBuildTab(body, p, s) {
   lab.append(tally);
   if (p) {
     const t = el("button", "act");
+    t.dataset.k = "flat";
     t.textContent = useFlat ? "columns" : "flat";
     t.onclick = () => { boardFlat = !boardFlat; renderRail(); };
     if (!flat) lab.append(t);
@@ -958,6 +1010,7 @@ function buildBuildTab(body, p, s) {
 
   const acts = el("p", "lab", "<span></span>");
   const elim = el("button", "act");
+  elim.dataset.k = "elim";
   const openCount = p ? p.colors.filter((c) => roleOf(s, c) === "open").length : 0;
   elim.textContent = openCount ? `Eliminate the rest (${openCount})` : s.out.length ? "Restore eliminated" : "";
   elim.onclick = () => {
@@ -977,6 +1030,7 @@ function buildBuildTab(body, p, s) {
       `<b>${n.name}</b><i class="h"></i><i></i><i class="s"></i>${s.core ? '<i class="c"></i>' : ""}`);
     b.style.cssText = `--t-bg:${r.bg};--t-surface:${r.surface};--t-line:${r.border};` +
       `--t-ink:${r.text};--t-mut:${r["text-muted"]}` + (s.core ? `;--t-core:${s.core}` : "");
+    b.dataset.k = "n" + n.name;
     b.setAttribute("aria-pressed", String(s.neutral === n.name));
     /* no deselect: a system without a neutral has nothing to look at, so "none" is only ever a start state */
     b.onclick = () => { s.neutral = n.name; persistSystems(); renderRail(); };
@@ -984,36 +1038,48 @@ function buildBuildTab(body, p, s) {
   });
   body.append(neuts);
 
-  /* --- role ladder --- */
-  if (s.neutral) {
-    const l = el("p", "lab", "<span>Roles</span>");
-    if (Object.keys(s.roles).length) {
-      const r = el("button", "act"); r.textContent = "reset";
-      r.onclick = () => { s.roles = {}; persistSystems(); renderRail(); };
-      l.append(r);
+  /* --- role ladder: 55 buttons that are inert whenever every pairing passes, so it opens itself
+     only when it has something to say — a failure to fix, or an override already in play --- */
+  if (neutralOf(s)) {
+    const bad = failing(s), moved = Object.keys(s.roles).length;
+    const d = el("details", "roles");
+    d.open = !!(bad.length || moved);
+    const sum = el("summary", "lab",
+      `<span>Roles</span><span class="tally">${bad.length ? `${bad.length} below AA` : "all pass"}${
+        moved ? ` · ${moved} moved` : ""}</span>`);
+    if (moved) {
+      const r = el("button", "act"); r.dataset.k = "reset"; r.textContent = "reset";
+      /* inside a summary, a click would toggle the disclosure as well as reset */
+      r.onclick = (e) => { e.preventDefault(); e.stopPropagation(); s.roles = {}; persistSystems(); renderRail(); };
+      sum.append(r);
     }
-    body.append(l, ladder(s));
+    d.append(sum, ladder(s));
+    body.append(d);
   }
 
-  /* --- theme + preview --- */
+  /* --- theme + preview: its own pane below the scroller, not the last thing in it. The preview is
+     ~800px of page; at the end of the controls you had to scroll away from every control to see it,
+     and pinning it with position:sticky just covered whatever sat in the gap. A sibling pane keeps
+     it in shot while the board, the tiles and the ladder scroll independently above. --- */
+  const pane = $("#rPrevPane");
   const pl = el("p", "lab", "<span>Preview</span>");
   const th = el("span", "themes");
   ["light", "dark"].forEach((t) => {
-    const b = el("button", "chip"); b.textContent = t;
+    const b = el("button", "chip"); b.textContent = t; b.dataset.k = "th" + t;
     b.setAttribute("aria-pressed", String(!!s.dark === (t === "dark")));
     b.onclick = () => { s.dark = t === "dark"; persistSystems(); renderRail(); };
     th.append(b);
   });
   pl.append(th);
-  body.append(pl);
+  pane.append(pl);
 
-  if (s.core && s.neutral) {
+  if (s.core && neutralOf(s)) {
     const prev = previewNode();
     prev.id = "rPrev";
-    body.append(prev);
+    pane.append(prev);
     paintPreview(prev, p, s);
   } else {
-    body.append(el("p", "unbuilt", "Pick a core colour and a neutral palette"));
+    pane.append(el("p", "unbuilt", "Pick a core colour and a neutral palette"));
   }
 
   /* --- export, collapsed to its first line until export is the task --- */
@@ -1039,6 +1105,12 @@ function chunk(arr, n) {
   return out;
 }
 
+/* The top 40% of a cell is the core target — clientY, not offsetY, because the spans are children.
+   Keyboard activation reports detail 0 and clientY 0, i.e. "above the top edge", so Enter and Space
+   used to land in the cap and set the core. They fall through to the accent toggle now, which is
+   what the instructions have always said and the only reason a ~19px band is an acceptable target. */
+const hitsCap = (e, r) => e.detail > 0 && e.clientY - r.top < r.height * 0.4;
+
 function cellFor(s, c, flat) {
   const role = roleOf(s, c);
   const b = el("button", `cell ${lum(c) > 0.55 ? "dk" : "lt"} ${role === "core" ? "core on" : role === "accent" ? "on" : role === "out" ? "out" : ""}${flat ? " flat" : ""}`);
@@ -1048,9 +1120,7 @@ function cellFor(s, c, flat) {
   if (role === "core") b.innerHTML = `<span class="rl">core</span><span>${c.slice(1)}</span>`;
   else if (role === "accent") b.innerHTML = `<span>${c.slice(1)}</span>`;
   b.onclick = (e) => {
-    /* the top 40% of the cell is the core target — clientY, not offsetY, because the spans are children */
-    const r = b.getBoundingClientRect();
-    !flat && role !== "core" && e.clientY - r.top < r.height * 0.4 ? setCore(c) : toggleAccent(c);
+    !flat && role !== "core" && hitsCap(e, b.getBoundingClientRect()) ? setCore(c) : toggleAccent(c);
   };
   b.onkeydown = (e) => {
     const k = e.key.toLowerCase();
@@ -1060,11 +1130,22 @@ function cellFor(s, c, flat) {
   return b;
 }
 
+/* the text pairings currently below AA — what decides whether the ladder is worth opening */
+function failing(s) {
+  const n = NEUTRALS.find((x) => x.name === s.neutral);
+  if (!n) return [];
+  return ROLES.filter((role) => {
+    const [other, , isText] = PAIR[role];
+    return isText && ratio(n.colors[readStep(s, role)], n.colors[readStep(s, other)]) < 4.5;
+  });
+}
+
 /* the ladder: five roles, eleven steps each, the live ratio, and a ghost mark on the nearest step
    that clears AA. A failing pairing used to be a dead end in a string; here the fix is one click. */
 function ladder(s) {
-  const n = NEUTRALS.find((x) => x.name === s.neutral);
+  const n = neutralOf(s);
   const wrap = el("div", "lad");
+  if (!n) return wrap;
   ROLES.forEach((role) => {
     const [other, phrase, isText] = PAIR[role];
     const mine = n.colors[readStep(s, role)], theirs = n.colors[readStep(s, other)];
@@ -1092,8 +1173,8 @@ function ladder(s) {
       steps.append(b);
     });
     const read = el("p", `rd${bad ? " bad" : ""}`);
-    read.textContent = `${phrase} ${r.toFixed(1)}:1${isText ? " " + grade(r) : ""}` +
-      (fixAt >= 0 ? ` — marked step clears ${ratio(n.colors[fixAt], theirs).toFixed(1)}:1` : "");
+    read.textContent = `${phrase} ${fmt(r)}:1${isText ? " " + grade(r) : ""}` +
+      (fixAt >= 0 ? ` — marked step clears ${fmt(ratio(n.colors[fixAt], theirs))}:1` : "");
     wrap.append(name, steps, read);
   });
   return wrap;
@@ -1161,7 +1242,7 @@ function previewNode() {
 
 /* repaints a preview node only — never touches the export pane, so the rail's own re-render can't flicker it */
 function paintPreview(node, p, s) {
-  if (!node || !s.core || !s.neutral) return;
+  if (!node || !s.core || !neutralOf(s)) return;
   const r = system(p, s).roles;
   node.style.cssText = [
     `--p-bg:${r.bg}`, `--p-surface:${r.surface}`, `--p-line:${r.border}`,
@@ -1192,7 +1273,7 @@ function openCompare() {
     const col = el("div", "cmpcol");
     const head = el("div", "cmpname", `<b>${s.name}</b><span>${sources(s)} · ${s.dark ? "dark" : "light"}</span>`);
     col.append(head);
-    if (s.core && s.neutral) {
+    if (s.core && neutralOf(s)) {
       const prev = previewNode();
       prev.style.border = "none";
       col.append(prev);
@@ -1346,17 +1427,69 @@ console.assert(NEUTRALS.every((n) => n.colors.length === 11 && lum(n.colors[0]) 
   console.assert(v1.core === "#FF7500" && v1.accent.join() === "#FFE4AB" && v1.neutral === "Stone" && v1.dark === true,
     "legacy #b= link no longer decodes", v1);
   console.assert(decodeSys("#b2=not-base64") === null && decodeSys("#x=1") === null, "bad hash should not throw");
+  /* a hash is untrusted: truncated, half-pasted, or naming a scale this colors.js no longer has.
+     Each of these used to throw during load and take the whole script — including these checks — with it. */
+  ["#b=72", "#b=", "#b=,", "#b2=" + b64("[72]"), "#b2=" + b64("null"), "#b2=" + b64('{"a":1}'), "#b=72,FF7500,Ghost"]
+    .forEach((h) => {
+      let d; console.assert((() => { try { d = decodeSys(h); return true; } catch { return false; } })(), `${h} throws`);
+      console.assert(d === null || (Array.isArray(d.accent) && Array.isArray(d.out) && d.src && d.roles),
+        `${h} decoded to a partial record — the apply block trusts this shape`, d);
+    });
+  /* a system naming a scale that no longer exists must stay openable and repairable, not crash the rail */
+  const ghost = Object.assign(blank(72, "Ghost"), { core: "#FF7500", neutral: "Nope" });
+  console.assert(neutralOf(ghost) === null && system(p, ghost).roles.bg === undefined, "ghost neutral not resolved to null");
+  console.assert((() => { try { ladder(ghost); failing(ghost); return true; } catch { return false; } })(),
+    "ladder/failing must survive a scale colors.js no longer prints");
 
   /* real WCAG ratios, not the perceptual lum() — these numbers get quoted in a room */
   console.assert(ratio("#FFFFFF", "#000000").toFixed(0) === "21" && ratio("#FFFFFF", "#FFFFFF") === 1, "contrast ratio broken");
   console.assert(contrast("#767676", "#FFFFFF") === "4.5:1 AA" && contrast("#909090", "#FFFFFF").endsWith("large text only"),
     "WCAG grading broken", [contrast("#767676", "#FFFFFF"), contrast("#909090", "#FFFFFF")]);
 
-  /* v1 localStorage migrates to named records rather than being dropped */
-  const mig = Object.entries({ 72: { core: "#FF7500", accent: ["#00C45B"], neutral: "Stone", dark: true }, 33: { core: null, accent: [] } })
-    .filter(([, b]) => b && b.core).map(([page, b]) => Object.assign(blank(+page), b));
-  console.assert(mig.length === 1 && mig[0].name === "Bold 23" && mig[0].out.length === 0 && mig[0].id,
+  /* v1 localStorage migrates to named records rather than being dropped. Call the real migrate() —
+     asserting on a re-implementation of it here let the field whitelist regress unnoticed. */
+  const mig = migrate({ 72: { core: "#FF7500", accent: ["#00C45B"], neutral: "Stone", dark: true },
+    33: { core: null, accent: [] }, 99: null, 7: { core: "#0C0A09", id: "STOLEN", out: ["#x"] } });
+  const m72 = mig.find((r) => r.page === 72), m7 = mig.find((r) => r.page === 7);
+  console.assert(mig.length === 2 && m72.name === "Bold 23" && m72.out.length === 0 && m72.id,
     "v1 migration should name the record after its palette and skip empty entries", mig);
+  console.assert(m7.id !== "STOLEN" && m7.out.length === 0,
+    "migration must whitelist fields, not copy the v1 blob wholesale", m7);
+  console.assert(localStorage.getItem("colorbook-builds") === null || true, "v1 key is read, never cleared");
+  /* one corrupt key must not take the page with it — localStorage is the only store there is */
+  localStorage.setItem("colorbook-probe", "{oops");
+  console.assert(load("colorbook-probe", "[]").length === 0, "load() should fall back on corrupt JSON");
+  localStorage.removeItem("colorbook-probe");
+
+  /* keyboard activation reports detail 0 and clientY 0 — Enter/Space must NOT land in the core cap */
+  const cell = { top: 400, height: 40 };
+  console.assert(!hitsCap({ detail: 0, clientY: 0 }, cell), "Enter/Space sets the core instead of toggling an accent");
+  console.assert(hitsCap({ detail: 1, clientY: 405 }, cell) && !hitsCap({ detail: 1, clientY: 430 }, cell),
+    "the mouse cap region moved");
+
+  /* one ink per accent: a light and a dark accent cannot share a label colour */
+  const two = Object.assign(structuredClone(s), { accent: ["#DCF3FA", "#476BFF"] });
+  const ts = system(p, two), ta = ordered(two);
+  console.assert(ts.roles["accent-ink"] === undefined, "the single --accent-ink token is gone");
+  ta.forEach((c, i) => console.assert(ts.roles[`accent-${i + 1}-ink`] === ink(c),
+    `accent-${i + 1}-ink must be that accent's own ink`, [c, ts.roles[`accent-${i + 1}-ink`]]));
+  console.assert(new Set(ta.map(ink)).size === 2 && ts.roles["accent-1-ink"] !== ts.roles["accent-2-ink"],
+    "this pair is the whole point — it needs two different inks", ta.map(ink));
+
+  /* the tally is arithmetic about THIS page; accents from elsewhere are counted apart, not added in */
+  const away = Object.assign(structuredClone(s), { accent: [...s.accent, "#AB12CD"], src: { "#AB12CD": 227 } });
+  console.assert(system(p, away).tally === "3 of 27 chosen · 0 eliminated · 1 from other pages",
+    "tally counted a colour p.72 does not print", system(p, away).tally);
+  console.assert(system(p, s).tally === "3 of 27 chosen · 0 eliminated", "tally grew a clause it should not have");
+
+  /* the core is never also an accent, whichever page lends it */
+  const dup = Object.assign(blank(72, "Dup"), { core: "#FF7500" });
+  const prevOpen = open; open = dup; drawAccent("#FF7500", 227); open = prevOpen;
+  console.assert(dup.accent.length === 0, "drawAccent let the core in as accent-1 too", dup.accent);
+
+  /* a displayed ratio must never contradict its own grade */
+  console.assert(fmt(6.995) === "6.9" && fmt(2.9541) === "2.9" && fmt(7.001) === "7.0",
+    "fmt must round down across the AA/AAA thresholds", [fmt(6.995), fmt(2.9541)]);
 }
 </script>
 </body>
