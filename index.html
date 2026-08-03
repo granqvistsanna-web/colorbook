@@ -430,14 +430,16 @@ const slug = (p) => p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^
 const key = (p, i) => p.names?.[i] ?? `${slug(p)}-${i + 1}`;
 /* PDF p.4 — what each tier is for; only meaningful on a built system */
 const GUIDE = ["core — key brand moments, used with discipline", "accent — sparingly, for emphasis", "neutral — structure, backgrounds and body copy"];
-const guide = (p, open, close = "") => (p.names ? GUIDE.map((l) => `${open}${l}${close}\n`).join("") : "");
+/* name the theme — a dark roles block otherwise reads as a light one someone broke */
+const guide = (p, open, close = "") =>
+  (p.names ? [`${p.dark ? "dark" : "light"} theme`, ...GUIDE].map((l) => `${open}${l}${close}\n`).join("") : "");
 const FORMATS = {
   /* roles repeat hexes already listed above them — a flat hex dump stops at p.roleAt */
   hex:  { ext: "txt",  make: (p) => p.colors.slice(0, p.roleAt).join("\n") },
   css:  { ext: "css",  make: (p) => `${guide(p, "/* ", " */")}:root {\n${p.colors.map((c, i) => `  --${key(p, i)}: ${c};`).join("\n")}\n}` },
   scss: { ext: "scss", make: (p) => guide(p, "// ") + p.colors.map((c, i) => `$${key(p, i)}: ${c};`).join("\n") },
   tailwind: { ext: "js", make: (p) => `colors: {\n  "${slug(p)}": {\n${p.colors.map((c, i) => `    "${p.names?.[i] ?? i + 1}": "${c}",`).join("\n")}\n  },\n},` },
-  json: { ext: "json", make: (p) => JSON.stringify({ name: p.name, section: p.section, page: p.page, colors: p.colors, ...(p.names && { names: p.names }) }, null, 2) },
+  json: { ext: "json", make: (p) => JSON.stringify({ name: p.name, section: p.section, page: p.page, colors: p.colors, ...(p.names && { theme: p.dark ? "dark" : "light", names: p.names }) }, null, 2) },
   /* W3C design tokens — what Tokens Studio, Style Dictionary and Figma variable importers eat */
   tokens: { ext: "json", make: (p) => JSON.stringify(Object.fromEntries(p.colors.map((c, i) => [key(p, i), { $type: "color", $value: c }])), null, 2) },
 };
@@ -498,7 +500,7 @@ function system(p, b) {
   if (b.core) roles["core-ink"] = ink(b.core);
   if (b.accent[0]) roles["accent-ink"] = ink(b.accent[0]);
   Object.entries(roles).forEach(([k, c]) => { colors.push(c); names.push(k); });
-  return { name: `${p.name} system`, section: p.section, page: p.page, colors, names, neutral: n, roles, roleAt };
+  return { name: `${p.name} system`, section: p.section, page: p.page, colors, names, neutral: n, roles, roleAt, dark: !!b.dark };
 }
 
 function openBuild(p) {
@@ -665,6 +667,9 @@ console.assert(NEUTRALS.every((n) => n.colors.length === 11 && lum(n.colors[0]) 
   console.assert(dk.roles.bg === "#0C0A09" && dk.roles.text === "#F5F5F4", "dark roles not mirrored", dk.roles);
   console.assert(dk.roles.bg !== s.roles.bg && dk.roleAt === s.roleAt && dk.names.join() === s.names.join(),
     "theme should change colours, not the export shape");
+  console.assert(FORMATS.css.make(dk).includes("dark theme") && FORMATS.css.make(s).includes("light theme"),
+    "export doesn't name its theme");
+  console.assert(JSON.parse(FORMATS.json.make(dk)).theme === "dark", "json theme field missing");
 }
 </script>
 </body>
