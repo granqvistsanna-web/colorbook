@@ -1,0 +1,23 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "geist",
+        "createdAt": "2026-08-05T07:17:42.359Z",
+        "reason": "User confirmed geist is intentional"
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-08-05T11:22:35.480Z",
+        "reason": "False positive: detector matches the literal string esc(\"<img src=x onerror=...\">) inside a JS self-test assertion for HTML-escaping, not a real <img> tag"
+      }
+    ]
+  }
+}

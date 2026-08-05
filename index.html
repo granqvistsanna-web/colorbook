@@ -145,7 +145,7 @@
   /* the row gap moves into the buttons' own padding, so the target grows without the row growing */
   .acts { display: flex; flex-wrap: wrap; gap: 0 .9rem; margin: -.45rem 0; }
   .acts button {
-    font-size: .6rem; letter-spacing: .14em;
+    font-size: .6rem; letter-spacing: .16em;
     background: none; border: none; padding: .45rem 0; cursor: pointer; color: var(--ink);
     text-underline-offset: 4px; text-decoration-thickness: 1px;
   }
@@ -172,6 +172,7 @@
   dialog h3 { font-weight: 500; font-size: 1.15rem; letter-spacing: -.01em; }
   dialog header button { background: none; border: none; padding: .2rem; cursor: pointer; color: var(--mut); display: flex; }
   dialog header button:hover { color: var(--ink); }
+  dialog p { margin: 0; padding: 0 1.5rem 1.25rem; color: var(--mut); font-size: .8rem; line-height: 1.5; }
 
   /* Platform glyphs (⧉ ⌫ ✕) arrive at a different weight, size and baseline on every OS, and beside
      a UI built out of 1px rules they read as debris. Three line icons drawn to match those rules. */
@@ -221,8 +222,6 @@
      control to see it. Its own pane keeps it in shot while the board, tiles and ladder scroll above.
      Empty on the export tab, where it collapses to nothing. #rPrev, not .prev — the compare tray
      uses the same node and must stay full height. */
-  /* the preview yields first: the controls keep a floor, and on a short window the page scrolls
-     inside itself rather than pushing the board off the top */
   /* The pane keeps its size and the controls absorb the window — they already scroll, and a preview
      that shrinks to a strip is worth less than one you can read. `min-height: 0` on .rbody is what
      lets it yield: without it a flex item refuses to shrink past its content and the action bar
@@ -254,7 +253,9 @@
     .rprev:not(:empty) {
       grid-area: prev; border-top: none; border-left: 1px solid var(--line); padding: 0 1.4rem 1.3rem;
     }
-    #rPrev { flex: 1 1 auto; max-height: none; }
+    /* uncapped, this track grows with the window past any window a "page" is meant to be judged at —
+       50rem matches the ~800px the pane exists to show, so it stops stretching past every ordinary desktop width */
+    #rPrev { flex: 1 1 auto; max-height: none; width: 100%; max-width: 50rem; margin: 0 auto; }
     /* export: nothing to sit beside, so the code column centres instead of stretching to 1600px */
     body.rail #rail:has(.rbody.export) {
       grid-template-columns: min(52rem, 100%); grid-template-areas: "head" "body" "act";
@@ -267,10 +268,11 @@
     margin: 1.2rem 0 .45rem;
     display: flex; align-items: baseline; justify-content: space-between; gap: .75rem;
   }
-  .lab .act { font-size: .575rem; letter-spacing: .16em; color: var(--ink); background: none; border: none; padding: 0; cursor: pointer; font-family: inherit; font-weight: inherit; text-transform: inherit; }
+  .lab .act { font-size: .6rem; letter-spacing: .16em; color: var(--ink); background: none; border: none; padding: 0; cursor: pointer; font-family: inherit; font-weight: inherit; text-transform: inherit; }
   .lab .act:hover { text-decoration: underline; text-underline-offset: 3px; }
   .lab .tally { color: var(--mut); font-family: var(--mono); letter-spacing: .06em; text-transform: none; }
   .themes { display: flex; gap: .9rem; }
+  .pctrls { display: flex; align-items: baseline; gap: 1rem; }
 
   /* ---- ramp board: the palette regrouped into the tint/shade columns the book prints ----
      Columns run to a common height and their cells share it, so a two-step ramp and a five-step
@@ -285,8 +287,8 @@
   .cell.lt { color: rgba(255,255,255,.95); }
   .cell.dk { color: rgba(0,0,0,.8); }
   .cell.core { flex-grow: 1.7; }
-  .cell span { font-family: var(--mono); font-size: .5rem; letter-spacing: .04em; color: currentColor; }
-  .cell .rl { font-family: var(--sans); font-weight: 500; font-size: .45rem; letter-spacing: .16em; text-transform: uppercase; }
+  .cell span { font-family: var(--mono); font-size: .58rem; letter-spacing: .04em; color: currentColor; }
+  .cell .rl { font-family: var(--sans); font-weight: 500; font-size: .5rem; letter-spacing: .16em; text-transform: uppercase; }
   .cell.on { outline: 2px solid currentColor; outline-offset: -2px; z-index: 1; }
   /* the top 40% of a cell sets the core; a hairline draws the split on hover so the two targets are visible */
   .cell::before {
@@ -349,8 +351,8 @@
   details.roles > summary > span:first-child::after { content: " +"; font-family: var(--mono); }
   details.roles[open] > summary > span:first-child::after { content: " −"; }
   details.roles > summary:hover { color: var(--ink); }
-  .lad { display: grid; grid-template-columns: 4.6rem 1fr; gap: .35rem .6rem; align-items: center; }
-  .lad > .rn { font-size: .55rem; letter-spacing: .13em; text-transform: uppercase; font-weight: 500; color: var(--mut); }
+  .lad { display: grid; grid-template-columns: 5.4rem 1fr; gap: .35rem .6rem; align-items: center; }
+  .lad > .rn { font-size: .64rem; letter-spacing: .13em; text-transform: uppercase; font-weight: 500; color: var(--mut); }
   .lad > .rn.moved { color: var(--ink); }
   .steps { display: flex; gap: 1px; }
   .step { flex: 1 1 0; height: 1.15rem; border: none; padding: 0; cursor: pointer; position: relative; }
@@ -404,13 +406,13 @@
   .pal { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
   .pf-field, .pf-row, .pf-ramp { display: flex; }
   .pf-field { min-height: 6rem; }
-  .pf-row { min-height: 5rem; border-top: 1px solid rgba(0,0,0,.08); }
-  .pf-ramp { min-height: 2.4rem; border-top: 1px solid rgba(0,0,0,.08); }
+  .pf-row { min-height: 5rem; border-top: 1px solid var(--line); }
+  .pf-ramp { min-height: 2.4rem; border-top: 1px solid var(--line); }
   .pf-sw { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15rem; }
   .pf-sw.lt { color: rgba(255,255,255,.95); }
   .pf-sw.dk { color: rgba(0,0,0,.8); }
   .pf-sw span { font-family: var(--mono); font-size: .58rem; letter-spacing: .04em; color: currentColor; }
-  .pf-sw .rl { font-family: var(--sans); font-weight: 500; font-size: .48rem; letter-spacing: .14em; text-transform: uppercase; }
+  .pf-sw .rl { font-family: var(--sans); font-weight: 500; font-size: .5rem; letter-spacing: .14em; text-transform: uppercase; }
   .pf-ramp .pf-sw .rl { display: none; }
   .pf-ramp .pf-sw span:last-child { font-size: .48rem; }
 
@@ -454,10 +456,13 @@
   #toast.show { opacity: 1; translate: -50% -4px; }
 
   @media (max-width: 900px) {
-    .board { height: calc(var(--rows) * 3rem); }
     .cmpcol { min-width: 82vw; }
     .cmpbody { scroll-snap-type: x mandatory; }
     .cmpcol { scroll-snap-align: start; }
+  }
+  /* a coarse pointer is the actual thing being served here, not a narrow window */
+  @media (pointer: coarse) {
+    .board { height: calc(var(--rows) * 3rem); }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
@@ -538,6 +543,15 @@
   <footer>
     <button class="btn ghost" id="dlgDl">Download</button>
     <button class="btn" id="dlgCopy">Copy</button>
+  </footer>
+</dialog>
+
+<dialog id="delDlg">
+  <header><h3>Delete system?</h3></header>
+  <p id="delMsg"></p>
+  <footer>
+    <button class="btn ghost" id="delCancel">Cancel</button>
+    <button class="btn" id="delOk">Delete</button>
   </footer>
 </dialog>
 
@@ -1009,9 +1023,16 @@ $("#rDup").onclick = () => {
   $("#rname").select();
 };
 $("#rDel").onclick = () => {
-  if (!open || !confirm(`Delete “${open.name}”?`)) return;
+  if (!open) return;
+  $("#delMsg").textContent = `“${open.name}” will be gone for good.`;
+  $("#delDlg").showModal();
+};
+$("#delCancel").onclick = () => $("#delDlg").close();
+$("#delDlg").onclick = (e) => { if (e.target === $("#delDlg")) $("#delDlg").close(); };
+$("#delOk").onclick = () => {
   systems = systems.filter((x) => x.id !== open.id);
   pinned.delete(open.id); open = null;
+  $("#delDlg").close();
   persistSystems(); render();
 };
 $("#rname").oninput = (e) => { if (open) { open.name = e.target.value; persistSystems(); } };
@@ -1182,6 +1203,7 @@ function buildBuildTab(body, p, s) {
      it in shot while the board, the tiles and the ladder scroll independently above. --- */
   const pane = $("#rPrevPane");
   const pl = el("p", "lab", "<span>Preview</span>");
+  const ctrls = el("span", "pctrls");
   const views = el("span", "themes");
   ["page", "palette"].forEach((v) => {
     const b = el("button", "chip"); b.textContent = v; b.dataset.k = "pv" + v;
@@ -1189,7 +1211,7 @@ function buildBuildTab(body, p, s) {
     b.onclick = () => { previewView = v; renderRail(); };
     views.append(b);
   });
-  pl.append(views);
+  ctrls.append(views);
   const th = el("span", "themes");
   ["light", "dark"].forEach((t) => {
     const b = el("button", "chip"); b.textContent = t; b.dataset.k = "th" + t;
@@ -1197,7 +1219,8 @@ function buildBuildTab(body, p, s) {
     b.onclick = () => { s.dark = t === "dark"; persistSystems(); renderRail(); };
     th.append(b);
   });
-  pl.append(th);
+  ctrls.append(th);
+  pl.append(ctrls);
   pane.append(pl);
 
   if (s.core && neutralOf(s)) {
@@ -1456,7 +1479,7 @@ $("#cmpTheme").onclick = () => {
    on this list — a fullscreen surface whose only exit is one ✕ in a corner is a trap. <dialog> does
    its own Escape, and without this guard closing it would take the rail down behind it. */
 document.addEventListener("keydown", (e) => {
-  if (e.key !== "Escape" || $("#dlg").open) return;
+  if (e.key !== "Escape" || $("#dlg").open || $("#delDlg").open) return;
   if (document.body.classList.contains("cmp")) document.body.classList.remove("cmp");
   else if (drawFrom) { drawFrom = null; render(); }
   else if (picking) { picking = false; render(); }
