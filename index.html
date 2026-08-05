@@ -399,6 +399,21 @@
   .plabel { font-size: .55rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 500; color: var(--p-mut); }
   .pfoot { border-top: 1px solid var(--p-line); background: var(--p-surface); padding: .7rem .8rem; font-size: .58rem; color: var(--p-mut); display: flex; justify-content: space-between; gap: .5rem; }
 
+  /* palette view: proportional colour field, no UI chrome — same swatch vocabulary as .cell
+     (rl label + mono hex) but always shown, since this sheet is read, not clicked. */
+  .pal { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .pf-field, .pf-row, .pf-ramp { display: flex; }
+  .pf-field { min-height: 6rem; }
+  .pf-row { min-height: 5rem; border-top: 1px solid rgba(0,0,0,.08); }
+  .pf-ramp { min-height: 2.4rem; border-top: 1px solid rgba(0,0,0,.08); }
+  .pf-sw { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15rem; }
+  .pf-sw.lt { color: rgba(255,255,255,.95); }
+  .pf-sw.dk { color: rgba(0,0,0,.8); }
+  .pf-sw span { font-family: var(--mono); font-size: .58rem; letter-spacing: .04em; color: currentColor; }
+  .pf-sw .rl { font-family: var(--sans); font-weight: 500; font-size: .48rem; letter-spacing: .14em; text-transform: uppercase; }
+  .pf-ramp .pf-sw .rl { display: none; }
+  .pf-ramp .pf-sw span:last-child { font-size: .48rem; }
+
   /* ---- export owns the rail floor when export is the task ---- */
   .rbody.export nav { display: flex; gap: .2rem 1.05rem; flex-wrap: wrap; padding: 1rem 0 .7rem; flex: none; }
   .rbody.export pre {
@@ -646,6 +661,7 @@ let tab = "build";
 let drawFrom = null;  /* page whose card is currently lending accents to the open system */
 let picking = false;  /* the rail stepped aside so the grid can be browsed for a page to draw from */
 let boardFlat = false;
+let previewView = "page"; /* "page" (UI mock) or "palette" (bare colour field, no UI chrome) */
 
 /* ---------- toolbar ---------- */
 const sections = [...new Set(PALETTES.map((p) => p.section))];
@@ -1166,6 +1182,14 @@ function buildBuildTab(body, p, s) {
      it in shot while the board, the tiles and the ladder scroll independently above. --- */
   const pane = $("#rPrevPane");
   const pl = el("p", "lab", "<span>Preview</span>");
+  const views = el("span", "themes");
+  ["page", "palette"].forEach((v) => {
+    const b = el("button", "chip"); b.textContent = v; b.dataset.k = "pv" + v;
+    b.setAttribute("aria-pressed", String(previewView === v));
+    b.onclick = () => { previewView = v; renderRail(); };
+    views.append(b);
+  });
+  pl.append(views);
   const th = el("span", "themes");
   ["light", "dark"].forEach((t) => {
     const b = el("button", "chip"); b.textContent = t; b.dataset.k = "th" + t;
@@ -1177,10 +1201,17 @@ function buildBuildTab(body, p, s) {
   pane.append(pl);
 
   if (s.core && neutralOf(s)) {
-    const prev = previewNode();
-    prev.id = "rPrev";
-    pane.append(prev);
-    paintPreview(prev, p, s);
+    if (previewView === "palette") {
+      const pal = paletteNode();
+      pal.id = "rPrev";
+      pane.append(pal);
+      paintPalette(pal, p, s);
+    } else {
+      const prev = previewNode();
+      prev.id = "rPrev";
+      pane.append(prev);
+      paintPreview(prev, p, s);
+    }
   } else {
     pane.append(el("p", "unbuilt", "Pick a core colour and a neutral palette"));
   }
@@ -1353,6 +1384,43 @@ function paintPreview(node, p, s) {
   const acc = ordered(s);
   node.querySelector(".ptags").innerHTML = acc
     .map((c, i) => `<span class="tag" style="background:${c};color:${ink(c)}">accent ${i + 1}</span>`).join("");
+}
+
+/* ---------- palette: the colours alone, sized by the weight they'd carry on a page and labelled
+   with the exact token name export ships (core, accent-N, neutral-N) — a brand-guideline colour
+   sheet, not a UI mock. No chrome, so nothing here can be mistaken for a design decision. ---------- */
+function paletteNode() {
+  return el("div", "pal", `
+    <div class="pf-field"></div>
+    <div class="pf-row"></div>
+    <div class="pf-ramp"></div>`);
+}
+
+const swatch = (cls, hex, label, grow) => {
+  const b = el("div", `pf-sw ${lum(hex) > 0.55 ? "dk" : "lt"} ${cls || ""}`,
+    `<span class="rl">${label}</span><span>${hex.slice(1)}</span>`);
+  if (grow) b.style.flexGrow = grow;
+  b.style.background = hex;
+  return b;
+};
+
+function paintPalette(node, p, s) {
+  if (!node || !s.core || !neutralOf(s)) return;
+  const sys = system(p, s);
+  const acc = ordered(s);
+
+  const field = node.querySelector(".pf-field");
+  field.innerHTML = "";
+  field.append(swatch("field", sys.roles.bg, "bg · " + sys.steps.bg, 1));
+
+  const row = node.querySelector(".pf-row");
+  row.innerHTML = "";
+  row.append(swatch("core", s.core, "core", 2));
+  acc.forEach((c, i) => row.append(swatch("", c, "accent-" + (i + 1), 1)));
+
+  const ramp = node.querySelector(".pf-ramp");
+  ramp.innerHTML = "";
+  neutralOf(s).colors.forEach((c, i) => ramp.append(swatch("", c, "neutral-" + (i + 1), 1)));
 }
 
 /* ---------- compare tray ---------- */
