@@ -88,6 +88,10 @@
   }
   .chip:hover { color: var(--ink); }
   .chip[aria-pressed="true"] { color: var(--accent); text-decoration: underline; }
+  .chip:disabled { opacity: .35; cursor: default; }
+  /* while picking, the system rides the toolbar — what you have, next to the way back */
+  .picksys { display: inline-flex; gap: 2px; align-items: center; }
+  .picksys i { width: .85rem; height: .85rem; border-radius: 3px; border: 1px solid rgba(0,0,0,.12); }
   .dots { display: flex; gap: .8rem; align-items: center; }
   .dot {
     width: .8rem; height: .8rem; border-radius: 50%; border: 1px solid rgba(0,0,0,.16);
@@ -212,6 +216,12 @@
   #rname:hover { border-bottom-color: var(--line); }
   #rname:focus { border-bottom-color: var(--accent); }
   .rhead .src { display: block; margin-top: .3rem; font-size: .575rem; letter-spacing: .18em; text-transform: uppercase; color: var(--mut); }
+  /* the method as a strip: each segment is a fact about the build and a link to the stage that changes it */
+  .rprog { display: flex; flex-wrap: wrap; gap: .1rem .4rem; align-items: baseline; margin-top: .45rem; }
+  .rprog button { background: none; border: none; padding: .15rem 0; cursor: pointer; font-family: var(--mono); font-size: .6rem; letter-spacing: .04em; color: var(--mut); }
+  .rprog button.done { color: var(--ink); }
+  .rprog button:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .rprog .sep { color: var(--line-strong); font-size: .6rem; }
   .rtabs { display: flex; gap: 1.1rem; margin-top: .7rem; }
   .ricon { background: none; border: none; padding: .2rem; cursor: pointer; color: var(--mut); font-size: .9rem; line-height: 1; display: flex; }
   .ricon:hover { color: var(--ink); }
@@ -266,13 +276,13 @@
   .lab {
     font-size: .575rem; letter-spacing: .2em; color: var(--mut);
     margin: 1.2rem 0 .45rem;
-    display: flex; align-items: baseline; justify-content: space-between; gap: .75rem;
+    display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .3rem .75rem;
   }
   .lab .act { font-size: .6rem; letter-spacing: .16em; color: var(--ink); background: none; border: none; padding: 0; cursor: pointer; font-family: inherit; font-weight: inherit; text-transform: inherit; }
   .lab .act:hover { text-decoration: underline; text-underline-offset: 3px; }
   .lab .tally { color: var(--mut); font-family: var(--mono); letter-spacing: .06em; text-transform: none; }
-  .themes { display: flex; gap: .9rem; }
-  .pctrls { display: flex; align-items: baseline; gap: 1rem; }
+  .themes { display: flex; flex-wrap: wrap; gap: .1rem .9rem; }
+  .pctrls { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem 1rem; }
 
   /* ---- ramp board: the palette regrouped into the tint/shade columns the book prints ----
      Columns run to a common height and their cells share it, so a two-step ramp and a five-step
@@ -296,7 +306,7 @@
     border-bottom: 1px solid currentColor; opacity: 0; transition: opacity .15s;
   }
   .cell:hover::before, .cell:focus-visible::before { opacity: .8; }
-  .cell.core::before, .cell.flat::before { display: none; }
+  .cell.core::before { display: none; }
   /* An unchosen swatch used to answer nothing on hover — not its hex, not what the hairline divided.
      Now the top zone names itself and the hex reads out, so both targets are discoverable in place
      instead of only in the screen-reader instructions. */
@@ -304,7 +314,6 @@
   .cell .cue, .cell .hx { opacity: 0; transition: opacity .15s; }
   .cell:hover .cue, .cell:focus-visible .cue,
   .cell:hover .hx, .cell:focus-visible .hx { opacity: 1; }
-  .cell.flat .cue { display: none; }
   /* the hovered swatch reads as the target without growing — a swelling cell drags every neighbour
      in the column with it, which makes scanning a ramp feel like walking on a waterbed */
   .cell:not(.on):hover, .cell:not(.on):focus-visible { box-shadow: inset 0 0 0 1px currentColor; z-index: 2; }
@@ -314,6 +323,41 @@
     content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .75;
     background: linear-gradient(to top right, transparent calc(50% - .5px), currentColor calc(50% - .5px), currentColor calc(50% + .5px), transparent calc(50% + .5px));
   }
+
+  /* large swatches: the same board, sized for judging colour (and for fingers) */
+  .board.big { height: calc(var(--rows) * 3.4rem); }
+  .bigcell span { opacity: 1; }
+
+  /* list: every verb a labelled button — the arrangement where nothing hides in a hover or a cap */
+  .blist { display: flex; flex-direction: column; }
+  .lrow { display: flex; align-items: center; gap: .7rem; padding: .3rem 0; border-bottom: 1px solid var(--line); }
+  .lrow .lsw { width: 2.2rem; height: 1.5rem; border: none; border-radius: 4px; cursor: pointer; flex: none; }
+  .lrow .lsw.on { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .lrow.out .lsw { opacity: .55; }
+  .lrow .lhex { font-family: var(--mono); font-size: .66rem; width: 4.4rem; }
+  .lrow.out .lhex { text-decoration: line-through; color: var(--mut); }
+  .lrow .lrole { flex: 1; font-size: .55rem; letter-spacing: .16em; text-transform: uppercase; font-weight: 500; color: var(--mut); }
+  .lrow .act { font-family: var(--sans); font-weight: 500; font-size: .6rem; letter-spacing: .16em; text-transform: uppercase; color: var(--ink); background: none; border: none; padding: .3rem 0; cursor: pointer; }
+  .lrow .act:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ---- the tray: the system itself, chip by chip. The one surface where a build is listed whole —
+          including accents borrowed from pages the board can't show — and picked apart or reordered. ---- */
+  .tray { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; min-height: 2.5rem; border: 1px dashed var(--line-strong); border-radius: var(--radius-sm); padding: .45rem; }
+  .tray .none { font-size: .575rem; letter-spacing: .2em; text-transform: uppercase; font-weight: 500; color: var(--mut); padding: 0 .4rem; }
+  .tchip { display: inline-flex; align-items: center; gap: .45rem; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: .3rem .65rem .3rem .35rem; position: relative; transition: border-color .18s ease-out; }
+  .tchip:hover { border-color: var(--line-strong); }
+  .tchip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .tchip.lifting { opacity: .3; }
+  .tchip i { width: 1.1rem; height: 1.1rem; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); }
+  .tchip .tl { font-size: .55rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 500; color: var(--mut); }
+  .tchip code { font-family: var(--mono); font-size: .62rem; }
+  .tchip .tp { font-family: var(--mono); font-size: .55rem; color: var(--mut); }
+  .tchip.corechip { border-color: var(--line-strong); cursor: pointer; }
+  .tx { background: none; border: none; padding: .1rem; margin: 0 -.25rem 0 -.15rem; cursor: pointer; color: var(--mut); display: flex; opacity: 0; transition: opacity .15s; }
+  .tx .i { width: .85em; height: .85em; }
+  .tchip:hover .tx, .tchip:focus-within .tx { opacity: 1; }
+  .tx:hover { color: var(--ink); }
+  @media (pointer: coarse) { .tx { opacity: 1; } }
 
   /* Five 1.5rem ramp strips were near-indistinguishable, and Neutral and Zinc genuinely share their
      light bg (#FAFAFA) — a plain colour field could not tell those two apart at all. So each scale is
@@ -365,6 +409,32 @@
   .lad .rd { grid-column: 2; margin: -.15rem 0 .15rem; font-family: var(--mono); font-size: .58rem; letter-spacing: .02em; color: var(--mut); }
   .lad .rd.bad { color: var(--ink); font-weight: 500; }
   .lad .rd.bad::before { content: "⚠ "; }
+  .rx { background: none; border: none; padding: .1rem; margin-left: .35rem; cursor: pointer; color: var(--mut); display: inline-flex; vertical-align: -.15em; }
+  .rx .i { width: .85em; height: .85em; }
+  .rx:hover { color: var(--ink); }
+
+  /* the ramp as a drag source — the same eleven steps the ladder reads, liftable onto a role or the page */
+  .rstrip { display: flex; gap: 1px; margin: .2rem 0 0; }
+  .rstrip .rstep { flex: 1 1 0; height: 1.7rem; }
+  .rstrip .rstep:hover { box-shadow: inset 0 0 0 1px currentColor; }
+  .rstep.lt { color: rgba(255,255,255,.95); }
+  .rstep.dk { color: rgba(0,0,0,.8); }
+  .stripcue { font-family: var(--mono); font-size: .58rem; letter-spacing: .02em; color: var(--mut); margin: .3rem 0 .6rem; }
+
+  /* ---- drag: what's liftable says so, what's under a lift says what it would mean ---- */
+  .grab { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+  body.dragging, body.dragging * { cursor: grabbing !important; }
+  /* .dghost, not .ghost — the rail's secondary buttons already own that name */
+  .dghost { position: fixed; left: 0; top: 0; z-index: 80; pointer-events: none; display: flex; align-items: center; gap: .45rem; background: var(--ink); color: var(--paper); border-radius: 999px; padding: .3rem .8rem .3rem .35rem; font-size: .62rem; letter-spacing: .06em; font-weight: 500; box-shadow: 0 8px 28px rgba(0,0,0,.28); }
+  .dghost i { width: 1rem; height: 1rem; border-radius: 50%; border: 1px solid rgba(255,255,255,.4); }
+  .dghost .gbadge { font-family: var(--mono); font-weight: 400; letter-spacing: .02em; }
+  .dghost .gbadge:empty { display: none; }
+  [data-drop].dropok { outline: 2px solid currentColor; outline-offset: -2px; }
+  [data-drop].dropbad { outline: 2px dashed currentColor; outline-offset: -2px; opacity: .85; }
+  @keyframes flashp { 0%, 55% { outline: 2px solid currentColor; outline-offset: -2px; } 100% { outline: 2px solid transparent; outline-offset: -2px; } }
+  .flash { animation: flashp .9s ease-out; }
+  @keyframes shk { 25% { translate: -3px 0; } 75% { translate: 3px 0; } }
+  .shake { animation: shk .3s; }
 
   /* ---- preview: a page, not a card — nav, body, quote, field and footer, so bg/surface/border/text
           and both ink pairings are all on screen at once ---- */
@@ -400,6 +470,26 @@
   .pfield.focus { outline: 2px solid var(--p-core); outline-offset: 1px; color: var(--p-ink); }
   .plabel { font-size: .55rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 500; color: var(--p-mut); }
   .pfoot { border-top: 1px solid var(--p-line); background: var(--p-surface); padding: .7rem .8rem; font-size: .58rem; color: var(--p-mut); display: flex; justify-content: space-between; gap: .5rem; }
+
+  /* ---- the other pages: each preview template leans on a different part of the system,
+          so a weakness that one page hides, another shows ---- */
+  .pxl { font-size: 1.7rem; font-weight: 500; letter-spacing: -.03em; line-height: 1.06; }
+  .prev a { color: var(--p-core); text-underline-offset: 3px; }
+  .pcode { font-family: var(--mono); font-size: .66rem; background: var(--p-surface); border: 1px solid var(--p-line); border-radius: 5px; padding: .06rem .3rem; }
+  .ptiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin-top: .8rem; }
+  .ptile { background: var(--p-surface); border: 1px solid var(--p-line); border-radius: var(--radius-sm); padding: .55rem .65rem; min-width: 0; }
+  .ptile b { display: block; font-size: 1.05rem; font-weight: 500; letter-spacing: -.02em; margin-top: .2rem; }
+  .ptable { margin-top: .8rem; border: 1px solid var(--p-line); border-radius: var(--radius-sm); overflow: hidden; }
+  .ptr { display: grid; grid-template-columns: 2fr .9fr .8fr; gap: .5rem; padding: .45rem .6rem; border-top: 1px solid var(--p-line); font-size: .68rem; align-items: center; }
+  .ptr:first-child { border-top: none; background: var(--p-surface); color: var(--p-mut); font-size: .55rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 500; }
+  .ptag2 { justify-self: start; font-family: var(--mono); font-size: .56rem; border-radius: 5px; padding: .12rem .4rem; }
+  .pchk { display: flex; gap: .5rem; align-items: center; margin-top: .9rem; font-size: .74rem; }
+  .pchk i { width: .8rem; height: .8rem; border-radius: 4px; background: var(--p-core); flex: none; }
+  .pbtn.dis { background: var(--p-surface); color: var(--p-mut); border-color: var(--p-line); }
+  .pchart { display: block; width: 100%; margin-top: .7rem; }
+  .plegend { display: flex; gap: .9rem; flex-wrap: wrap; margin-top: .45rem; }
+  .plegend span { display: inline-flex; align-items: center; gap: .35rem; font-family: var(--mono); font-size: .58rem; color: var(--p-mut); }
+  .plegend i { width: .7rem; height: .7rem; border-radius: 3px; }
 
   /* palette view: proportional colour field, no UI chrome — same swatch vocabulary as .cell
      (rl label + mono hex) but always shown, since this sheet is read, not clicked. */
@@ -453,7 +543,8 @@
     border-radius: 999px; padding: .6rem 1.2rem;
     opacity: 0; pointer-events: none; transition: opacity .25s, translate .25s;
   }
-  #toast.show { opacity: 1; translate: -50% -4px; }
+  #toast.show { opacity: 1; translate: -50% -4px; pointer-events: auto; }
+  #toast .tundo { background: none; border: none; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; margin-left: 1rem; padding: 0; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
   @media (max-width: 900px) {
     .cmpcol { min-width: 82vw; }
@@ -490,8 +581,9 @@
 </header>
 
 <div class="toolbar">
-  <!-- only while picking: the way back to the system you left open -->
+  <!-- only while picking: the way back to the system you left open, and the system itself in miniature -->
   <button class="chip back" id="backChip" hidden></button>
+  <span class="picksys" id="pickSys" hidden aria-hidden="true"></span>
   <input id="q" type="search" placeholder="Search name, section, hex…" aria-label="Search palettes">
   <div id="sections"></div>
   <div class="dots" id="dots" role="group" aria-label="Filter by hue"></div>
@@ -514,6 +606,7 @@
       <button class="ricon" id="rClose" title="Close" aria-label="Close the builder"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button>
     </div>
     <span class="src" id="rSrc"></span>
+    <div class="rprog" id="rProg"></div>
     <nav class="rtabs">
       <button class="chip" data-tab="build">Build</button>
       <button class="chip" data-tab="export">Export</button>
@@ -649,14 +742,22 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&
 const saved = new Set(arr(load("colorbook-saved", "[]")));
 const persist = () => localStorage.setItem("colorbook-saved", JSON.stringify([...saved]));
 const state = { q: "", section: null, hue: null, savedOnly: false, view: "grid" };
+/* app-level view preferences — how she looks at a build, never what the build is:
+   not part of the system record, and never in a share hash */
+const ui = obj(load("colorbook-ui", "{}"));
+const saveUI = () => localStorage.setItem("colorbook-ui", JSON.stringify(ui));
+const BOARD_VIEWS = ["ramps", "grid", "list", "large"];
+const boardView = () => (BOARD_VIEWS.includes(ui.board) ? ui.board : "ramps");
+const previewTpl = () => (TEMPLATES[ui.tpl] ? ui.tpl : "page");
 
 /* A system is a named record, not a slot on a page: one palette can carry three candidates.
-   { id, page, name, core, accent[], src{hex:page}, out[], neutral, dark, roles{role:step}, at } */
+   { id, page, name, core, accent[], src{hex:page}, out[], neutral, dark, roles{role:step}, order, at }
+   order: null means accent order is derived from the board; an array is a dragged, deliberate order. */
 const SYS_KEY = "colorbook-systems";
 const uid = () => Math.random().toString(36).slice(2, 8);
 const blank = (page, name) => ({
   id: uid(), page, name: name || byPage.get(page)?.name || `p. ${page}`,
-  core: null, accent: [], src: {}, out: [], neutral: null, dark: false, roles: {}, at: new Date().toISOString().slice(0, 10),
+  core: null, accent: [], src: {}, out: [], neutral: null, dark: false, roles: {}, order: null, at: new Date().toISOString().slice(0, 10),
 });
 /* v1 kept one build per palette page. Every core-bearing entry becomes a named system; empty ones
    are skipped. colorbook-builds is read, never written or cleared, so the old data survives. */
@@ -674,8 +775,7 @@ let open = null;      /* the system in the rail */
 let tab = "build";
 let drawFrom = null;  /* page whose card is currently lending accents to the open system */
 let picking = false;  /* the rail stepped aside so the grid can be browsed for a page to draw from */
-let boardFlat = false;
-let previewView = "page"; /* "page" (UI mock) or "palette" (bare colour field, no UI chrome) */
+let flashRole = null; /* a role that just changed — the next render pulses its preview region */
 
 /* ---------- toolbar ---------- */
 const sections = [...new Set(PALETTES.map((p) => p.section))];
@@ -776,7 +876,7 @@ function renderShelf() {
     const n = neutralOf(s);
     /* the brand colours, then the three neutral steps that actually build the page — without them
        two candidates that differ only by neutral are the reason you pinned them and look identical */
-    const strip = [s.core, ...ordered(s)].filter(Boolean).slice(0, 4)
+    const strip = [s.core, ...orderedOf(s)].filter(Boolean).slice(0, 4)
       .concat(n ? ["bg", "surface", "text"].map((r) => n.colors[readStep(s, r)]) : []);
     const card = el("article", "card" + (pinned.has(s.id) ? " pin" : ""));
     card.style.animationDelay = Math.min(i, 16) * 30 + "ms";
@@ -798,7 +898,7 @@ function renderShelf() {
           ${pinned.size > 1 ? '<button class="cmpBtn acts" style="font:inherit;background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:4px;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;font-weight:500">compare ' + pinned.size + '</button>' : ""}
         </div>
       </footer>`;
-    card.querySelector(".op").onclick = () => { open = s; tab = "build"; drawFrom = null; picking = false; boardFlat = false; state.view = "grid"; render(); };
+    card.querySelector(".op").onclick = () => { open = s; tab = "build"; drawFrom = null; picking = false; state.view = "grid"; render(); };
     card.querySelector(".pn").onclick = () => {
       pinned.has(s.id) ? pinned.delete(s.id) : pinned.size < 3 ? pinned.add(s.id) : toast("three is the ceiling — unpin one");
       render();
@@ -818,12 +918,120 @@ function renderShelf() {
 
 /* ---------- copy + toast ---------- */
 let toastTimer;
-function toast(msg) {
-  $("#toast").textContent = msg;
-  $("#toast").classList.add("show");
+function toast(msg, undo) {
+  const t = $("#toast");
+  t.textContent = msg;
+  if (undo) {
+    const b = el("button", "tundo", "undo");
+    b.onclick = () => { t.classList.remove("show"); undo(); };
+    t.append(b);
+  }
+  t.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => $("#toast").classList.remove("show"), 1600);
+  toastTimer = setTimeout(() => t.classList.remove("show"), undo ? 6000 : 1600);
 }
+/* a moment of undo instead of a confirm dialog: snapshot the open record, mutate, offer the way back */
+function withUndo(msg, mutate) {
+  const before = structuredClone(open);
+  mutate();
+  persistSystems();
+  renderRail();
+  toast(msg, () => {
+    const i = systems.findIndex((x) => x.id === before.id);
+    if (i < 0) return;
+    systems[i] = before;
+    if (open && open.id === before.id) open = before;
+    persistSystems();
+    render();
+  });
+}
+
+/* ---------- drag: one pointer engine — tray reorder, drag-off removal, ramp→role drops ----------
+   Native pointer events, no library. A fine pointer lifts after 6px of travel; touch lifts on a
+   300ms hold so a swipe is never mistaken for a drag (handles are touch-action:none, so nothing
+   scrolls from them either way). Nothing mutates until the drop, so no re-render can destroy the
+   node mid-gesture. Every drag has a click/keyboard twin — this is sugar, never the only door. */
+let drag = null;
+function draggable(node, spec) {
+  node.classList.add("grab");
+  node.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0 || drag) return;
+    const sx = e.clientX, sy = e.clientY, pid = e.pointerId;
+    const touch = e.pointerType === "touch";
+    let lifted = false, over = null, timer = 0;
+    const lift = () => {
+      lifted = true;
+      try { node.setPointerCapture(pid); } catch {}
+      const ghost = el("div", "dghost", `<i style="background:${spec.color}"></i><span>${esc(spec.label)}</span><b class="gbadge"></b>`);
+      ghost.style.transform = `translate(${sx + 12}px, ${sy + 14}px)`;
+      document.body.append(ghost);
+      node.classList.add("lifting");
+      document.body.classList.add("dragging");
+      drag = { ghost, cancel: finish };
+    };
+    const move = (ev) => {
+      if (!lifted) {
+        const d = Math.hypot(ev.clientX - sx, ev.clientY - sy);
+        if (touch) { if (d > 12) finish(); return; } /* moved before the hold — not a drag */
+        if (d <= 6) return;
+        lift();
+      }
+      drag.ghost.style.transform = `translate(${ev.clientX + 12}px, ${ev.clientY + 14}px)`;
+      const hit = document.elementFromPoint(ev.clientX, ev.clientY)?.closest("[data-drop]") || null;
+      if (over && over !== hit) over.classList.remove("dropok", "dropbad");
+      over = hit;
+      const b = spec.canDrop(hit);
+      if (hit && b) { hit.classList.toggle("dropok", b.ok); hit.classList.toggle("dropbad", !b.ok); }
+      drag.ghost.querySelector(".gbadge").textContent = b ? (b.ok ? "" : "⚠ ") + b.text : "";
+    };
+    const finish = () => {
+      clearTimeout(timer);
+      node.removeEventListener("pointermove", move);
+      node.removeEventListener("pointerup", up);
+      node.removeEventListener("pointercancel", finish);
+      over?.classList.remove("dropok", "dropbad");
+      if (lifted) {
+        drag.ghost.remove();
+        node.classList.remove("lifting");
+        document.body.classList.remove("dragging");
+        lifted = false;
+      }
+      drag = null;
+    };
+    const up = (ev) => {
+      const was = lifted, t = over;
+      finish();
+      if (!was) return;
+      /* a completed drag must not also count as a click on the same node */
+      node.addEventListener("click", (c) => { c.stopImmediatePropagation(); c.preventDefault(); }, { capture: true, once: true });
+      spec.onDrop(t, ev);
+    };
+    if (touch) timer = setTimeout(lift, 300);
+    node.addEventListener("pointermove", move);
+    node.addEventListener("pointerup", up);
+    node.addEventListener("pointercancel", finish);
+  });
+}
+/* FLIP the tray across a rebuild, so a reorder reads as movement rather than replacement */
+function flipTray(rerender) {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return rerender();
+  const before = new Map([...document.querySelectorAll(".tchip")].map((n) => [n.dataset.k, n.getBoundingClientRect()]));
+  rerender();
+  document.querySelectorAll(".tchip").forEach((n) => {
+    const b = before.get(n.dataset.k);
+    if (!b) return;
+    const r = n.getBoundingClientRect();
+    const dx = b.left - r.left, dy = b.top - r.top;
+    if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+    n.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: "none" }],
+      { duration: 200, easing: "cubic-bezier(.16,1,.3,1)" });
+  });
+}
+const shake = (n) => {
+  if (!n) return;
+  n.classList.add("shake");
+  n.addEventListener("animationend", () => n.classList.remove("shake"), { once: true });
+};
 function copy(text, msg) {
   (navigator.clipboard?.writeText(text) || Promise.reject()).catch(() => {
     const t = document.createElement("textarea");
@@ -928,6 +1136,14 @@ function ordered(s) {
   const { cols } = ramps(p ? p.colors : s.accent);
   return s.accent.slice().sort((a, b) => rankIn(cols, a) - rankIn(cols, b));
 }
+/* a dragged order wins where one exists; anything it doesn't cover keeps its derived rank.
+   No order recorded → exactly the derived order, so an untouched build exports byte for byte. */
+function orderedOf(s) {
+  if (!Array.isArray(s.order) || !s.order.length) return ordered(s);
+  const ord = s.order.filter((c) => s.accent.includes(c));
+  ordered(s).forEach((c) => { if (!ord.includes(c)) ord.push(c); });
+  return ord;
+}
 /* every page this system drew from, in the order it drew from them */
 function sources(s) {
   const p = byPage.get(s.page);
@@ -940,9 +1156,10 @@ function sources(s) {
 
 function system(p, s) {
   const n = neutralOf(s);
+  const acc = orderedOf(s);
   const colors = [], names = [];
   if (s.core) { colors.push(s.core); names.push("core"); }
-  ordered(s).forEach((c, i) => { colors.push(c); names.push(`accent-${i + 1}`); });
+  acc.forEach((c, i) => { colors.push(c); names.push(`accent-${i + 1}`); });
   n?.colors.forEach((c, i) => { colors.push(c); names.push(`neutral-${i + 1}`); });
   /* semantic roles — the same hexes again, named for the job they do; neutrals run dark→light, 11 steps */
   const roleAt = colors.length;
@@ -952,7 +1169,7 @@ function system(p, s) {
   /* one ink per accent. A single --accent-ink was taken from accent-1 and was wrong for every accent
      on the other side of the threshold — p.135 shipped white on #FFFFFF. The preview already paints
      each tag with its own ink(); the export now says the same thing. */
-  ordered(s).forEach((c, i) => (roles[`accent-${i + 1}-ink`] = ink(c)));
+  acc.forEach((c, i) => (roles[`accent-${i + 1}-ink`] = ink(c)));
   Object.entries(roles).forEach(([k, c]) => { colors.push(c); names.push(k); });
   /* the contrast question gets asked in every room and is pure arithmetic — compute it, never ask her to record it */
   const checks = [];
@@ -977,8 +1194,10 @@ function system(p, s) {
    byte for byte. v1's readable #b= is still decoded — links already in the wild have to keep working. */
 const b64 = (s) => btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 const unb64 = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)));
+/* the 10th element is the dragged accent order — appended, so every pre-order link stays decodable */
 const encodeSys = (s) =>
-  "#b2=" + b64(JSON.stringify([s.page, s.name, s.core, s.accent, s.neutral, s.dark ? 1 : 0, s.roles, s.out, s.src]));
+  "#b2=" + b64(JSON.stringify([s.page, s.name, s.core, s.accent, s.neutral, s.dark ? 1 : 0, s.roles, s.out, s.src,
+    ...(Array.isArray(s.order) && s.order.length ? [s.order] : [])]));
 /* A hash is untrusted input: hand-truncated, half-pasted, or written against an older format.
    Every path returns a fully-shaped record or null — never a partial one, and never a throw. */
 const str = (v) => (typeof v === "string" ? v : null);
@@ -991,9 +1210,11 @@ function decodeSys(hash) {
   try {
     const m2 = hash.match(/^#b2=(.+)/);
     if (m2) {
-      const [page, name, core, accent, neutral, dark, roles, out, src] = JSON.parse(unb64(m2[1]));
+      const [page, name, core, accent, neutral, dark, roles, out, src, order] = JSON.parse(unb64(m2[1]));
+      const ord = hexes(order);
       return Object.assign(blank(page, str(name)), { core: hexes([core])[0] ?? null, accent: hexes(accent),
-        neutral: str(neutral), dark: !!dark, roles: steps(roles), out: hexes(out), src: obj(src) });
+        neutral: str(neutral), dark: !!dark, roles: steps(roles), out: hexes(out), src: obj(src),
+        order: ord.length ? ord : null });
     }
     const m = hash.match(/^#b=(.+)/);
     if (!m) return null;
@@ -1011,7 +1232,7 @@ function decodeSys(hash) {
 function openFor(p) {
   const mine = sysOf(p.page);
   open = mine[mine.length - 1] || (systems.push(blank(p.page)), persistSystems(), systems[systems.length - 1]);
-  tab = "build"; drawFrom = null; picking = false; boardFlat = false;
+  tab = "build"; drawFrom = null; picking = false;
   render();
 }
 $("#rClose").onclick = () => { open = null; drawFrom = null; picking = false; render(); };
@@ -1084,6 +1305,58 @@ function drawAccent(hex, page) {
   document.querySelector(`.card.drawing .band[data-hex="${CSS.escape(hex)}"]`)?.focus();
 }
 
+/* ---------- tray mutations: remove, reorder — one gesture each, every one undoable or derivable back ---------- */
+function removeAccent(hex) {
+  withUndo(`${hex} removed`, () => {
+    open.accent = open.accent.filter((c) => c !== hex);
+    if (Array.isArray(open.order)) open.order = open.order.filter((c) => c !== hex);
+    delete open.src[hex];
+  });
+}
+function moveAccent(hex, delta) {
+  const ord = orderedOf(open);
+  const i = ord.indexOf(hex), j = i + delta;
+  if (i < 0 || j < 0 || j >= ord.length) return;
+  [ord[i], ord[j]] = [ord[j], ord[i]];
+  /* dragged back into the derived order = no override left worth recording */
+  open.order = ord.join() === ordered(open).join() ? null : ord;
+  persistSystems();
+  flipTray(renderRail);
+}
+function reorderTo(hex, x, y) {
+  const ord = orderedOf(open).filter((c) => c !== hex);
+  const chips = [...document.querySelectorAll(".tray .tchip[data-hex]")].filter((n) => n.dataset.hex !== hex);
+  let i = ord.length;
+  for (let k = 0; k < chips.length; k++) {
+    const r = chips[k].getBoundingClientRect();
+    if (y < r.top - 2 || (y <= r.bottom + 2 && x < r.left + r.width / 2)) { i = k; break; }
+  }
+  ord.splice(i, 0, hex);
+  open.order = ord.join() === ordered(open).join() ? null : ord;
+  persistSystems();
+  flipTray(renderRail);
+}
+/* a tray chip answers "where is this on the board" — or names the page it was borrowed from */
+function flashCell(hex) {
+  const sel = `.cell[data-hex="${CSS.escape(hex)}"], .lsw[data-hex="${CSS.escape(hex)}"]`;
+  const cell = $("#rBody").querySelector(sel);
+  if (!cell) return toast(open?.src[hex] ? `drawn from p. ${open.src[hex]}` : "not on this page");
+  cell.scrollIntoView({ block: "nearest" });
+  cell.classList.add("flash");
+  cell.addEventListener("animationend", () => cell.classList.remove("flash"), { once: true });
+}
+const roleFrom = (t) => (t?.dataset.drop?.startsWith("role:") ? t.dataset.drop.slice(5) : null);
+/* the same mutation as a ladder click, but named for what just happened — and undoable */
+function dropRole(role, j) {
+  const n = neutralOf(open);
+  const [other, phrase, isText] = PAIR[role];
+  const r = ratio(n.colors[j], n.colors[readStep(open, other)]);
+  const light = open.dark ? 10 - j : j;
+  flashRole = role;
+  withUndo(`${isText && r < 4.5 ? "⚠ " : ""}${role} → neutral-${j + 1} · ${phrase} ${fmt(r)}:1${isText ? " " + grade(r) : ""}`,
+    () => { light === ROLE_STEP[role] ? delete open.roles[role] : (open.roles[role] = light); });
+}
+
 /* ---------- the rail ---------- */
 function renderRail() {
   document.body.classList.toggle("rail", !!open);
@@ -1092,8 +1365,13 @@ function renderRail() {
   const back = $("#backChip");
   back.hidden = !(open && picking);
   if (!back.hidden) back.textContent = "← back to " + open.name;
+  /* the system in miniature rides along while she browses other pages for an accent */
+  const ps = $("#pickSys");
+  ps.hidden = back.hidden;
+  if (!ps.hidden) ps.innerHTML = [open.core, ...orderedOf(open)].filter(Boolean)
+    .map((c) => `<i style="background:${c}"></i>`).join("");
   $("#rPrevPane").innerHTML = "";   /* the export tab leaves it empty, and an empty pane takes no height */
-  if (!open) { $("#rBody").innerHTML = ""; $("#rAct").innerHTML = ""; return; }
+  if (!open) { $("#rBody").innerHTML = ""; $("#rAct").innerHTML = ""; $("#rProg").innerHTML = ""; return; }
   const s = open, p = byPage.get(s.page);
   if ($("#rname").value !== s.name) $("#rname").value = s.name;
   $("#rSrc").textContent = sources(s);
@@ -1102,43 +1380,87 @@ function renderRail() {
   /* focus survives a rebuild — the rail is keyboard-driven and losing your place mid-edit is unusable.
      data-hex covers the board; data-k covers everything else that rebuilds under you (ladder steps,
      neutral tiles, theme chips). Scoped to #rBody so a focused grid band cannot teleport into the rail. */
+  /* data-k first: a tray chip shares its hex with a board cell, and only its k is unique to it */
   const a = document.activeElement;
-  const held = a && $("#rBody").contains(a) && (a.dataset.hex || a.dataset.k);
+  const held = a && $("#rBody").contains(a) && (a.dataset.k || a.dataset.hex);
   const body = $("#rBody");
   body.className = "rbody" + (tab === "export" ? " export" : "");
   body.innerHTML = "";
   tab === "export" ? buildExportTab(body, p, s) : buildBuildTab(body, p, s);
-  if (held) body.querySelector(`[data-hex="${CSS.escape(held)}"],[data-k="${CSS.escape(held)}"]`)?.focus();
+  renderProg(s);
+  if (held) body.querySelector(`[data-k="${CSS.escape(held)}"],[data-hex="${CSS.escape(held)}"]`)?.focus();
+}
+
+/* the method as a strip in the header: each segment is a fact, and a link to the stage that changes it */
+function renderProg(s) {
+  const prog = $("#rProg");
+  prog.innerHTML = "";
+  if (tab !== "build") return;
+  const n = neutralOf(s), bad = n ? failing(s) : [];
+  const segs = [
+    [s.core ? "core ✓" : "core —", !!s.core, "b1"],
+    [`${s.accent.length} accent${s.accent.length === 1 ? "" : "s"}`, s.accent.length > 0, "b1"],
+    [`${s.out.length} out`, s.out.length > 0, "b1"],
+    [n ? s.neutral.toLowerCase() : "neutral —", !!n, "b2"],
+    [n ? (bad.length ? `${bad.length} below AA` : "roles AA") : "roles —", !!n && !bad.length, "b3"],
+  ];
+  segs.forEach(([txt, done, stage], i) => {
+    if (i) prog.append(el("span", "sep", "·"));
+    const b = el("button", done ? "done" : "");
+    b.textContent = txt;
+    b.onclick = () => {
+      const t = $("#rBody").querySelector(`[data-stage="${stage}"]`);
+      if (!t) return;
+      if (t.tagName === "DETAILS") t.open = true;
+      t.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    };
+    prog.append(b);
+  });
 }
 
 function buildBuildTab(body, p, s) {
-  /* --- ramp board --- */
+  /* --- ① the board: this page's colours, in whichever arrangement reads best today --- */
   const { cols, flat } = p ? ramps(p.colors) : { cols: [], flat: false };
-  const useFlat = flat || boardFlat;
+  const view = boardView();
+  const eff = view === "ramps" && flat ? "grid" : view;
   const chosen = (s.core ? 1 : 0) + s.accent.length;
-  const lab = el("p", "lab", `<span>Core &amp; accents</span>`);
+  const lab = el("p", "lab", `<span>① Core &amp; accents</span>`);
+  lab.dataset.stage = "b1";
   const tally = el("span", "tally");
   tally.textContent = p ? `${chosen}/${p.colors.length} · ${s.out.length} out` : "";
   lab.append(tally);
   if (p) {
-    const t = el("button", "act");
-    t.dataset.k = "flat";
-    t.textContent = useFlat ? "columns" : "flat";
-    t.onclick = () => { boardFlat = !boardFlat; renderRail(); };
-    if (!flat) lab.append(t);
+    const bv = el("span", "themes");
+    BOARD_VIEWS.forEach((v) => {
+      const b = el("button", "chip");
+      b.textContent = v;
+      b.dataset.k = "bv" + v;
+      b.setAttribute("aria-pressed", String(view === v));
+      if (v === "ramps" && flat) { b.disabled = true; b.title = "this palette is one long ramp — no columns to split into"; }
+      b.onclick = () => { ui.board = v; saveUI(); renderRail(); };
+      bv.append(b);
+    });
+    lab.append(bv);
   }
   body.append(lab);
-  body.append(el("p", "sr", "Click a swatch to toggle it as an accent, or its top edge to make it the core. With a swatch focused: C sets the core, Enter toggles an accent, X eliminates it."));
+  body.append(el("p", "sr", "Click a swatch to toggle it as an accent, or its top edge to make it the core. With a swatch focused: C sets the core, Enter toggles an accent, X eliminates it. In the system list further down, arrow keys reorder an accent and X removes it."));
 
-  const board = el("div", "board");
-  const groups = useFlat ? chunk(p ? p.colors : [], Math.ceil((p?.colors.length || 1) / 9)) : cols.map((c) => c.cs);
-  board.style.setProperty("--rows", Math.max(1, ...groups.map((g) => g.length)));
-  groups.forEach((cs) => {
-    const col = el("div", "col");
-    cs.forEach((c) => col.append(cellFor(s, c, useFlat)));
-    board.append(col);
-  });
-  body.append(board);
+  if (eff === "list") {
+    const rows = el("div", "blist");
+    (p ? p.colors : []).forEach((c) => rows.append(listRow(s, c)));
+    body.append(rows);
+  } else {
+    const board = el("div", "board" + (eff === "large" ? " big" : ""));
+    const groups = eff === "ramps" ? cols.map((c) => c.cs)
+      : chunk(p ? p.colors : [], Math.ceil((p?.colors.length || 1) / (eff === "large" ? 5 : 9)));
+    board.style.setProperty("--rows", Math.max(1, ...groups.map((g) => g.length)));
+    groups.forEach((cs) => {
+      const col = el("div", "col");
+      cs.forEach((c) => col.append(cellFor(s, c, eff === "large")));
+      board.append(col);
+    });
+    body.append(board);
+  }
 
   const acts = el("p", "lab");
   /* the board only holds this page. An accent can come from any of the other 201, and the button that
@@ -1153,16 +1475,42 @@ function buildBuildTab(body, p, s) {
   const openCount = p ? p.colors.filter((c) => roleOf(s, c) === "open").length : 0;
   elim.textContent = openCount ? `Eliminate the rest (${openCount})` : s.out.length ? "Restore eliminated" : "";
   elim.onclick = () => {
-    if (openCount) open.out = [...new Set([...s.out, ...p.colors.filter((c) => roleOf(s, c) === "open")])];
-    else open.out = [];
-    persistSystems(); renderRail();
+    if (openCount) withUndo(`${openCount} eliminated`, () => {
+      open.out = [...new Set([...open.out, ...p.colors.filter((c) => roleOf(open, c) === "open")])];
+    });
+    else withUndo("eliminated restored", () => { open.out = []; });
   };
   if (elim.textContent) acts.append(elim);
   body.append(acts);
 
-  /* --- neutral: five live pages, not five strips. Each tile is this system in that scale —
+  /* --- the system so far: core + every accent, including ones borrowed from pages this board
+         can't show. The one surface where a build is listed whole — reordered, or picked apart. --- */
+  const tl = el("p", "lab", "<span>System</span>");
+  const tacts = el("span", "pctrls");
+  if (Array.isArray(s.order) && s.order.length) {
+    const d = el("button", "act");
+    d.dataset.k = "dord";
+    d.textContent = "derived order";
+    d.title = "drop the dragged order and let the board decide again";
+    d.onclick = () => { open.order = null; persistSystems(); flipTray(renderRail); };
+    tacts.append(d);
+  }
+  if (chosen || s.out.length || s.neutral || Object.keys(s.roles).length) {
+    const rb = el("button", "act");
+    rb.dataset.k = "rsb";
+    rb.textContent = "reset build";
+    rb.onclick = () => withUndo("build reset", () => Object.assign(open,
+      { core: null, accent: [], src: {}, out: [], neutral: null, roles: {}, order: null }));
+    tacts.append(rb);
+  }
+  if (tacts.childNodes.length) tl.append(tacts);
+  body.append(tl, trayFor(s));
+
+  /* --- ② neutral: five live pages, not five strips. Each tile is this system in that scale —
      her role overrides and her theme, so what she compares is what she would ship. --- */
-  body.append(el("p", "lab", "<span>Neutral palette</span>"));
+  const nlab = el("p", "lab", "<span>② Neutral palette</span>");
+  nlab.dataset.stage = "b2";
+  body.append(nlab);
   const neuts = el("div", "neuts");
   NEUTRALS.forEach((n) => {
     const r = system(p, { ...s, neutral: n.name }).roles;
@@ -1183,17 +1531,18 @@ function buildBuildTab(body, p, s) {
   if (neutralOf(s)) {
     const bad = failing(s), moved = Object.keys(s.roles).length;
     const d = el("details", "roles");
+    d.dataset.stage = "b3";
     d.open = !!(bad.length || moved);
     const sum = el("summary", "lab",
-      `<span>Roles</span><span class="tally">${bad.length ? `${bad.length} below AA` : "all pass"}${
+      `<span>③ Roles</span><span class="tally">${bad.length ? `${bad.length} below AA` : "all pass"}${
         moved ? ` · ${moved} moved` : ""}</span>`);
     if (moved) {
-      const r = el("button", "act"); r.dataset.k = "reset"; r.textContent = "reset";
+      const r = el("button", "act"); r.dataset.k = "reset"; r.textContent = "reset all";
       /* inside a summary, a click would toggle the disclosure as well as reset */
-      r.onclick = (e) => { e.preventDefault(); e.stopPropagation(); s.roles = {}; persistSystems(); renderRail(); };
+      r.onclick = (e) => { e.preventDefault(); e.stopPropagation(); withUndo("roles reset", () => { open.roles = {}; }); };
       sum.append(r);
     }
-    d.append(sum, ladder(s));
+    d.append(sum, rampStrip(s), ladder(s));
     body.append(d);
   }
 
@@ -1205,10 +1554,10 @@ function buildBuildTab(body, p, s) {
   const pl = el("p", "lab", "<span>Preview</span>");
   const ctrls = el("span", "pctrls");
   const views = el("span", "themes");
-  ["page", "palette"].forEach((v) => {
+  Object.keys(TEMPLATES).forEach((v) => {
     const b = el("button", "chip"); b.textContent = v; b.dataset.k = "pv" + v;
-    b.setAttribute("aria-pressed", String(previewView === v));
-    b.onclick = () => { previewView = v; renderRail(); };
+    b.setAttribute("aria-pressed", String(previewTpl() === v));
+    b.onclick = () => { ui.tpl = v; saveUI(); renderRail(); };
     views.append(b);
   });
   ctrls.append(views);
@@ -1224,20 +1573,18 @@ function buildBuildTab(body, p, s) {
   pane.append(pl);
 
   if (s.core && neutralOf(s)) {
-    if (previewView === "palette") {
-      const pal = paletteNode();
-      pal.id = "rPrev";
-      pane.append(pal);
-      paintPalette(pal, p, s);
-    } else {
-      const prev = previewNode();
-      prev.id = "rPrev";
-      pane.append(prev);
-      paintPreview(prev, p, s);
-    }
+    const node = TEMPLATES[previewTpl()].make(p, s);
+    node.id = "rPrev";
+    pane.append(node);
+    /* a role that just moved shows itself: the regions that read it pulse once */
+    if (flashRole) pane.querySelectorAll(`[data-drop="role:${flashRole}"]`).forEach((n) => {
+      n.classList.add("flash");
+      n.addEventListener("animationend", () => n.classList.remove("flash"), { once: true });
+    });
   } else {
     pane.append(el("p", "unbuilt", "Pick a core colour and a neutral palette"));
   }
+  flashRole = null;
 
   /* --- export, collapsed to its first line until export is the task --- */
   const sys = system(p, s);
@@ -1268,9 +1615,15 @@ function chunk(arr, n) {
    what the instructions have always said and the only reason a ~19px band is an acceptable target. */
 const hitsCap = (e, r) => e.detail > 0 && e.clientY - r.top < r.height * 0.4;
 
-function cellFor(s, c, flat) {
+const cellKeys = (c) => (e) => {
+  const k = e.key.toLowerCase();
+  if (k === "c") { e.preventDefault(); setCore(c); }
+  else if (k === "x") { e.preventDefault(); toggleOut(c); }
+};
+
+function cellFor(s, c, big) {
   const role = roleOf(s, c);
-  const b = el("button", `cell ${lum(c) > 0.55 ? "dk" : "lt"} ${role === "core" ? "core on" : role === "accent" ? "on" : role === "out" ? "out" : ""}${flat ? " flat" : ""}`);
+  const b = el("button", `cell ${lum(c) > 0.55 ? "dk" : "lt"} ${role === "core" ? "core on" : role === "accent" ? "on" : role === "out" ? "out" : ""}${big ? " bigcell" : ""}`);
   b.style.background = c;
   b.dataset.hex = c;
   b.setAttribute("aria-label", `${c} — ${role === "open" ? "not chosen" : role}`);
@@ -1279,14 +1632,119 @@ function cellFor(s, c, flat) {
   /* hover/focus reveals these; a chosen swatch already shows its hex, so only the rest need them */
   else b.innerHTML = `<span class="rl cue">core</span><span class="hx">${c.slice(1)}</span>`;
   b.onclick = (e) => {
-    !flat && role !== "core" && hitsCap(e, b.getBoundingClientRect()) ? setCore(c) : toggleAccent(c);
+    role !== "core" && hitsCap(e, b.getBoundingClientRect()) ? setCore(c) : toggleAccent(c);
   };
-  b.onkeydown = (e) => {
-    const k = e.key.toLowerCase();
-    if (k === "c") { e.preventDefault(); setCore(c); }
-    else if (k === "x") { e.preventDefault(); toggleOut(c); }
-  };
+  b.onkeydown = cellKeys(c);
   return b;
+}
+
+/* list view: the same three verbs as a cell, but as labelled buttons — nothing lives in a hover */
+function listRow(s, c) {
+  const role = roleOf(s, c);
+  const row = el("div", "lrow" + (role === "out" ? " out" : ""));
+  const sw = el("button", "lsw" + (role === "core" || role === "accent" ? " on" : ""));
+  sw.style.background = c;
+  sw.dataset.hex = c;
+  sw.setAttribute("aria-label", `${c} — ${role === "open" ? "not chosen" : role}`);
+  sw.onclick = () => toggleAccent(c);
+  sw.onkeydown = cellKeys(c);
+  row.append(sw, el("code", "lhex", c.slice(1)), el("span", "lrole", role === "open" ? "" : role));
+  if (role !== "core") {
+    const mk = el("button", "act"); mk.textContent = "core"; mk.dataset.k = "mk" + c;
+    mk.onclick = () => setCore(c);
+    const ex = el("button", "act"); ex.textContent = role === "out" ? "restore" : "eliminate"; ex.dataset.k = "ex" + c;
+    ex.onclick = () => toggleOut(c);
+    row.append(mk, ex);
+  }
+  return row;
+}
+
+/* the tray: chips for the record itself. data-k (not the shared hex) is what focus restore keys on,
+   so a rebuild never hands a chip's focus to the board cell wearing the same colour. */
+function trayFor(s) {
+  const tray = el("div", "tray");
+  tray.dataset.drop = "tray";
+  if (!s.core && !s.accent.length) {
+    tray.append(el("span", "none", "nothing chosen yet"));
+    return tray;
+  }
+  if (s.core) {
+    const chip = el("div", "tchip corechip",
+      `<i style="background:${s.core}"></i><span class="tl">core</span><code>${s.core.slice(1)}</code>`);
+    chip.tabIndex = 0;
+    chip.dataset.k = "t" + s.core;
+    chip.setAttribute("role", "button");
+    chip.setAttribute("aria-label", `core — ${s.core}. The core moves from the board: focus a swatch and press C.`);
+    chip.onclick = () => flashCell(s.core);
+    tray.append(chip);
+  }
+  orderedOf(s).forEach((c, i) => {
+    const away = s.src[c];
+    const chip = el("div", "tchip",
+      `<i style="background:${c}"></i><span class="tl">a${i + 1}</span><code>${c.slice(1)}</code>${
+        away ? `<span class="tp">p.${away}</span>` : ""}`);
+    chip.dataset.hex = c;
+    chip.dataset.k = "t" + c;
+    chip.tabIndex = 0;
+    chip.setAttribute("role", "button");
+    chip.setAttribute("aria-label",
+      `accent ${i + 1} — ${c}${away ? `, drawn from page ${away}` : ""}. Arrow keys reorder, X removes.`);
+    const x = el("button", "tx", '<svg class="i" aria-hidden="true"><use href="#i-close"/></svg>');
+    x.setAttribute("aria-label", `Remove ${c}`);
+    x.tabIndex = -1; /* the chip is the tab stop; ✕ is the pointer spelling of the same act */
+    x.onclick = (e) => { e.stopPropagation(); removeAccent(c); };
+    chip.append(x);
+    chip.onclick = () => flashCell(c);
+    chip.onkeydown = (e) => {
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); moveAccent(c, e.key === "ArrowLeft" ? -1 : 1); }
+      else if (e.key.toLowerCase() === "x" || e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); removeAccent(c); }
+    };
+    draggable(chip, {
+      label: "a" + (i + 1), color: c,
+      canDrop: (t) => {
+        const d = t?.dataset.drop;
+        if (d === "tray") return { ok: true, text: "reorder" };
+        if (d?.startsWith("role:")) return { ok: false, text: "roles read the neutral ramp" };
+        return { ok: true, text: "release to remove" };
+      },
+      onDrop: (t, ev) => {
+        const d = t?.dataset.drop;
+        if (d === "tray") reorderTo(c, ev.clientX, ev.clientY);
+        else if (d?.startsWith("role:")) { shake(t); toast("roles read the neutral ramp — pp. 4–5"); }
+        else removeAccent(c);
+      },
+    });
+    tray.append(chip);
+  });
+  return tray;
+}
+
+/* the ramp, liftable: the same eleven steps the ladder reads, as drag sources for the rows below
+   and the page beside. Pointer-only sugar — the ladder's own buttons stay the keyboard path. */
+function rampStrip(s) {
+  const n = neutralOf(s);
+  const wrap = el("div");
+  const strip = el("div", "rstrip");
+  strip.setAttribute("aria-hidden", "true");
+  n.colors.forEach((c, j) => {
+    const step = el("div", `rstep ${lum(c) > 0.55 ? "dk" : "lt"}`);
+    step.style.background = c;
+    step.title = `neutral-${j + 1}`;
+    draggable(step, {
+      label: `neutral-${j + 1}`, color: c,
+      canDrop: (t) => {
+        const role = roleFrom(t);
+        if (!role) return null;
+        const [other, phrase, isText] = PAIR[role];
+        const r = ratio(n.colors[j], n.colors[readStep(open, other)]);
+        return { ok: !isText || r >= 4.5, text: `${role} · ${phrase} ${fmt(r)}:1${isText ? " " + grade(r) : ""}` };
+      },
+      onDrop: (t) => { const role = roleFrom(t); if (role) dropRole(role, j); },
+    });
+    strip.append(step);
+  });
+  wrap.append(strip, el("p", "stripcue", "drag a step onto a role below, or onto the preview itself"));
+  return wrap;
 }
 
 /* the text pairings currently below AA — what decides whether the ladder is worth opening */
@@ -1313,7 +1771,17 @@ function ladder(s) {
 
     const name = el("span", `rn${s.roles[role] != null ? " moved" : ""}`);
     name.textContent = role;
+    name.dataset.drop = "role:" + role;
+    if (s.roles[role] != null) {
+      /* a moved role resets one at a time, not only all at once */
+      const rx = el("button", "rx", '<svg class="i" aria-hidden="true"><use href="#i-close"/></svg>');
+      rx.dataset.k = "rx" + role;
+      rx.setAttribute("aria-label", `Reset ${role} to its default step`);
+      rx.onclick = () => { flashRole = role; withUndo(`${role} reset`, () => delete open.roles[role]); };
+      name.append(rx);
+    }
     const steps = el("div", "steps");
+    steps.dataset.drop = "role:" + role;
     /* the ramp always reads dark→light; in dark theme the marker sits at the mirrored position */
     const eff = readStep(s, role);
     /* only the text roles get the ghost mark. bg and surface report the same failing ratio, but
@@ -1327,6 +1795,7 @@ function ladder(s) {
       b.onclick = () => {
         const light = s.dark ? 10 - j : j;
         light === ROLE_STEP[role] ? delete s.roles[role] : (s.roles[role] = light);
+        flashRole = role;
         persistSystems(); renderRail();
       };
       steps.append(b);
@@ -1374,24 +1843,24 @@ function buildExportTab(body, p, s) {
 /* ---------- preview: a page, because a colour system is judged across one ---------- */
 function previewNode() {
   return el("div", "prev", `
-    <div class="pnav"><span class="brand">Acme</span><span>Work · Studio · Journal</span><span class="pill">Contact</span></div>
-    <div class="pbody">
-      <h4>A colour system is judged across a page, not on a single card</h4>
-      <p>Body copy sits on the background in the text colour, at a length long enough to show what
+    <div class="pnav" data-drop="role:surface"><span class="brand">Acme</span><span>Work · Studio · Journal</span><span class="pill">Contact</span></div>
+    <div class="pbody" data-drop="role:bg">
+      <h4 data-drop="role:text">A colour system is judged across a page, not on a single card</h4>
+      <p data-drop="role:text">Body copy sits on the background in the text colour, at a length long enough to show what
          reading it actually feels like — two lines is the shortest honest test.</p>
       <div class="prow"><span class="pbtn">Primary action</span><span class="pbtn sec">Secondary</span></div>
       <div class="prow ptags"></div>
     </div>
     <div class="psec">
       <blockquote>Colour is the first thing people notice about a design, and the last thing they forget.</blockquote>
-      <p class="pcap" style="margin-top:.6rem">Caption — muted text on the background.</p>
+      <p class="pcap" data-drop="role:text-muted" style="margin-top:.6rem">Caption — muted text on the background.</p>
     </div>
     <div class="psec">
       <p class="plabel">Email</p>
-      <div class="pfield focus">you@studio.com</div>
-      <p class="pcap" style="font-size:.68rem">Enter an address we can reach you at.</p>
+      <div class="pfield focus" data-drop="role:surface">you@studio.com</div>
+      <p class="pcap" data-drop="role:text-muted" style="font-size:.68rem">Enter an address we can reach you at.</p>
     </div>
-    <div class="pfoot"><span>© 2026 Acme</span><span>Privacy · Terms</span></div>`);
+    <div class="pfoot" data-drop="role:surface"><span>© 2026 Acme</span><span>Privacy · Terms</span></div>`);
 }
 
 /* repaints a preview node only — never touches the export pane, so the rail's own re-render can't flicker it */
@@ -1404,8 +1873,9 @@ function paintPreview(node, p, s) {
     `--p-core:${s.core}`, `--p-core-ink:${r["core-ink"]}`,
   ].join(";");
   /* every accent, not just accent-1 — picking six and seeing one is how you ship a system you never saw */
-  const acc = ordered(s);
-  node.querySelector(".ptags").innerHTML = acc
+  const acc = orderedOf(s);
+  const tags = node.querySelector(".ptags");
+  if (tags) tags.innerHTML = acc
     .map((c, i) => `<span class="tag" style="background:${c};color:${ink(c)}">accent ${i + 1}</span>`).join("");
 }
 
@@ -1430,7 +1900,7 @@ const swatch = (cls, hex, label, grow) => {
 function paintPalette(node, p, s) {
   if (!node || !s.core || !neutralOf(s)) return;
   const sys = system(p, s);
-  const acc = ordered(s);
+  const acc = orderedOf(s);
 
   const field = node.querySelector(".pf-field");
   field.innerHTML = "";
@@ -1445,6 +1915,125 @@ function paintPalette(node, p, s) {
   ramp.innerHTML = "";
   neutralOf(s).colors.forEach((c, i) => ramp.append(swatch("", c, "neutral-" + (i + 1), 1)));
 }
+
+/* ---------- the other pages: each template leans on a different part of the system, so a weakness
+   one page hides, another shows. hero → text at display weight; article → long-form reading and
+   links; cards → surfaces and borders in bulk; form → field and button states; chart → the accents
+   together as series. All painted through the same --p-* variables paintPreview sets. ---------- */
+function heroNode() {
+  return el("div", "prev", `
+    <div class="pnav" data-drop="role:surface"><span class="brand">Acme</span><span>Work · Studio · Journal</span><span class="pill">Contact</span></div>
+    <div class="pbody" data-drop="role:bg">
+      <p class="plabel" data-drop="role:text-muted">New — V2.1</p>
+      <h4 class="pxl" data-drop="role:text" style="margin-top:.4rem">Ship the system,<br>not the swatch</h4>
+      <p class="pcap" data-drop="role:text-muted">Display type is where thin strokes meet your background —
+         a weight body copy never reaches, on the largest field the system paints.</p>
+      <div class="prow"><span class="pbtn">Start building</span><span class="pbtn sec">Read the method</span></div>
+    </div>
+    <div class="pfoot" data-drop="role:surface"><span>© 2026 Acme</span><span>Privacy · Terms</span></div>`);
+}
+function articleNode() {
+  return el("div", "prev", `
+    <div class="pnav" data-drop="role:surface"><span class="brand">Acme</span><span>Journal</span><span class="pill">Subscribe</span></div>
+    <div class="pbody" data-drop="role:bg">
+      <p class="plabel" data-drop="role:text-muted">Method · 12 min read</p>
+      <h4 data-drop="role:text" style="font-size:1.35rem;margin-top:.3rem">Eliminate the rest: choosing colour by removal</h4>
+      <p data-drop="role:text">Long-form reading is where a text colour earns its keep. Two paragraphs at body
+         size show the real texture of the pairing — including an <a>inline link in the core colour</a> and a
+         run of text long enough that the eye settles in rather than skimming across.</p>
+      <blockquote style="margin-top:.8rem">The palette is what survives elimination, not what catches the eye first.</blockquote>
+      <p data-drop="role:text">Code tokens like <code class="pcode">--core</code> and <code class="pcode">--accent-1</code>
+         sit on the surface colour, bordered, a size below the copy around them.</p>
+      <p class="pcap" data-drop="role:text-muted">Figure 1 — the five neutrals, compared as pages.</p>
+    </div>
+    <div class="pfoot" data-drop="role:surface"><span>Previous: The board</span><span>Next: Roles</span></div>`);
+}
+function cardsNode(p, s) {
+  const acc = orderedOf(s);
+  const a = (i) => (acc.length ? acc[i % acc.length] : s.core);
+  const tag = (t, c) => `<span class="ptag2" style="background:${c};color:${ink(c)}">${t}</span>`;
+  return el("div", "prev", `
+    <div class="pnav" data-drop="role:surface"><span class="brand">Acme</span><span>Overview · Reports · Team</span><span class="pill">New</span></div>
+    <div class="pbody" data-drop="role:bg">
+      <h4 data-drop="role:text">Monday, 9:41</h4>
+      <div class="ptiles">
+        <div class="ptile" data-drop="role:surface"><p class="plabel">Revenue</p><b>$48.2k</b></div>
+        <div class="ptile" data-drop="role:surface"><p class="plabel">Sessions</p><b>12,940</b></div>
+        <div class="ptile" data-drop="role:surface"><p class="plabel">Uptime</p><b>99.98%</b></div>
+      </div>
+      <div class="ptable" data-drop="role:surface">
+        <div class="ptr"><span>Invoice</span><span>Amount</span><span>Status</span></div>
+        <div class="ptr"><span>#1042 — Studio Norr</span><span>$1,200</span>${tag("paid", a(0))}</div>
+        <div class="ptr"><span>#1041 — Welcom</span><span>$860</span>${tag("sent", a(1))}</div>
+        <div class="ptr"><span>#1040 — Docket</span><span>$2,400</span>${tag("draft", a(2))}</div>
+        <div class="ptr"><span>#1039 — Aster &amp; Co</span><span>$430</span>${tag("paid", a(0))}</div>
+      </div>
+    </div>
+    <div class="pfoot" data-drop="role:surface"><span>Updated just now</span><span>4 of 128 rows</span></div>`);
+}
+function formNode() {
+  return el("div", "prev", `
+    <div class="pnav" data-drop="role:surface"><span class="brand">Acme</span><span>Account</span><span class="pill">Save</span></div>
+    <div class="pbody" data-drop="role:bg">
+      <h4 data-drop="role:text">Field &amp; button states</h4>
+      <p class="plabel" style="margin-top:.8rem">Email</p>
+      <div class="pfield" data-drop="role:surface">you@studio.com</div>
+      <p class="plabel" style="margin-top:.6rem">Name — focused</p>
+      <div class="pfield focus">Sanna Granqvist</div>
+      <p class="pcap" data-drop="role:text-muted" style="font-size:.68rem;margin-top:.45rem">Helper text sits muted under the field; the focus ring reads in the core colour.</p>
+      <div class="prow"><span class="pbtn">Primary</span><span class="pbtn sec">Secondary</span><span class="pbtn dis">Disabled</span></div>
+      <p class="pchk"><i></i><span data-drop="role:text">Email me a copy of this</span></p>
+    </div>
+    <div class="pfoot" data-drop="role:surface"><span>Changes save automatically</span><span>Synced</span></div>`);
+}
+function chartNode(p, s) {
+  const acc = orderedOf(s);
+  const series = acc.length ? acc.slice(0, 4) : [s.core];
+  /* fixed data, deterministic render — the chart is a colour instrument, not a dashboard */
+  const groups = [[62, 38, 74, 51], [48, 80, 30, 66], [71, 52, 58, 40]];
+  const W = 320, H = 132, top = 8, bottom = 18, left = 10, right = 10;
+  const plotH = H - top - bottom, gw = (W - left - right) / groups.length;
+  let bars = "";
+  groups.forEach((g, gi) => {
+    const bw = Math.min(16, (gw - 26) / series.length);
+    series.forEach((c, si) => {
+      const h = plotH * (g[si % g.length] / 100);
+      const x = left + gi * gw + (gw - bw * series.length - 2 * (series.length - 1)) / 2 + si * (bw + 2);
+      bars += `<rect x="${x.toFixed(1)}" y="${(top + plotH - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="1.5" fill="${c}"/>`;
+    });
+  });
+  const grid = [0, 0.25, 0.5, 0.75, 1].map((f) => {
+    const y = (top + plotH * (1 - f)).toFixed(1);
+    return `<line x1="${left}" x2="${W - right}" y1="${y}" y2="${y}"/>`;
+  }).join("");
+  const labels = ["Q1", "Q2", "Q3"].map((q, i) =>
+    `<text x="${(left + i * gw + gw / 2).toFixed(1)}" y="${H - 5}" text-anchor="middle">${q}</text>`).join("");
+  return el("div", "prev", `
+    <div class="pnav" data-drop="role:surface"><span class="brand">Acme</span><span>Analytics</span><span class="pill">Export</span></div>
+    <div class="pbody" data-drop="role:bg">
+      <h4 data-drop="role:text">Sessions by quarter</h4>
+      <p class="pcap" data-drop="role:text-muted">The accents as series — do they hold apart at chart size?</p>
+      <div class="ptile" data-drop="role:surface">
+        <svg class="pchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Bar chart drawn with the system's accents">
+          <g stroke="var(--p-line)" stroke-width="1">${grid}</g>
+          ${bars}
+          <g fill="var(--p-mut)" font-size="7.5" style="font-family:var(--mono)">${labels}</g>
+        </svg>
+        <div class="plegend">${series.map((c, i) =>
+          `<span><i style="background:${c}"></i>${acc.length ? "accent-" + (i + 1) : "core"}</span>`).join("")}</div>
+      </div>
+    </div>`);
+}
+const painted = (n, p, s) => { paintPreview(n, p, s); return n; };
+const TEMPLATES = {
+  page:    { make: (p, s) => painted(previewNode(), p, s) },
+  hero:    { make: (p, s) => painted(heroNode(), p, s) },
+  article: { make: (p, s) => painted(articleNode(), p, s) },
+  cards:   { make: (p, s) => painted(cardsNode(p, s), p, s) },
+  form:    { make: (p, s) => painted(formNode(), p, s) },
+  chart:   { make: (p, s) => painted(chartNode(p, s), p, s) },
+  palette: { make: (p, s) => { const n = paletteNode(); paintPalette(n, p, s); return n; } },
+};
 
 /* ---------- compare tray ---------- */
 function openCompare() {
@@ -1480,7 +2069,8 @@ $("#cmpTheme").onclick = () => {
    its own Escape, and without this guard closing it would take the rail down behind it. */
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape" || $("#dlg").open || $("#delDlg").open) return;
-  if (document.body.classList.contains("cmp")) document.body.classList.remove("cmp");
+  if (drag) drag.cancel();
+  else if (document.body.classList.contains("cmp")) document.body.classList.remove("cmp");
   else if (drawFrom) { drawFrom = null; render(); }
   else if (picking) { picking = false; render(); }
   else if (open) { open = null; render(); }
@@ -1748,6 +2338,123 @@ console.assert(NEUTRALS.every((n) => n.colors.length === 11 && lum(n.colors[0]) 
     FORMATS.scss.make(nasty).split("\n")[1].startsWith("// "),
     "a newline in a name must not drop the rest of a // comment into live scss");
   console.assert(cmt("a*/b") === "a* /b" && cmt("a\n b") === "a b", "cmt()", [cmt("a*/b"), cmt("a\n b")]);
+}
+{ /* the redesigned build screen: dragged order, tray mutations, undo, templates, board views */
+  const p = byPage.get(72);
+  const fx = Object.assign(blank(72, "T"), { core: "#FF7500", accent: ["#FFE4AB", "#00C45B"], neutral: "Stone" });
+
+  /* an untouched build derives its order — and its export is frozen, byte for byte */
+  console.assert(orderedOf(fx).join() === ordered(fx).join(), "no-order build must derive its order");
+  const FROZEN_CSS = `/* T · Bold 23 p. 72 + Stone p. 7 · light theme */
+/* 3 of 27 chosen · 0 eliminated */
+/* text on bg 16.7:1 AAA · muted on surface 7.0:1 AAA · ink on core 7.3:1 AAA */
+/* roles read bg=neutral-11 surface=neutral-10 border=neutral-9 text-muted=neutral-5 text=neutral-2 */
+/* core — key brand moments, used with discipline */
+/* accent — sparingly, for emphasis */
+/* neutral — structure, backgrounds and body copy */
+:root {
+  --core: #FF7500;
+  --accent-1: #FFE4AB;
+  --accent-2: #00C45B;
+  --neutral-1: #0C0A09;
+  --neutral-2: #1C1917;
+  --neutral-3: #292524;
+  --neutral-4: #44403B;
+  --neutral-5: #57534D;
+  --neutral-6: #79716B;
+  --neutral-7: #A6A09B;
+  --neutral-8: #D6D3D1;
+  --neutral-9: #E7E5E4;
+  --neutral-10: #F5F5F4;
+  --neutral-11: #FAFAF9;
+  --bg: #FAFAF9;
+  --surface: #F5F5F4;
+  --border: #E7E5E4;
+  --text-muted: #57534D;
+  --text: #1C1917;
+  --core-ink: #0A0A0A;
+  --accent-1-ink: #0A0A0A;
+  --accent-2-ink: #FFFFFF;
+}`;
+  console.assert(FORMATS.css.make(system(p, fx)) === FROZEN_CSS, "the export drifted from the frozen baseline");
+
+  /* a dragged order reaches the export, survives the hash, and heals around stale entries */
+  const of = Object.assign(structuredClone(fx), { order: ["#00C45B", "#FFE4AB"] });
+  console.assert(system(p, of).colors[1] === "#00C45B" && system(p, of).names[1] === "accent-1",
+    "a dragged order must reach the export", system(p, of).colors.slice(0, 3));
+  console.assert(system(p, of).roles["accent-1-ink"] === ink("#00C45B"), "accent inks must follow the dragged order");
+  console.assert(orderedOf(Object.assign(structuredClone(fx), { order: ["#123456", "#00C45B"] })).join() === "#00C45B,#FFE4AB",
+    "stale order entries must heal, not linger");
+  console.assert(decodeSys(encodeSys(of)).order.join() === "#00C45B,#FFE4AB", "the dragged order was lost in the hash");
+  console.assert(decodeSys(encodeSys(fx)).order === null, "a derived-order build must stay order-null through the hash");
+  console.assert(FORMATS.css.make(system(p, decodeSys(encodeSys(of)))) === FORMATS.css.make(system(p, of)),
+    "an ordered link must reproduce the ordered export byte for byte");
+  console.assert(decodeSys("#b2=" + b64(JSON.stringify([72, "T", "#FF7500", [], "Stone", 0, {}, [], {}, "nope"]))).order === null,
+    "a wrong-typed order in a hash must coerce to null");
+  /* a 9-element #b2= minted before order existed — the literal, not a re-encode */
+  const LEG = "#b2=WzcyLCJUIiwiI0ZGNzUwMCIsWyIjRkZFNEFCIiwiIzAwQzQ1QiJdLCJTdG9uZSIsMCx7fSxbXSx7fV0";
+  const leg = decodeSys(LEG);
+  console.assert(leg && leg.core === "#FF7500" && leg.accent.join() === "#FFE4AB,#00C45B" &&
+    leg.neutral === "Stone" && leg.order === null, "a pre-order #b2= link must still decode", leg);
+  console.assert(FORMATS.css.make(system(p, leg)) === FROZEN_CSS, "a pre-order link must reproduce the frozen export");
+
+  /* tray mutations + the undo toast */
+  const probe = Object.assign(blank(72, "U"), { core: "#FF7500", accent: ["#FFE4AB", "#00C45B"] });
+  systems.push(probe);
+  const prevOpen = open, prevTab = tab;
+  open = probe; tab = "build";
+  withUndo("probe", () => { open.accent = ["#FFE4AB"]; });
+  console.assert(sysById(probe.id).accent.length === 1, "withUndo must apply the mutation");
+  $("#toast .tundo")?.click();
+  console.assert(sysById(probe.id).accent.length === 2, "undo must restore the snapshot", sysById(probe.id).accent);
+  open = sysById(probe.id);
+  removeAccent("#00C45B");
+  console.assert(open.accent.join() === "#FFE4AB" && !("#00C45B" in open.src), "removeAccent must clear accent and src");
+  $("#toast .tundo")?.click();
+  open = sysById(probe.id);
+  console.assert(open.accent.length === 2, "removeAccent must be undoable");
+  moveAccent("#00C45B", -1);
+  console.assert(Array.isArray(open.order) && orderedOf(open).join() === "#00C45B,#FFE4AB", "moveAccent must record the order");
+  moveAccent("#00C45B", 1);
+  console.assert(open.order === null, "moving back into the derived order must dissolve the override", open.order);
+  /* a role drop is a ladder click with a name: light theme writes the index, dark writes its mirror */
+  open.neutral = "Stone";
+  dropRole("text-muted", 3);
+  console.assert(open.roles["text-muted"] === 3, "a light-theme drop must write the displayed index");
+  $("#toast .tundo")?.click();
+  open = sysById(probe.id);
+  console.assert(open.roles["text-muted"] === undefined, "a role drop must be undoable");
+  open.neutral = "Stone"; open.dark = true;
+  dropRole("text-muted", 3);
+  console.assert(open.roles["text-muted"] === 7, "a dark-theme drop must write the mirrored index", open.roles);
+  /* the tray lists a borrowed accent the board can't show, with its page on it */
+  Object.assign(open, { dark: false, roles: {}, accent: ["#FFE4AB", "#FD6CFB"], src: { "#FD6CFB": 33 } });
+  render();
+  console.assert($('#rBody .tray .tchip[data-hex="#FD6CFB"] .tp')?.textContent === "p.33",
+    "a borrowed accent must sit in the tray naming its page");
+  console.assert($('#rBody .tray .tchip[data-hex="#FD6CFB"] .tx'), "every accent chip must carry its one-gesture remove");
+  systems = systems.filter((x) => x.id !== probe.id);
+  open = prevOpen; tab = prevTab;
+  persistSystems(); render();
+
+  /* every preview template renders from the same system, and the page keeps its drop regions */
+  Object.entries(TEMPLATES).forEach(([k, tpl]) => {
+    let n = null;
+    try { n = tpl.make(p, fx); } catch {}
+    console.assert(n instanceof Element && n.innerHTML.length > 50, `template ${k} failed to render`);
+  });
+  console.assert(TEMPLATES.chart.make(p, fx).querySelectorAll("rect").length === 6, "chart must draw one bar per accent per group");
+  console.assert(TEMPLATES.page.make(p, fx).querySelectorAll('[data-drop^="role:"]').length >= 4, "page template lost its drop regions");
+
+  /* board views: list rows carry the same three verbs as cells; view prefs fall back when corrupt */
+  const row = listRow(fx, "#00C45B");
+  console.assert(row.querySelector(".lsw") && [...row.querySelectorAll(".act")].map((b) => b.textContent).join() === "core,eliminate",
+    "a list row must offer toggle, core and eliminate");
+  console.assert(listRow(fx, "#FF7500").querySelectorAll(".act").length === 0, "the core row has nothing to do but be core");
+  const wasBoard = ui.board, wasTpl = ui.tpl;
+  ui.board = "bogus"; ui.tpl = "bogus";
+  console.assert(boardView() === "ramps" && previewTpl() === "page", "unknown view prefs must fall back");
+  ui.board = wasBoard; ui.tpl = wasTpl;
 }
 </script>
 </body>
