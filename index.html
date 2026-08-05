@@ -1603,6 +1603,17 @@ console.assert(NEUTRALS.every((n) => n.colors.length === 11 && lum(n.colors[0]) 
     document.body.className = was;
   }
 
+  /* the rail is a full screen with one ✕ in a corner — Escape has to be able to close it */
+  {
+    const wasOpen = open, wasPick = picking;
+    open = Object.assign(blank(72, "Esc probe"), { core: "#FF7500" }); picking = true;
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    console.assert(!picking && open, "Escape should leave picking first, not close the system under it");
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    console.assert(open === null, "Escape must close the rail", open);
+    open = wasOpen; picking = wasPick; render();
+  }
+
   /* a name is user text and reaches innerHTML in three places — it must never arrive as markup */
   console.assert(esc('<img src=x onerror="alert(1)">') === "&lt;img src=x onerror=&quot;alert(1)&quot;&gt;",
     "esc() must neutralise tags and attribute quotes", esc("<img>"));
