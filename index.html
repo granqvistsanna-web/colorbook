@@ -27,10 +27,10 @@
     font-family: var(--sans);
     -webkit-font-smoothing: antialiased;
   }
-  /* the padding snaps; only the rail animates. Transitioning body padding reflowed all 202 cards
-     every frame for the length of the ease — the grid gets one reflow, the panel gets the motion. */
-  body.rail { padding-right: var(--rail); }
-  @keyframes railin { from { opacity: 0; translate: 1.5rem 0; } }
+  /* building is its own screen — the header, toolbar and grid aren't part of that task, so they
+     step out rather than compete with the board for room. */
+  body.rail .masthead, body.rail .toolbar, body.rail #grid, body.rail .colophon { display: none; }
+  @keyframes railin { from { opacity: 0; scale: .98; } }
   ::selection { background: var(--ink); color: var(--paper); }
   :focus-visible { outline: 1px solid var(--accent); outline-offset: 3px; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -176,8 +176,8 @@
 
   /* ================= the rail — where a system is built (book pp. 4–5) ================= */
   #rail {
-    position: fixed; inset: 0 0 0 auto; width: var(--rail); z-index: 40;
-    background: var(--card); border-left: 1px solid var(--ink);
+    position: fixed; inset: 0; margin: 0 auto; width: min(38rem, 100%); z-index: 40;
+    background: var(--card);
     display: none; flex-direction: column;
   }
   body.rail #rail { display: flex; animation: railin .28s cubic-bezier(.2,.6,.2,1); }
@@ -387,9 +387,6 @@
   #toast.show { opacity: 1; translate: -50% -4px; }
 
   @media (max-width: 900px) {
-    body.rail { padding-right: 0; padding-bottom: 52svh; }
-    #rail { inset: auto 0 0 0; width: auto; max-height: 80svh; border-left: none; border-top: 1px solid var(--ink); }
-    @keyframes railin { from { opacity: 0; translate: 0 1.5rem; } }
     .board { height: calc(var(--rows) * 3rem); }
     .cmpcol { min-width: 82vw; }
     .cmpbody { scroll-snap-type: x mandatory; }
@@ -420,7 +417,7 @@
 
 <footer class="colophon">Extracted from COLOURBOOK-V1.0_2026.pdf · regenerate with scripts/extract.py · saves live in this browser</footer>
 
-<!-- the rail: a system is built here, and building never closes the grid -->
+<!-- the rail: a system is built here, and the grid steps aside while it is -->
 <aside id="rail" aria-label="System builder">
   <div class="rhead">
     <div class="rtop">
