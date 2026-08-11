@@ -57,7 +57,11 @@ Confirmed capabilities: section / hue / search / saved / built filtering; copy a
 hex or a palette; export in hex, CSS, SCSS, Tailwind, JSON, and W3C design
 tokens; build a system (core, any number of accents, one of five Neutrals
 scales); light and dark theme; live preview of the built system; shareable build
-links; contrast-aware label and `core-ink` colours.
+links; contrast-aware label and `core-ink` colours; hand-maintained **brand-study
+palettes** (`brands.js` — Klarna, Stripe, ICA, Bolt, Netflix and ~30 others) in
+one **Brands** section that browses, builds and exports exactly like the book's
+pages; each entry records whether its hexes are officially published (✅) or
+reference values (≈).
 
 Durable constraints:
 
@@ -65,7 +69,10 @@ Durable constraints:
   `index.html` pulls Geist and Geist Mono from Google Fonts. Future work must
   self-host or replace those faces rather than add to the exception.
 - **`colors.js` is generated, never authored.** `scripts/extract.py` is the only
-  source of truth for palette data. Hand-edits are lost on the next regeneration.
+  source of truth for the book's palette data. Hand-edits are lost on the next
+  regeneration. `brands.js` is the one authored exception: hand-maintained brand
+  palettes (documented brand colours only, synthetic page ids ≥ 900), merged at
+  load and never written into `colors.js`.
 - **Every Neutrals scale is exactly 11 steps, dark → light, in identical
   positions.** The dark theme is those role indices mirrored; role mapping breaks
   if that ever stops holding.

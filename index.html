@@ -145,6 +145,9 @@
   .chip.back:hover { background: var(--bg-3); }
   /* while picking, the system rides the toolbar — what you have, next to the way back */
   .picksys { display: inline-flex; gap: 2px; align-items: center; }
+  /* display:inline-flex would out-rank the UA's [hidden] rule — an invisible zero-width flex
+     item still owns a toolbar gap, which shoved the search 1.5rem off the content edge */
+  .picksys[hidden] { display: none; }
   .picksys i { width: .85rem; height: .85rem; border-radius: 3px; border: 1px solid var(--hairline); }
   .dots { display: flex; gap: .8rem; align-items: center; }
   .dot {
@@ -728,6 +731,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 <div id="toast" role="status"></div>
 
 <script src="colors.js"></script>
+<script src="brands.js"></script>
 <script>
 const $ = (s) => document.querySelector(s);
 const el = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
@@ -778,6 +782,13 @@ function hueFamily(hex) {
   if (h < 290) return "purple";
   return "pink";
 }
+/* brands.js is the one authored palette source (colors.js never is) — merged here, before
+   anything derives from PALETTES, so brands filter, build, export and share like book pages */
+if (typeof BRANDS !== "undefined") PALETTES.push(...BRANDS);
+/* brand sections are "Brands · <strategy>" — the prefix is the marker, the suffix is the filter */
+const isBrand = (p) => !!p?.section?.startsWith("Brands");
+/* brands carry a synthetic page id (≥900) that must never reach the eye — it is a key, not a fact */
+const pageLabel = (p) => (isBrand(p) ? "brand" : `p. ${p.page}`);
 PALETTES.forEach((p) => (p.hues = new Set(p.colors.map(hueFamily))));
 const byPage = new Map(PALETTES.map((p) => [p.page, p]));
 
@@ -911,7 +922,7 @@ function renderGrid() {
     card.innerHTML = `
       <div class="bands ${p.colors.length > 12 ? "many" : ""}">${bands}</div>
       <footer>
-        <div class="row1"><h3>${p.name}</h3><span class="page">p. ${p.page}</span></div>
+        <div class="row1"><h3>${p.name}</h3><span class="page">${pageLabel(p)}</span></div>
         <div class="row2">
           <span class="sec">${p.section}</span>
           <span class="acts">
@@ -964,7 +975,7 @@ function renderShelf() {
       <footer>
         <div class="row1"><h3>${esc(s.name)}</h3><span class="page">${esc(s.at)}</span></div>
         <div class="row2">
-          <span class="sec">${p ? p.name + " · p. " + s.page : "p. " + s.page}${s.neutral ? " · " + esc(s.neutral) : ""} · ${s.dark ? "dark" : "light"}</span>
+          <span class="sec">${p ? p.name + " · " + pageLabel(p) : "p. " + s.page}${s.neutral ? " · " + esc(s.neutral) : ""} · ${s.dark ? "dark" : "light"}</span>
         </div>
         <div class="row2">
           <span class="acts">
@@ -1224,9 +1235,10 @@ function orderedOf(s) {
 /* every page this system drew from, in the order it drew from them */
 function sources(s) {
   const p = byPage.get(s.page);
-  const out = [p ? `${p.name} p. ${s.page}` : `p. ${s.page}`];
+  const out = [p ? `${p.name} ${isBrand(p) ? "· brand" : "p. " + s.page}` : `p. ${s.page}`];
   const extra = [...new Set(s.accent.map((c) => s.src[c]).filter((pg) => pg && pg !== s.page))];
-  extra.forEach((pg) => out.push(byPage.get(pg) ? `${byPage.get(pg).name} p. ${pg}` : `p. ${pg}`));
+  extra.forEach((pg) => out.push(byPage.get(pg)
+    ? `${byPage.get(pg).name} ${isBrand(byPage.get(pg)) ? "· brand" : "p. " + pg}` : `p. ${pg}`));
   if (s.neutral) { const n = neutralOf(s); out.push(`${s.neutral} p. ${n ? n.page : "?"}`); }
   return out.join(" + ");
 }
@@ -2187,6 +2199,13 @@ render();
 console.assert(PALETTES.length > 100, "palette count suspicious", PALETTES.length);
 /* a broken swap in the shuffle drops or duplicates a palette — silently, and only sometimes */
 console.assert(new Set(PALETTES.map((p) => p.page)).size === PALETTES.length, "shuffle lost or duplicated a palette");
+/* brands ride a hand-authored file: shape errors there must fail loudly, not render half a card */
+if (typeof BRANDS !== "undefined") {
+  console.assert(BRANDS.every((b) => b.section === "Brands" && b.page >= 900 && b.colors.every((c) => /^#[0-9A-F]{6}$/.test(c))),
+    "brands.js entries malformed — section Brands, page ≥ 900, uppercase #RRGGBB", BRANDS);
+  console.assert(pageLabel(BRANDS[0]) === "brand" && sections.includes("Brands"),
+    "a brand must never print its synthetic page number, and Brands must reach the section chips");
+}
 console.assert(NEUTRALS.every((n, i) => i === 0 || n.page > NEUTRALS[i - 1].page),
   "the builder's neutral ramps got shuffled — they must stay in book order", NEUTRALS.map((n) => n.name));
 console.assert(hueFamily("#FF0000") === "red" && hueFamily("#808080") === "neutral" && hueFamily("#0185FF") === "blue", "hueFamily broken");
