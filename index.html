@@ -531,6 +531,18 @@
   .prev .pbtn.sec { background: transparent; color: var(--p-ink); border-color: var(--p-line); }
   .ptags { display: flex; flex-wrap: wrap; gap: .3rem; }
   .prev .tag { font-family: var(--font-mono); font-size: .58rem; border-radius: 6px; padding: .25rem .5rem; }
+  /* the tool annotating the page: a failing text pairing stays pinned to the region it breaks,
+     for as long as it is true. Chrome voice — opaque graphite — so the chip stays legible on
+     any user palette, including the broken one it is reporting. */
+  .pwarn {
+    position: absolute; top: .3rem; right: .3rem; z-index: 3;
+    background: var(--bg-0); color: var(--ink-hi); border: 1px solid rgba(255,255,255,.14);
+    border-radius: var(--r-xs); padding: .18rem .5rem;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: .02em; font-variant-numeric: tabular-nums;
+    cursor: pointer; transition: background var(--t-fast) var(--ease);
+  }
+  .prev .pwarn { border-color: rgba(255,255,255,.14); }
+  .pwarn:hover { background: var(--bg-2); }
   .psec { border-top: 1px solid var(--p-line); padding: 1rem; }
   .prev blockquote { font-size: .95rem; line-height: 1.4; letter-spacing: -.01em; border-left: 2px solid var(--p-core); padding-left: .75rem; }
   .pfield { background: var(--p-surface); border: 1px solid var(--p-line); border-radius: 9px; padding: .5rem .6rem; font-size: .72rem; color: var(--p-mut); margin-top: .35rem; }
@@ -1435,14 +1447,13 @@ function flashCell(hex) {
   cell.addEventListener("animationend", () => cell.classList.remove("flash"), { once: true });
 }
 const roleFrom = (t) => (t?.dataset.drop?.startsWith("role:") ? t.dataset.drop.slice(5) : null);
-/* the same mutation as a ladder click, but named for what just happened — and undoable */
+/* the same mutation as a ladder click, but named for what just happened — and undoable.
+   The toast is only the event receipt; the contrast verdict stands on the preview (.pwarn)
+   and in the ladder for as long as it is true, so it does not ride a 6-second message. */
 function dropRole(role, j) {
-  const n = neutralOf(open);
-  const [other, phrase, isText] = PAIR[role];
-  const r = ratio(n.colors[j], n.colors[readStep(open, other)]);
   const light = open.dark ? 10 - j : j;
   flashRole = role;
-  withUndo(`${isText && r < 4.5 ? "⚠ " : ""}${role} → neutral-${j + 1} · ${phrase} ${fmt(r)}:1${isText ? " " + grade(r) : ""}`,
+  withUndo(`${role} → neutral-${j + 1}`,
     () => { light === ROLE_STEP[role] ? delete open.roles[role] : (open.roles[role] = light); });
 }
 
@@ -1966,6 +1977,37 @@ function paintPreview(node, p, s) {
   const tags = node.querySelector(".ptags");
   if (tags) tags.innerHTML = acc
     .map((c, i) => `<span class="tag" style="background:${c};color:${ink(c)}">accent ${i + 1}</span>`).join("");
+  warnChips(node, s);
+}
+
+/* ---- persistent verdicts, build state only: a text pairing below AA stays announced on the
+   page being judged for as long as it is true — the toast is just the event receipt. Browsing
+   never sees these; they exist only where a built system is previewed. ---- */
+const PAIRINGS = [["text", "bg", "text on bg"], ["text-muted", "surface", "muted on surface"]];
+function warnChips(node, s) {
+  const n = neutralOf(s);
+  PAIRINGS.forEach(([ink2, ground, phrase]) => {
+    const r = ratio(n.colors[readStep(s, ink2)], n.colors[readStep(s, ground)]);
+    if (r >= 4.5) return;
+    /* pin to the region that reads the failing ink; fall back to its ground, then the page */
+    const anchor = node.querySelector(`[data-drop="role:${ink2}"]`) ||
+      node.querySelector(`[data-drop="role:${ground}"]`) || node;
+    if (!anchor.style.position) anchor.style.position = "relative";
+    const idx = anchor.querySelectorAll(".pwarn").length;
+    const chip = el("button", "pwarn", `⚠ ${phrase} ${fmt(r)}:1`);
+    if (idx) chip.style.top = `calc(.3rem + ${idx * 1.7}rem)`;
+    chip.title = `${phrase} reads ${fmt(r)}:1 — AA needs 4.5:1. Open the role ladder.`;
+    chip.setAttribute("aria-label", chip.title);
+    chip.onclick = (e) => {
+      e.stopPropagation();
+      const d = $("#rBody")?.querySelector("details.roles");
+      if (!d) return; /* compare tray has no ladder — the chip is a verdict there, not a door */
+      d.open = true;
+      const t = d.querySelector(`.rn[data-drop="role:${ink2}"]`);
+      t?.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    };
+    anchor.append(chip);
+  });
 }
 
 /* ---------- palette: the colours alone, sized by the weight they'd carry on a page and labelled
@@ -2552,6 +2594,26 @@ console.assert(NEUTRALS.every((n) => n.colors.length === 11 && lum(n.colors[0]) 
   console.assert(boardView() === "ramps" && previewTpl() === "page", "unknown view prefs must fall back");
   ui.board = wasBoard; ui.tpl = wasTpl;
 }
+{ /* the persistent verdict chip: build-state only, standing exactly as long as the failure does */
+  const p = byPage.get(72);
+  /* dark theme + text-muted moved to mirrored step 7 = the 1.7:1 pairing the old toast reported */
+  const bad = Object.assign(blank(72, "W"), { core: "#FF7500", neutral: "Stone", dark: true, roles: { "text-muted": 7 } });
+  const n1 = TEMPLATES.page.make(p, bad);
+  console.assert(n1.querySelectorAll(".pwarn").length === 1 && n1.querySelector(".pwarn").textContent.includes("muted on surface"),
+    "a failing text pairing must pin a persistent chip on the preview", n1.querySelector(".pwarn")?.textContent);
+  const good = Object.assign(blank(72, "G"), { core: "#FF7500", neutral: "Stone" });
+  console.assert(TEMPLATES.page.make(p, good).querySelectorAll(".pwarn").length === 0,
+    "a passing build must show no warning chips");
+  console.assert(TEMPLATES.cards.make(p, bad).querySelectorAll(".pwarn").length === 1,
+    "a template without a muted region must still anchor the chip somewhere");
+  console.assert(TEMPLATES.palette.make(p, bad).querySelectorAll(".pwarn").length === 0,
+    "the palette sheet shows colours, not judgements — no chips there");
+}
+/* the self-checks above drive the real toast pipeline — a fresh load must not greet her with a
+   test's receipt. State cleanup, not a behaviour change: real toasts still show and fade. */
+clearTimeout(toastTimer);
+$("#toast").classList.remove("show");
+$("#toast").textContent = "";
 </script>
 </body>
 </html>
