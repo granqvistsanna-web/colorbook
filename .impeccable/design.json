@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-11T14:30:00+02:00",
+  "title": "Design System: Colourbook",
+  "extensions": {
+    "colorMeta": {
+      "bg-0": { "role": "neutral", "displayName": "Canvas Graphite", "canonical": "#0f0f0f", "tonalRamp": ["#0f0f0f", "#171717", "#222222", "#2e2e2e", "#3a3a3a", "#5f5f5f", "#8a8a8a", "#f2f2f2"] },
+      "bg-1": { "role": "neutral", "displayName": "Panel Graphite", "canonical": "#171717", "tonalRamp": ["#0f0f0f", "#171717", "#222222", "#2e2e2e", "#3a3a3a", "#5f5f5f", "#8a8a8a", "#f2f2f2"] },
+      "bg-2": { "role": "neutral", "displayName": "Control Graphite", "canonical": "#222222", "tonalRamp": ["#0f0f0f", "#171717", "#222222", "#2e2e2e", "#3a3a3a", "#5f5f5f", "#8a8a8a", "#f2f2f2"] },
+      "bg-3": { "role": "neutral", "displayName": "Active Graphite", "canonical": "#2e2e2e", "tonalRamp": ["#0f0f0f", "#171717", "#222222", "#2e2e2e", "#3a3a3a", "#5f5f5f", "#8a8a8a", "#f2f2f2"] },
+      "bg-4": { "role": "neutral", "displayName": "Raised-Hover Graphite (reserved — defined, not yet consumed)", "canonical": "#3a3a3a", "tonalRamp": ["#0f0f0f", "#171717", "#222222", "#2e2e2e", "#3a3a3a", "#5f5f5f", "#8a8a8a", "#f2f2f2"] },
+      "hairline": { "role": "neutral", "displayName": "Hairline", "canonical": "rgba(255,255,255,.08)", "tonalRamp": ["rgba(255,255,255,.04)", "rgba(255,255,255,.08)", "rgba(255,255,255,.12)", "rgba(255,255,255,.16)", "rgba(255,255,255,.22)", "rgba(255,255,255,.32)", "rgba(255,255,255,.48)", "rgba(255,255,255,.64)"] },
+      "ink-hi": { "role": "neutral", "displayName": "High Ink", "canonical": "#f2f2f2", "tonalRamp": ["#171717", "#2e2e2e", "#3a3a3a", "#5f5f5f", "#8a8a8a", "#b3b3b3", "#f2f2f2", "#ffffff"] },
+      "ink-mid": { "role": "neutral", "displayName": "Mid Ink", "canonical": "#b3b3b3", "tonalRamp": ["#171717", "#2e2e2e", "#3a3a3a", "#5f5f5f", "#8a8a8a", "#b3b3b3", "#f2f2f2", "#ffffff"] },
+      "ink-low": { "role": "neutral", "displayName": "Low Ink", "canonical": "#8a8a8a", "tonalRamp": ["#171717", "#2e2e2e", "#3a3a3a", "#5f5f5f", "#8a8a8a", "#b3b3b3", "#f2f2f2", "#ffffff"] },
+      "ink-faint": { "role": "neutral", "displayName": "Faint Ink", "canonical": "#5f5f5f", "tonalRamp": ["#171717", "#2e2e2e", "#3a3a3a", "#5f5f5f", "#8a8a8a", "#b3b3b3", "#f2f2f2", "#ffffff"] },
+      "inverse-bg": { "role": "primary", "displayName": "Inverse Paper", "canonical": "#ffffff", "tonalRamp": ["#101010", "#2e2e2e", "#5f5f5f", "#8a8a8a", "#b3b3b3", "#d9d9d9", "#f2f2f2", "#ffffff"] },
+      "inverse-ink": { "role": "primary", "displayName": "Inverse Ink", "canonical": "#101010", "tonalRamp": ["#101010", "#2e2e2e", "#5f5f5f", "#8a8a8a", "#b3b3b3", "#d9d9d9", "#f2f2f2", "#ffffff"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The COLOURBOOK wordmark only — single colour (ink-hi), no gradients." },
+      "title": { "displayName": "Dialog Title", "purpose": "Centred dialog headings." },
+      "heading": { "displayName": "Heading", "purpose": "Card titles; the rail's system-name input grows it to 17px." },
+      "body": { "displayName": "Body", "purpose": "Base copy and empty states, ink-mid by default." },
+      "control": { "displayName": "Control", "purpose": "All clickable text: chips 13px, segments/buttons 14px. Normal case, never tracked caps." },
+      "label": { "displayName": "Section Label", "purpose": "Tracked-caps 11px/600/+.14em uppercase, ink-low — labels only, never controls. Format pickers are the one uppercase-control exception (11.5px/600/+.06em)." },
+      "mono": { "displayName": "Mono Value", "purpose": "Geist Mono for anything that is a value — hex, ratios, tallies, code, search input — with tabular-nums where digits align." }
+    },
+    "shadows": [
+      { "name": "drag-ghost-glow", "value": "0 0 14px 5px rgba(255,255,255,.18)", "purpose": "The system's ONLY glow — under the inverse-pill drag ghost while a handle is in flight. Chrome is otherwise shadowless; elevation is lightness." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(.25,.1,.25,1)", "purpose": "The one ease for all state transitions." },
+      { "name": "t-fast", "value": "120ms", "purpose": "Colour/background/opacity state fades." },
+      { "name": "t-med", "value": "180ms", "purpose": "Swatch reveals and flex-grow changes." },
+      { "name": "ease-spring", "value": "cubic-bezier(.16,1,.3,1)", "purpose": "Surfaces arriving: card rise (.45s, 30ms stagger capped at 16), rail slide-in (.3s), tray FLIP reorder (200ms)." },
+      { "name": "flash", "value": "outline pulse .9s ease-out", "purpose": "One-shot 'where is this / what changed' answer on a target." },
+      { "name": "shake", "value": "translate ±3px, .3s", "purpose": "One-shot 'that drop is not allowed'." }
+    ],
+    "breakpoints": [
+      { "name": "rail-split", "value": "60rem", "purpose": "Builder becomes controls-left / full-height preview-right." },
+      { "name": "compare-stack", "value": "900px", "purpose": "Compare columns become 82vw with x scroll-snap." },
+      { "name": "pointer-coarse", "value": "(pointer: coarse)", "purpose": "Taller board rows (3rem), always-visible chip removes — targets the pointer, not the width." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The inverse pair spent on the single loudest action; hover darkens via brightness filter so the white never tints.",
+      "html": "<button class=\"ds-btn-primary\">Export</button>",
+      "css": ".ds-btn-primary { font-family: Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-weight: 600; font-size: 14px; border: none; border-radius: 12px; background: var(--inverse-bg, #ffffff); color: var(--inverse-ink, #101010); height: 48px; padding: 0 22px; cursor: pointer; transition: filter 120ms cubic-bezier(.25,.1,.25,1); } .ds-btn-primary:hover:not(:disabled) { filter: brightness(.92); } .ds-btn-primary:focus-visible { outline: 2px solid var(--ink-low, #8a8a8a); outline-offset: 2px; } .ds-btn-primary:disabled { opacity: .35; cursor: not-allowed; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "The quiet sibling: control-graphite surface, one step up on hover.",
+      "html": "<button class=\"ds-btn-ghost\">Download</button>",
+      "css": ".ds-btn-ghost { font-family: Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-weight: 500; font-size: 14px; border: none; border-radius: 12px; background: var(--bg-2, #222222); color: var(--ink-mid, #b3b3b3); height: 48px; padding: 0 22px; cursor: pointer; transition: background 120ms cubic-bezier(.25,.1,.25,1), color 120ms cubic-bezier(.25,.1,.25,1); } .ds-btn-ghost:hover:not(:disabled) { background: var(--bg-3, #2e2e2e); color: var(--ink-hi, #f2f2f2); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--ink-low, #8a8a8a); outline-offset: 2px; } .ds-btn-ghost:disabled { opacity: .35; cursor: not-allowed; }"
+    },
+    {
+      "name": "Filter Chips",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Bare normal-case chips in a row; hover lifts ink only, the active one steps one surface up (aria-pressed).",
+      "html": "<div class=\"ds-chiprow\"><button class=\"ds-chip\" aria-pressed=\"true\">All</button><button class=\"ds-chip\" aria-pressed=\"false\">Brights</button><button class=\"ds-chip\" aria-pressed=\"false\">Earthy</button><button class=\"ds-chip\" aria-pressed=\"false\">Neutrals</button></div>",
+      "css": ".ds-chiprow { display: flex; flex-wrap: wrap; gap: .15rem .2rem; } .ds-chip { font-family: Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 500; background: none; border: none; border-radius: 10px; padding: .45rem .85rem; cursor: pointer; color: var(--ink-low, #8a8a8a); transition: color 120ms cubic-bezier(.25,.1,.25,1), background 120ms cubic-bezier(.25,.1,.25,1); } .ds-chip:hover { color: var(--ink-hi, #f2f2f2); } .ds-chip[aria-pressed=\"true\"] { background: var(--bg-3, #2e2e2e); color: var(--ink-hi, #f2f2f2); } .ds-chip:focus-visible { outline: 2px solid var(--ink-low, #8a8a8a); outline-offset: 2px; }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "nav",
+      "refersTo": "chip-active",
+      "description": "Chips inside a bg-2 container read as segments: 12px container, 3px padding, active segment concentric at 9px, one step up.",
+      "html": "<nav class=\"ds-seg\"><button class=\"ds-seg-btn\" aria-pressed=\"true\">Build</button><button class=\"ds-seg-btn\" aria-pressed=\"false\">Export</button></nav>",
+      "css": ".ds-seg { display: flex; gap: 2px; background: var(--bg-2, #222222); border-radius: 12px; padding: 3px; max-width: 22rem; } .ds-seg-btn { flex: 1 1 0; text-align: center; font-family: Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 14px; font-weight: 500; background: none; border: none; border-radius: 9px; padding: .55rem 1rem; cursor: pointer; color: var(--ink-low, #8a8a8a); transition: color 120ms cubic-bezier(.25,.1,.25,1), background 120ms cubic-bezier(.25,.1,.25,1); } .ds-seg-btn:not([aria-pressed=\"true\"]):hover { color: var(--ink-mid, #b3b3b3); } .ds-seg-btn[aria-pressed=\"true\"] { background: var(--bg-3, #2e2e2e); color: var(--ink-hi, #f2f2f2); } .ds-seg-btn:focus-visible { outline: 2px solid var(--ink-low, #8a8a8a); outline-offset: 2px; }"
+    },
+    {
+      "name": "Search Field",
+      "kind": "input",
+      "refersTo": "search-field",
+      "description": "A 48px bg-2 row that IS the field: leading Phosphor magnifier, borderless mono input, faint placeholder.",
+      "html": "<div class=\"ds-search\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 256 256\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z\"/></svg><input type=\"search\" placeholder=\"Search name, section, hex…\" aria-label=\"Search\"></div>",
+      "css": ".ds-search { display: flex; align-items: center; gap: .6rem; height: 48px; background: var(--bg-2, #222222); border-radius: 12px; padding: 0 16px; color: var(--ink-faint, #5f5f5f); width: 17rem; max-width: 100%; transition: background 120ms cubic-bezier(.25,.1,.25,1); } .ds-search:hover { background: var(--bg-3, #2e2e2e); } .ds-search:focus-within { outline: 2px solid var(--ink-low, #8a8a8a); outline-offset: 2px; } .ds-search svg { flex: none; } .ds-search input { flex: 1; min-width: 0; font-family: 'Geist Mono', ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; color: var(--ink-hi, #f2f2f2); background: none; border: 0; outline: none; padding: 0; } .ds-search input::placeholder { color: var(--ink-faint, #5f5f5f); }"
+    },
+    {
+      "name": "Palette Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "bg-1 panel, 16px radius, no border; the colour bands are content (exempt from chrome grayscale), the hairline-topped footer is chrome. Whole card steps to bg-2 on hover.",
+      "html": "<article class=\"ds-card\"><div class=\"ds-card-bands\"><i style=\"background:#C8451F\"></i><i style=\"background:#E8871E\"></i><i style=\"background:#F2C230\"></i><i style=\"background:#3767C8\"></i><i style=\"background:#1D1A16\"></i></div><footer><div class=\"ds-card-row1\"><h3>Bold 23</h3><span class=\"ds-card-page\">p. 72</span></div><div class=\"ds-card-row2\"><span class=\"ds-card-sec\">Brights</span><span class=\"ds-card-acts\"><button>Save</button><button>Copy</button><button>Build</button></span></div></footer></article>",
+      "css": ".ds-card { background: var(--bg-1, #171717); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; max-width: 22rem; font-family: Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; transition: background 120ms cubic-bezier(.25,.1,.25,1); } .ds-card:hover { background: var(--bg-2, #222222); } .ds-card-bands { display: flex; height: 6rem; } .ds-card-bands i { flex: 1 1 0; } .ds-card footer { padding: 1rem 1.1rem 1.1rem; border-top: 1px solid var(--hairline, rgba(255,255,255,.08)); } .ds-card-row1 { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; } .ds-card h3 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: var(--ink-hi, #f2f2f2); } .ds-card-page { font-family: 'Geist Mono', ui-monospace, Menlo, monospace; font-size: 11px; letter-spacing: .02em; color: var(--ink-faint, #5f5f5f); font-variant-numeric: tabular-nums; } .ds-card-row2 { margin-top: .6rem; display: flex; justify-content: space-between; align-items: center; gap: .5rem; } .ds-card-sec { font-size: 12px; color: var(--ink-low, #8a8a8a); } .ds-card-acts { display: flex; gap: 0 .35rem; } .ds-card-acts button { font-family: inherit; font-size: 13px; font-weight: 500; background: none; border: none; border-radius: 6px; padding: .4rem .5rem; cursor: pointer; color: var(--ink-low, #8a8a8a); transition: color 120ms cubic-bezier(.25,.1,.25,1); } .ds-card-acts button:hover { color: var(--ink-hi, #f2f2f2); }"
+    },
+    {
+      "name": "Tray Chip",
+      "kind": "chip",
+      "refersTo": "tray-chip",
+      "description": "A build ingredient as a pill: colour dot, tracked-caps role tag, mono hex; the ✕ appears on hover/focus (always on coarse pointers).",
+      "html": "<span class=\"ds-tchip\" tabindex=\"0\"><i class=\"ds-tchip-dot\" style=\"background:#3767C8\"></i><span class=\"ds-tchip-role\">a1</span><code>3767C8</code><button class=\"ds-tchip-x\" aria-label=\"Remove\"><svg viewBox=\"0 0 256 256\" fill=\"currentColor\" width=\"11\" height=\"11\" aria-hidden=\"true\"><path d=\"M208.49,191.51a12,12,0,0,1-17,17L128,145,64.49,208.49a12,12,0,0,1-17-17L111,128,47.51,64.49a12,12,0,0,1,17-17L128,111l63.51-63.52a12,12,0,0,1,17,17L145,128Z\"/></svg></button></span>",
+      "css": ".ds-tchip { display: inline-flex; align-items: center; gap: .45rem; background: var(--bg-2, #222222); border-radius: 999px; padding: .35rem .7rem .35rem .4rem; font-family: Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; transition: background 120ms cubic-bezier(.25,.1,.25,1); } .ds-tchip:hover { background: var(--bg-3, #2e2e2e); } .ds-tchip:focus-visible { outline: 2px solid var(--ink-low, #8a8a8a); outline-offset: 2px; } .ds-tchip-dot { width: 1.1rem; height: 1.1rem; border-radius: 50%; border: 1px solid var(--hairline, rgba(255,255,255,.08)); } .ds-tchip-role { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: var(--ink-low, #8a8a8a); } .ds-tchip code { font-family: 'Geist Mono', ui-monospace, Menlo, monospace; font-size: 12px; color: var(--ink-hi, #f2f2f2); } .ds-tchip-x { background: none; border: none; padding: .1rem; margin: 0 -.25rem 0 -.15rem; cursor: pointer; color: var(--ink-low, #8a8a8a); display: flex; opacity: 0; transition: opacity 120ms cubic-bezier(.25,.1,.25,1), color 120ms cubic-bezier(.25,.1,.25,1); } .ds-tchip:hover .ds-tchip-x, .ds-tchip:focus-within .ds-tchip-x { opacity: 1; } .ds-tchip-x:hover { color: var(--ink-hi, #f2f2f2); }"
+    },
+    {
+      "name": "Toast",
+      "kind": "custom",
+      "refersTo": "toast",
+      "description": "The inverse pill at bottom-centre; lowercase terse copy, optional underlined inline undo, tabular numerals.",
+      "html": "<div class=\"ds-toast\">#3767C8 copied<button class=\"ds-toast-undo\">undo</button></div>",
+      "css": ".ds-toast { display: inline-flex; align-items: center; background: var(--inverse-bg, #ffffff); color: var(--inverse-ink, #101010); font-family: Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 600; letter-spacing: .01em; border-radius: 999px; padding: .65rem 1.2rem; font-variant-numeric: tabular-nums; } .ds-toast-undo { background: none; border: none; color: inherit; font: inherit; letter-spacing: inherit; margin-left: 1rem; padding: 0; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }"
+    },
+    {
+      "name": "Drag Ghost",
+      "kind": "custom",
+      "refersTo": "toast",
+      "description": "Signature: the lifted handle in flight — an inverse pill wearing the system's only glow.",
+      "html": "<span class=\"ds-dghost\"><i style=\"background:#F2C230\"></i><span>a2</span></span>",
+      "css": ".ds-dghost { display: inline-flex; align-items: center; gap: .45rem; background: var(--inverse-bg, #ffffff); color: var(--inverse-ink, #101010); border-radius: 999px; padding: .3rem .8rem .3rem .35rem; font-family: Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 12px; letter-spacing: .04em; font-weight: 600; box-shadow: 0 0 14px 5px rgba(255,255,255,.18); } .ds-dghost i { width: 1rem; height: 1rem; border-radius: 50%; border: 1px solid rgba(0,0,0,.18); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Graphite Console",
+    "overview": "Colourbook's chrome is a dark, monochrome instrument panel — user-pinned, adopted from the author's image-compressor project and tightened mid-build against screenshots of the Arqé app it was originally extracted from. The interface is built from exactly two grayscale ladders (five surfaces, four inks), one hairline, and a single white \"inverse\" accent. Everything else on screen is the content: the 202 palettes' own colours, and the brand system the user builds from them. The chrome recedes so colour reads true against neutral graphite; the refusal of the gallery-white swatch-site default is the whole thesis.\n\nThe system is dark-only (html { color-scheme: dark }). There is no light chrome theme and none should be added — the light/dark chips inside the builder switch the theme of the built system's preview, never of the app around it. Density is working-tool density: 48px controls, 13–15px text, hairline seams, information in mono where a value must be read exactly. Motion is quick and functional — 120ms state fades, one gentle ease, a single springy entrance curve for surfaces arriving on screen.\n\nThe file is a single self-contained index.html with zero runtime network dependencies: Geist and Geist Mono are self-hosted variable fonts in fonts/ (GeistVariable.woff2, GeistMonoVariable.woff2, weights 100–900, font-display: swap), and icons are inline Phosphor symbol defs at the top of <body>.",
+    "keyCharacteristics": [
+      "Chrome is grayscale by law; every coloured pixel belongs to palette content or the user's built system.",
+      "Elevation is lightness — one surface step up — never a shadow.",
+      "One accent: the white inverse pair, spent only on the loudest moments (primary button, toast, drag ghost, selection highlight).",
+      "Two voices: normal-case 13–14px/500 controls, tracked-caps 11px/600 labels. Mono for anything that is a value.",
+      "48px control height (--row-h); hairline dividers instead of boxes."
+    ],
+    "rules": [
+      { "name": "The Grayscale-By-Law Rule", "body": "Chrome is grayscale, no exceptions. Every coloured pixel on screen belongs to palette content (card bands, board cells, hue dots, neutral tiles, shelf strips) or to the user's built system (the preview painted via --p-* variables, its tags and chart). A new chrome element that \"needs\" colour is a design error; give it a surface step or the inverse pair instead.", "section": "colors" },
+      { "name": "The Content Exemption Rule", "body": "The preview subtree (.prev, .pal) and anything painted from palette data is CONTENT, exempt from every chrome rule — it is painted entirely through --p-bg/--p-surface/--p-line/--p-ink/--p-mut/--p-core/--p-core-ink set from the built system, plus per-accent inks. Do not \"fix\" the preview to match the chrome; its whole job is to be the other world.", "section": "colors" },
+      { "name": "The One-Step-Up Rule", "body": "Selected or active means exactly one surface step up plus brighter ink (bg-2 container → bg-3 segment, transparent chip → bg-3, ink-low → ink-hi). Never two steps, never a hue, never a border.", "section": "colors" },
+      { "name": "The Two-Voices Rule", "body": "Tracked caps are reserved for labels — never for controls. Anything clickable speaks normal-case 13–14px/500. The single declared exception: format pickers (HEX/CSS/SCSS/Tailwind/JSON/tokens) are acronym rows — 11.5px/600/+.06em uppercase chips, in the export dialog and export tab only.", "section": "typography" },
+      { "name": "The Mono-Means-Value Rule", "body": "If a user might copy it, quote it, or compare digits, it is Geist Mono with tabular numerals. Prose and labels never are.", "section": "typography" },
+      { "name": "The Lightness-Is-Elevation Rule", "body": "To raise a chrome surface, step it up the bg ladder (+1). Never add a box-shadow, border-glow, or gradient to chrome; the drag ghost's glow is spoken for.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do run every new surface through the two ladders: pick its resting bg step, its ink step, and let states move exactly one step (The One-Step-Up Rule).",
+      "Do spend the inverse pair on the single loudest thing on a screen — and only one thing at a time.",
+      "Do use aria-pressed for every toggle/selected control; the CSS state grammar is keyed to it, and so are the self-checks.",
+      "Do keep every control row at 48px (--row-h) and body-adjacent text at 13–15px.",
+      "Do set hex, ratios, counts, and code in Geist Mono with tabular-nums where digits align.",
+      "Do keep the ~60 console.assert self-checks at the end of index.html passing — several assert on rendered DOM and computed styles (e.g. body.rail must hide #grid while body.rail.pick shows it; tray chips must carry .tp/.tx; list rows must offer exactly core,eliminate; Escape must unwind picking before closing the rail; the frozen CSS export must match byte for byte). A visual edit that breaks one is wrong until proven otherwise.",
+      "Do give drag interactions a click/keyboard twin, restore focus across re-renders via data-k/data-hex, and honour prefers-reduced-motion and pointer: coarse in any new interaction."
+    ],
+    "donts": [
+      "Don't put colour in the chrome. No accent hues, no tinted grays, no coloured focus rings — grayscale by law; colour belongs to palette content and the --p-* preview world only.",
+      "Don't add shadows, glows, or gradients to chrome. Elevation is lightness; the drag ghost owns the one glow.",
+      "Don't use tracked caps on anything clickable except the format-picker acronym rows; controls speak normal-case 13–14px/500.",
+      "Don't add a light theme to the chrome, or let the preview's light/dark toggle leak into app styling.",
+      "Don't hand-edit colors.js — it is generated by scripts/extract.py and hand edits are lost on regeneration.",
+      "Don't treat ink()'s #0A0A0A/#FFFFFF as chrome tokens — that pair is exported content, frozen by the tests.",
+      "Don't load anything from a network at runtime; fonts stay self-hosted in fonts/, icons stay inline Phosphor symbols.",
+      "Don't grow a swatch on hover inside a shared column, and don't hide a destructive action behind hover on coarse pointers (the ✕ pattern already handles this)."
+    ]
+  }
+}
