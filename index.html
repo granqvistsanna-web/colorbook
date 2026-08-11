@@ -215,6 +215,31 @@
 
   .empty { grid-column: 1 / -1; text-align: center; padding: 6rem 1rem; color: var(--ink-low); font-size: 15px; }
 
+  /* ---- the namer: a typed hex is a question about a colour, not a filter — the grid answers
+          with ranked name suggestions before any palettes ---- */
+  .namer { grid-column: 1 / -1; background: var(--bg-1); border-radius: var(--r-lg); padding: .35rem 1.25rem 1.15rem; }
+  .namer .lab { margin-top: .85rem; }
+  .namerbody { display: flex; gap: 1.1rem; align-items: stretch; flex-wrap: wrap; }
+  .nswatch {
+    flex: 0 0 11rem; min-height: 8.5rem; border-radius: var(--r-sm); border: 1px solid var(--hairline);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15rem;
+  }
+  .nswatch.lt { color: rgba(255,255,255,.95); }
+  .nswatch.dk { color: rgba(0,0,0,.8); }
+  .nswatch .rl { font-weight: 600; font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; }
+  .nswatch span:last-child { font-family: var(--font-mono); font-size: .72rem; }
+  .nlist { flex: 1 1 16rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 2px .6rem; align-content: center; }
+  .nrow {
+    display: flex; align-items: center; gap: .6rem; height: 40px; padding: 0 .6rem; border-radius: var(--r-sm);
+    background: none; border: none; font: inherit; cursor: pointer; text-align: left;
+    transition: background var(--t-fast) var(--ease);
+  }
+  .nrow:hover { background: var(--bg-2); }
+  .nrow i { width: 1.4rem; height: 1.4rem; border-radius: 6px; border: 1px solid var(--hairline); flex: none; }
+  .nrow b { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 500; color: var(--ink-hi); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nrow code { font-family: var(--font-mono); font-size: 11px; color: var(--ink-low); }
+  .nrow .nd { font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); width: 3.2rem; text-align: right; font-variant-numeric: tabular-nums; }
+
   .colophon {
     border-top: 1px solid var(--hairline); margin: 0 clamp(1.5rem, 5vw, 5rem); padding: 1.2rem 0 3.5rem;
     font-size: 12px; color: var(--ink-faint);
@@ -400,7 +425,10 @@
   .lrow.out .lsw { opacity: .55; }
   .lrow .lhex { font-family: var(--font-mono); font-size: 12px; width: 4.4rem; color: var(--ink-mid); }
   .lrow.out .lhex { text-decoration: line-through; color: var(--ink-faint); }
-  .lrow .lrole { flex: 1; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: var(--ink-low); }
+  /* the colour's name — the list is the closer-inspection surface, so the name lives here */
+  .lrow .lname { flex: 1; min-width: 0; font-size: 12px; color: var(--ink-low); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lrow.out .lname { color: var(--ink-faint); }
+  .lrow .lrole { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: var(--ink-low); }
   .lrow .act { font-family: var(--font-ui); font-weight: 500; font-size: 13px; color: var(--ink-mid); background: none; border: none; padding: .3rem 0; cursor: pointer; transition: color var(--t-fast) var(--ease); }
   .lrow .act:hover { color: var(--ink-hi); }
 
@@ -582,6 +610,8 @@
   .pf-sw.dk { color: rgba(0,0,0,.8); }
   .pf-sw span { font-family: var(--font-mono); font-size: .58rem; letter-spacing: .04em; color: currentColor; }
   .pf-sw .rl { font-family: var(--font-ui); font-weight: 600; font-size: .5rem; letter-spacing: .14em; text-transform: uppercase; }
+  /* the human name under the token name — the sheet reads like a brand guideline page */
+  .pf-sw .pf-name { font-family: var(--font-ui); font-size: .55rem; font-weight: 500; opacity: .85; max-width: 96%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pf-ramp .pf-sw .rl { display: none; }
   .pf-ramp .pf-sw span:last-child { font-size: .48rem; }
 
@@ -744,6 +774,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 
 <script src="colors.js"></script>
 <script src="brands.js"></script>
+<script src="names.js"></script>
 <script>
 const $ = (s) => document.querySelector(s);
 const el = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
@@ -762,6 +793,51 @@ const grade = (r) => (r >= 7 ? "AAA" : r >= 4.5 ? "AA" : r >= 3 ? "large text on
    to whoever is holding the CSS file. A stated ratio must never contradict its own grade. */
 const fmt = (r) => (Math.floor(r * 10) / 10).toFixed(1);
 const contrast = (a, b) => { const r = ratio(a, b); return `${fmt(r)}:1 ${grade(r)}`; };
+/* ---------- colour names: nearest neighbour in Lab over the local names.js list ----------
+   Lab via sRGB→XYZ (D65); ΔE76 is plenty for "what would a human call this". The list is
+   ordered curated-first, so an exact tie lands on Sanna's own name for it. */
+function lab(hex) {
+  const [r, g, b] = rgb(hex).map((v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+  const [x, y, z] = [
+    (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047,
+    0.2126 * r + 0.7152 * g + 0.0722 * b,
+    (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883,
+  ].map((t) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116));
+  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+}
+const nameCache = new Map();
+let NAME_LABS = null; /* built on first use — grid render never pays for it */
+function nameOf(hex) {
+  if (typeof COLOR_NAMES === "undefined") return "";
+  hex = hex.toUpperCase();
+  if (nameCache.has(hex)) return nameCache.get(hex);
+  NAME_LABS ??= COLOR_NAMES.map(([n, h]) => [n, lab(h)]);
+  const [L, A, B] = lab(hex);
+  let best = "", d = Infinity;
+  for (const [n, [l2, a2, b2]] of NAME_LABS) {
+    const dd = (L - l2) ** 2 + (A - a2) ** 2 + (B - b2) ** 2;
+    if (dd < d) { d = dd; best = n; }
+  }
+  nameCache.set(hex, best);
+  return best;
+}
+/* the top k names for a colour, ranked by ΔE, one entry per name — the namer's data */
+function namesFor(hex, k) {
+  if (typeof COLOR_NAMES === "undefined") return [];
+  NAME_LABS ??= COLOR_NAMES.map(([n, h]) => [n, lab(h)]);
+  const [L, A, B] = lab(hex);
+  const scored = NAME_LABS.map(([, [l2, a2, b2]], i) => [Math.hypot(L - l2, A - a2, B - b2), i])
+    .sort((a, b) => a[0] - b[0]);
+  const picks = [], seen = new Set();
+  for (const [d, i] of scored) {
+    const [n, h] = COLOR_NAMES[i];
+    if (seen.has(n)) continue; /* two hexes can share a name (Moss, Fern) — suggest it once */
+    seen.add(n);
+    picks.push({ name: n, hex: h, d });
+    if (picks.length === k) break;
+  }
+  return picks;
+}
 function hsl(hex) {
   const [r, g, b] = rgb(hex).map((v) => v / 255);
   const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
@@ -893,6 +969,12 @@ $("#dots").append(...HUES.map(([name, swatch]) => {
   return b;
 }));
 $("#q").oninput = (e) => { state.q = e.target.value.trim().toLowerCase(); state.view = "grid"; render(); };
+/* every swatch answers to its name on approach — computed on first hover, never during render,
+   so 1,800 colours cost nothing until one is actually asked about */
+document.addEventListener("pointerover", (e) => {
+  const b = e.target.closest("[data-hex]");
+  if (b && !b.title) b.title = nameOf(b.dataset.hex);
+});
 $("#savedChip").onclick = () => { state.savedOnly = !state.savedOnly; state.view = "grid"; render(); };
 $("#shelfChip").onclick = () => { state.view = state.view === "shelf" ? "grid" : "shelf"; render(); };
 $("#backChip").onclick = () => { picking = false; drawFrom = null; render(); };
@@ -920,7 +1002,11 @@ function renderGrid() {
 
   const grid = $("#grid");
   grid.className = "";
-  grid.innerHTML = list.length ? "" : '<p class="empty">No palettes match — loosen a filter.</p>';
+  /* a typed hex is a question about a colour — answer with names first; palettes holding that
+     exact hex (if any) still list below */
+  const qhex = state.q.match(/^#?([0-9a-f]{6}|[0-9a-f]{3})$/)?.[1];
+  grid.innerHTML = list.length || qhex ? "" : '<p class="empty">No palettes match — loosen a filter.</p>';
+  if (qhex) grid.append(namerFor("#" + (qhex.length === 3 ? [...qhex].map((c) => c + c).join("") : qhex).toUpperCase()));
   list.forEach((p, i) => {
     const drawing = drawFrom === p.page;
     const n = sysOf(p.page).length;
@@ -950,7 +1036,7 @@ function renderGrid() {
         </div>
       </footer>`;
     card.querySelectorAll(".band").forEach((b) => (b.onclick = () =>
-      drawing ? drawAccent(b.dataset.hex, p.page) : copy(b.dataset.hex, b.dataset.hex + " copied")));
+      drawing ? drawAccent(b.dataset.hex, p.page) : copy(b.dataset.hex, `${nameOf(b.dataset.hex)} · ${b.dataset.hex} copied`)));
     card.querySelector(".save").onclick = () => { saved.has(p.page) ? saved.delete(p.page) : saved.add(p.page); persist(); render(); };
     card.querySelector(".cpy").onclick = () => copy(p.colors.join(", "), "palette copied");
     card.querySelector(".exp").onclick = () => openExport(p);
@@ -959,6 +1045,31 @@ function renderGrid() {
     grid.append(card);
   });
   $("#meta").textContent = `${list.length} of ${PALETTES.length} palettes · ${sections.length} sections · ${PALETTES.reduce((n, p) => n + p.colors.length, 0)} colours`;
+}
+
+/* ---- the namer: type a hex in search, get ranked name suggestions — click one to copy it ---- */
+function namerFor(hex) {
+  const box = el("section", "namer");
+  const top = namesFor(hex, 8);
+  const head = el("p", "lab", "<span>Name this colour</span>");
+  const tally = el("span", "tally");
+  tally.textContent = `nearest of ${COLOR_NAMES.length.toLocaleString("en")} names`;
+  head.append(tally);
+  const body = el("div", "namerbody");
+  const sw = el("div", `nswatch ${lum(hex) > 0.55 ? "dk" : "lt"}`);
+  sw.style.background = hex;
+  sw.innerHTML = `<span class="rl">${esc(top[0]?.name ?? "")}</span><span>${hex.slice(1)}</span>`;
+  const rows = el("div", "nlist");
+  top.forEach(({ name, hex: h, d }) => {
+    const row = el("button", "nrow",
+      `<i style="background:${h}"></i><b>${esc(name)}</b><code>${h.slice(1)}</code><span class="nd">Δ${d.toFixed(1)}</span>`);
+    row.setAttribute("aria-label", `Copy the name ${name} (${h}, distance ${d.toFixed(1)})`);
+    row.onclick = () => copy(name, `“${name}” copied`);
+    rows.append(row);
+  });
+  body.append(sw, rows);
+  box.append(head, body);
+  return box;
 }
 
 /* ---------- the shelf: systems, recognisable by their colours and their name ---------- */
@@ -1726,7 +1837,7 @@ function cellFor(s, c, big) {
   const b = el("button", `cell ${lum(c) > 0.55 ? "dk" : "lt"} ${role === "core" ? "core on" : role === "accent" ? "on" : role === "out" ? "out" : ""}${big ? " bigcell" : ""}`);
   b.style.background = c;
   b.dataset.hex = c;
-  b.setAttribute("aria-label", `${c} — ${role === "open" ? "not chosen" : role}`);
+  b.setAttribute("aria-label", `${c} (${nameOf(c)}) — ${role === "open" ? "not chosen" : role}`);
   if (role === "core") b.innerHTML = `<span class="rl">core</span><span>${c.slice(1)}</span>`;
   else if (role === "accent") b.innerHTML = `<span>${c.slice(1)}</span>`;
   /* hover/focus reveals these; a chosen swatch already shows its hex, so only the rest need them */
@@ -1745,10 +1856,10 @@ function listRow(s, c) {
   const sw = el("button", "lsw" + (role === "core" || role === "accent" ? " on" : ""));
   sw.style.background = c;
   sw.dataset.hex = c;
-  sw.setAttribute("aria-label", `${c} — ${role === "open" ? "not chosen" : role}`);
+  sw.setAttribute("aria-label", `${c} (${nameOf(c)}) — ${role === "open" ? "not chosen" : role}`);
   sw.onclick = () => toggleAccent(c);
   sw.onkeydown = cellKeys(c);
-  row.append(sw, el("code", "lhex", c.slice(1)), el("span", "lrole", role === "open" ? "" : role));
+  row.append(sw, el("code", "lhex", c.slice(1)), el("span", "lname", esc(nameOf(c))), el("span", "lrole", role === "open" ? "" : role));
   if (role !== "core") {
     const mk = el("button", "act"); mk.textContent = "core"; mk.dataset.k = "mk" + c;
     mk.onclick = () => setCore(c);
@@ -2020,9 +2131,9 @@ function paletteNode() {
     <div class="pf-ramp"></div>`);
 }
 
-const swatch = (cls, hex, label, grow) => {
+const swatch = (cls, hex, label, grow, named) => {
   const b = el("div", `pf-sw ${lum(hex) > 0.55 ? "dk" : "lt"} ${cls || ""}`,
-    `<span class="rl">${label}</span><span>${hex.slice(1)}</span>`);
+    `<span class="rl">${label}</span><span>${hex.slice(1)}</span>${named ? `<span class="pf-name">${esc(nameOf(hex))}</span>` : ""}`);
   if (grow) b.style.flexGrow = grow;
   b.style.background = hex;
   return b;
@@ -2035,12 +2146,12 @@ function paintPalette(node, p, s) {
 
   const field = node.querySelector(".pf-field");
   field.innerHTML = "";
-  field.append(swatch("field", sys.roles.bg, "bg · " + sys.steps.bg, 1));
+  field.append(swatch("field", sys.roles.bg, "bg · " + sys.steps.bg, 1, true));
 
   const row = node.querySelector(".pf-row");
   row.innerHTML = "";
-  row.append(swatch("core", s.core, "core", 2));
-  acc.forEach((c, i) => row.append(swatch("", c, "accent-" + (i + 1), 1)));
+  row.append(swatch("core", s.core, "core", 2, true));
+  acc.forEach((c, i) => row.append(swatch("", c, "accent-" + (i + 1), 1, true)));
 
   const ramp = node.querySelector(".pf-ramp");
   ramp.innerHTML = "";
@@ -2608,6 +2719,29 @@ console.assert(NEUTRALS.every((n) => n.colors.length === 11 && lum(n.colors[0]) 
     "a template without a muted region must still anchor the chip somewhere");
   console.assert(TEMPLATES.palette.make(p, bad).querySelectorAll(".pwarn").length === 0,
     "the palette sheet shows colours, not judgements — no chips there");
+}
+{ /* colour names: local list, curated set wins ties, every colour gets a nearest name */
+  console.assert(typeof COLOR_NAMES !== "undefined" && COLOR_NAMES.length > 5000, "names.js missing or truncated", COLOR_NAMES?.length);
+  console.assert(COLOR_NAMES.every(([n, h]) => n && /^#[0-9A-F]{6}$/.test(h)), "names.js entries malformed");
+  console.assert(nameOf("#FF69B4") === "Hot Pink", "an exact curated hex must return its own name", nameOf("#FF69B4"));
+  console.assert(nameOf("#E8E0E9") === "Bubble Bath", "an exact bestof hex must return its own name", nameOf("#E8E0E9"));
+  console.assert(nameOf("#0D0D0D") === "Pitch" && nameOf("#F9F9F9") === "Salt", "the Nordic set must be reachable", [nameOf("#0D0D0D"), nameOf("#F9F9F9")]);
+  console.assert(nameOf("#123456").length > 0, "every colour must get a nearest name");
+  const named = listRow(blank(72, "N"), "#FF69B4");
+  console.assert(named.querySelector(".lname")?.textContent === "Hot Pink", "the list view must show the colour's name");
+
+  /* the namer: a typed hex answers with ranked, deduplicated suggestions */
+  const sug = namesFor("#FF69B4", 5);
+  console.assert(sug.length === 5 && sug[0].name === "Hot Pink" && sug[0].d === 0, "namesFor must rank the exact name first", sug[0]);
+  console.assert(new Set(sug.map((x) => x.name)).size === 5, "suggestions must not repeat a name");
+  console.assert(sug.every((x, i) => !i || x.d >= sug[i - 1].d), "suggestions must be sorted by distance");
+  const wasQ = state.q;
+  state.q = "#ff69b4"; renderGrid();
+  console.assert($("#grid .namer") && $("#grid .namer .nrow b").textContent === "Hot Pink", "a hex query must render the namer");
+  console.assert(!$("#grid .empty"), "the namer is an answer — no empty-state message beside it");
+  state.q = "fab"; renderGrid();
+  console.assert($("#grid .namer .nswatch span:last-child").textContent === "FFAABB", "3-digit hexes must expand");
+  state.q = wasQ; renderGrid();
 }
 /* the self-checks above drive the real toast pipeline — a fresh load must not greet her with a
    test's receipt. State cleanup, not a behaviour change: real toasts still show and fade. */
