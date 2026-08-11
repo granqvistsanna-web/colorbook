@@ -9,98 +9,137 @@
      ≈  = reference values — the colour (or its name) is official, but the company does not
           publish a hex; sampled/commonly-cited, verify against official assets before
           production use.
+   NO DERIVED COLOURS. Every hex here is a colour the brand actually uses — a published token,
+   a named palette entry, or a value sampled off the brand's own surfaces. Nothing is a tint,
+   shade or interpolation invented to pad a palette out. Where a brand genuinely owns only two
+   or three colours (Nike, Pinterest, Coca-Cola, Tiffany) the palette stays short: that
+   shortness IS the brand study. Where a brand publishes a real supporting palette
+   (Klarna, Duolingo, Slack, Airbnb, Atlassian) the whole palette is here, not just the logo.
    These are brand-STUDY palettes: the most recognizable references, not complete production
    systems. The file is organized by visual strategy — how each brand "owns" its colour. */
 const BRANDS = [
 
   /* ---- Minimal / premium: black, white, neutrals ---- */
-  /* ≈ Apple — black/white identity; grays sampled from apple.com's digital ground */
-  { name: "Apple", section: "Brands", page: 919, colors: ["#000000", "#F5F5F7", "#86868B", "#FFFFFF"] },
-  /* ≈ Nike — black and white, full stop */
-  { name: "Nike", section: "Brands", page: 920, colors: ["#111111", "#FFFFFF"] },
-  /* ≈ Notion — black/white + warm off-white ground */
-  { name: "Notion", section: "Brands", page: 921, colors: ["#000000", "#F7F6F3", "#FFFFFF"] },
-  /* ≈ Patagonia — black/white identity; nature & product photography carries the colour */
+  /* ≈ Apple — black/white identity; the rest sampled from apple.com's own digital ground:
+     #1D1D1F is the site's body ink, #0071E3 its link/CTA blue. No published palette exists */
+  { name: "Apple", section: "Brands", page: 919, colors: ["#000000", "#1D1D1F", "#86868B", "#F5F5F7", "#FFFFFF", "#0071E3"] },
+  /* ≈ Nike — black and white carry the identity; the third colour is the shoebox/Swoosh orange,
+     used on packaging and retail for decades but never published as a hex */
+  { name: "Nike", section: "Brands", page: 920, colors: ["#111111", "#FFFFFF", "#FA5400"] },
+  /* ≈ Notion — greyscale by design so the user's content carries the colour. #37352F is the
+     product's body ink (a warm near-black, not #000), #787774 its grey, #2EAADC the link blue */
+  { name: "Notion", section: "Brands", page: 921, colors: ["#000000", "#37352F", "#787774", "#F7F6F3", "#FFFFFF", "#2EAADC"] },
+  /* ≈ Patagonia — black/white identity, and genuinely only that: nature and product
+     photography carry every other colour. Nothing to add here without inventing it */
   { name: "Patagonia", section: "Brands", page: 917, colors: ["#000000", "#FFFFFF"] },
 
   /* ---- Bold single-colour: one memorable hero colour + neutrals ---- */
-  /* ✅ brand.netflix.com — Netflix Red + Symbol Dark Red, published hexes */
+  /* ✅ brand.klarna.com/brand-colors — the FULL published system: primary (Klarna Pink, White,
+     Black) plus the four-colour secondary palette that "works as backgrounds for the primary
+     palette": Eggplant, Balloon, Herring, Sticky Note */
+  { name: "Klarna", section: "Brands", page: 901, colors: ["#FFA8CD", "#0B051D", "#F9F8F5", "#2C2242", "#B798BE", "#E4E3DF", "#E6FFA9"] },
+  /* ✅ brand.netflix.com — Netflix Red + Symbol Dark Red are the only two published hexes;
+     black and white are the stated supporting colours. Verified complete, not truncated */
   { name: "Netflix", section: "Brands", page: 907, colors: ["#E50914", "#B20710", "#000000", "#FFFFFF"] },
-  /* ✅ discord.com/branding — Blurple, Light Blurple, Black, published hexes */
+  /* ✅ discord.com/branding — Blurple, Light Blurple, Black. Verified: Discord publishes
+     exactly these three, so this palette is complete rather than reduced */
   { name: "Discord", section: "Brands", page: 926, colors: ["#5865F2", "#E0E3FF", "#000000", "#FFFFFF"] },
   /* ✅ redditinc.com brand guidelines — OrangeRed, Urchin, Gold, Mango, published hexes */
   { name: "Reddit", section: "Brands", page: 927, colors: ["#FF4500", "#172E35", "#FFD635", "#FFA800"] },
-  /* ✅ brand.klarna.com/brand-colors — Klarna Pink, Klarna Black, Off White */
-  { name: "Klarna", section: "Brands", page: 901, colors: ["#FFA8CD", "#0B051D", "#F9F8F5"] },
-  /* ✅ Atlassian — Pacific Bridge, Squid Ink, Fine Pine; published, but that guideline is now
-     DEPRECATED in favour of their token-based system — don't copy blindly into production */
-  { name: "Atlassian", section: "Brands", page: 936, colors: ["#0052CC", "#172B4D", "#36B37E", "#FFFFFF"] },
-  /* ≈ Spotify — current brand green on black/white */
-  { name: "Spotify", section: "Brands", page: 905, colors: ["#1ED760", "#000000", "#FFFFFF"] },
-  /* ≈ Airbnb — the coral is officially named "Rausch" but no hex is published */
-  { name: "Airbnb", section: "Brands", page: 911, colors: ["#FF385C", "#222222", "#FFFFFF"] },
-  /* ≈ Pinterest — official red circle, hex not exposed in the current guideline */
+  /* ≈ Spotify — BOTH greens are real and in use: #1ED760 is the current brand green, #1DB954
+     the classic app green still widely deployed. #191414 is Spotify's own near-black — the
+     brand does not use pure #000 as its ground */
+  { name: "Spotify", section: "Brands", page: 905, colors: ["#1ED760", "#1DB954", "#191414", "#000000", "#FFFFFF"] },
+  /* ≈ Airbnb — the full named palette, not just the coral: Rausch (#FF5A5F, the launch coral)
+     and the current #FF385C both ship; Babu is the teal used for success and map pins, Arches
+     the orange for Superhost/highlights, Hof and Foggy the two text greys. Officially NAMED
+     colours, no published hex table */
+  { name: "Airbnb", section: "Brands", page: 911, colors: ["#FF385C", "#FF5A5F", "#00A699", "#FC642D", "#484848", "#767676", "#222222", "#FFFFFF"] },
+  /* ≈ Pinterest — Pinterest Red on white, plus the near-black used in product. Pinterest's
+     guideline is deliberately this narrow; there is no secondary palette to add */
   { name: "Pinterest", section: "Brands", page: 923, colors: ["#E60023", "#111111", "#FFFFFF"] },
-  /* ≈ Tiffany & Co. — Tiffany Blue (their trademarked colour) on black/white */
+  /* ≈ Tiffany & Co. — Pantone 1837, a custom colour made for Tiffany and not sold in the PMS
+     books. One trademarked colour on black/white is the entire system, by design */
   { name: "Tiffany & Co.", section: "Brands", page: 932, colors: ["#81D8D0", "#000000", "#FFFFFF"] },
-  /* ≈ Bolt — Jungle Green from the bolt.eu refresh */
-  { name: "Bolt", section: "Brands", page: 902, colors: ["#32BB78", "#000000", "#FFFFFF"] },
-  /* ≈ Stripe — Blurple, Slate, Cyan, Black Squeeze as used on stripe.com */
-  { name: "Stripe", section: "Brands", page: 904, colors: ["#635BFF", "#0A2540", "#00D4FF", "#F6F9FC"] },
+  /* ≈ Bolt — bolt.eu/press/guidelines: Jungle Green over the two neutrals the guidelines
+     actually name, Charade (text) and Athens Gray (ground) — not plain black and white */
+  { name: "Bolt", section: "Brands", page: 902, colors: ["#32BB78", "#2F313F", "#F9FAFB", "#000000", "#FFFFFF"] },
+  /* ≈ Stripe — Blurple plus the two lighter blurples Stripe uses in its own gradients
+     (#7E6BFD, #A99DFE), over Slate ink, Cyan and the Black Squeeze ground */
+  { name: "Stripe", section: "Brands", page: 904, colors: ["#635BFF", "#7E6BFD", "#A99DFE", "#0A2540", "#00D4FF", "#F6F9FC"] },
   /* ≈ Framer — Framer blue on black */
   { name: "Framer", section: "Brands", page: 912, colors: ["#0055FF", "#000000", "#FFFFFF"] },
-  /* ≈ Telia — Telia Purple + deep purple */
+  /* ≈ Telia — core purple + the deep purple shade. Telia's design system describes grey as the
+     preferred secondary and adds a beige palette, but publishes no hexes publicly */
   { name: "Telia", section: "Brands", page: 913, colors: ["#990AE3", "#29003E", "#FFFFFF"] },
   /* ≈ YouTube — red + almost-black */
   { name: "YouTube", section: "Brands", page: 922, colors: ["#FF0000", "#0F0F0F", "#FFFFFF"] },
   /* ≈ LinkedIn — blue + black */
   { name: "LinkedIn", section: "Brands", page: 924, colors: ["#0A66C2", "#000000", "#FFFFFF"] },
-  /* ≈ Twitch — purple + near-black */
-  { name: "Twitch", section: "Brands", page: 925, colors: ["#9146FF", "#0E0E10", "#FFFFFF"] },
-  /* ≈ GitHub — dark + blue accent */
-  { name: "GitHub", section: "Brands", page: 928, colors: ["#24292F", "#0969DA", "#FFFFFF"] },
+  /* ≈ Twitch — purple + near-black + Ice (#F0F0FF), the off-white Twitch's brand guidelines
+     use instead of pure white */
+  { name: "Twitch", section: "Brands", page: 925, colors: ["#9146FF", "#0E0E10", "#F0F0FF", "#FFFFFF"] },
+  /* ✅ primer.style — GitHub's brand ink plus the functional hues Primer publishes as tokens
+     and that carry GitHub's product identity: accent blue, success green, danger red,
+     attention yellow, done purple, sponsors pink */
+  { name: "GitHub", section: "Brands", page: 928, colors: ["#1F2328", "#24292F", "#0969DA", "#1A7F37", "#D1242F", "#9A6700", "#8250DF", "#BF3989", "#FFFFFF"] },
 
   /* ---- Playful multicolour: several saturated colours working as a system ---- */
-  /* ✅ design.duolingo.com/identity/color — the full published Feather palette: Feather Green,
-     Mask Green, Macaw, Cardinal, Bee, Fox, Beetle, Eel, Snow. The strongest documented
-     palette in this file — a complete core/secondary/neutral hierarchy, not just logo colours */
-  { name: "Duolingo", section: "Brands", page: 914, colors: ["#58CC02", "#89E219", "#1CB0F6", "#FF4B4B", "#FFC800", "#FF9600", "#CE82FF", "#4B4B4B", "#FFFFFF"] },
-  /* ✅ brand.mastercard.com — the interlocking-circles trio, published hexes */
-  { name: "Mastercard", section: "Brands", page: 935, colors: ["#EB001B", "#FF5F00", "#F79E1B"] },
-  /* ≈ Figma — logo mark colours; official assets exist but no published hex table */
+  /* ✅ design.duolingo.com/identity/color — the full published Feather palette: core (Feather
+     Green, Mask Green), secondary (Macaw, Cardinal, Bee, Fox, Beetle, Humpback) and neutrals
+     (Eel, Wolf, Swan, Snow). The most completely documented palette in this file */
+  { name: "Duolingo", section: "Brands", page: 914, colors: ["#58CC02", "#89E219", "#1CB0F6", "#2B70C9", "#FF4B4B", "#FFC800", "#FF9600", "#CE82FF", "#4B4B4B", "#777777", "#E5E5E5", "#FFFFFF"] },
+  /* ✅ atlassian.design — the CURRENT token palette, replacing the deprecated Pacific Bridge /
+     Squid Ink guideline this entry used to carry: brand blue, danger red, warning yellow,
+     success lime, discovery purple, plus the teal and magenta accents and the neutral ink */
+  { name: "Atlassian", section: "Brands", page: 936, colors: ["#1868DB", "#C9372C", "#FCA700", "#6A9A23", "#AF59E1", "#2898BD", "#CD519D", "#292A2E", "#FFFFFF"] },
+  /* ✅ brand.mastercard.com — the interlocking-circles trio plus the brand black the brand-mark
+     guidelines specify (#231F20, not pure #000) */
+  { name: "Mastercard", section: "Brands", page: 935, colors: ["#EB001B", "#FF5F00", "#F79E1B", "#231F20"] },
+  /* ✅ slack.com media-kit brand guidelines — Aubergine is the primary (#4A154B); #611F69 and
+     #7C3085 are the real Aubergine Null and Aubergine Active states, plus the four "classic
+     pairing" secondary colours from the logo */
+  { name: "Slack", section: "Brands", page: 908, colors: ["#4A154B", "#611F69", "#7C3085", "#36C5F0", "#2EB67D", "#ECB22E", "#E01E5A"] },
+  /* ≈ Figma — the five mark colours ARE the identity, used pure and never tinted. Verified as
+     the complete set; official assets exist but no published hex table */
   { name: "Figma", section: "Brands", page: 909, colors: ["#F24E1E", "#FF7262", "#A259FF", "#1ABCFE", "#0ACF83"] },
-  /* ≈ Google — the G's colours; Google's guideline says don't recolor the asset rather than
-     publishing a corporate hex palette */
-  { name: "Google", section: "Brands", page: 910, colors: ["#4285F4", "#EA4335", "#FBBC05", "#34A853"] },
-  /* ≈ LEGO — official RGB/SVG logo assets exist, but no published hex table; sample the
-     official asset for production work */
+  /* ≈ Google — the four G colours plus Google Grey (#5F6368), the fifth palette colour used
+     for text and UI. Google's guideline says don't recolor the asset rather than publishing a
+     corporate hex table */
+  { name: "Google", section: "Brands", page: 910, colors: ["#4285F4", "#EA4335", "#FBBC05", "#34A853", "#5F6368"] },
+  /* ≈ LEGO — official RGB/SVG logo assets exist, but no published hex table; note that
+     Pantone-derived references (#E3000B red, #FFED00 yellow) circulate alongside the
+     logo-sampled values below. Sample the official asset for production work */
   { name: "LEGO", section: "Brands", page: 918, colors: ["#D01012", "#FFCF00", "#000000", "#FFFFFF"] },
-  /* ≈ Slack — primary purple + the four logo colours */
-  { name: "Slack", section: "Brands", page: 908, colors: ["#611F69", "#36C5F0", "#2EB67D", "#ECB22E", "#E01E5A"] },
 
   /* ---- High-contrast mass-market: two highly recognizable contrasting colours ---- */
   /* ≈ IKEA — blue/yellow is the confirmed key combination ("the blue creates attention, the
      yellow conveys optimism") but IKEA publishes no hex; digital references only */
   { name: "IKEA", section: "Brands", page: 906, colors: ["#0058A3", "#FFDA1A", "#FFFFFF"] },
-  /* ≈ McDonald's — golden-arches yellow + red */
-  { name: "McDonald's", section: "Brands", page: 929, colors: ["#FFC72C", "#DA291C", "#FFFFFF"] },
-  /* ≈ Coca-Cola — commonly cited Coca-Cola Red */
+  /* ≈ McDonald's — golden-arches yellow + red, plus the dark brown-black (#27251F) the brand
+     standards use as the third palette colour instead of pure black */
+  { name: "McDonald's", section: "Brands", page: 929, colors: ["#FFC72C", "#DA291C", "#27251F", "#FFFFFF"] },
+  /* ≈ Coca-Cola — Coca-Cola Red on black and white, and genuinely nothing else: this two-colour
+     system has run essentially unchanged for a century */
   { name: "Coca-Cola", section: "Brands", page: 930, colors: ["#F40009", "#000000", "#FFFFFF"] },
   /* ≈ FedEx — purple + orange */
   { name: "FedEx", section: "Brands", page: 934, colors: ["#4D148C", "#FF6600", "#FFFFFF"] },
   /* ≈ ICA — sampled from ica.se's own markup: classic logo red + current digital red */
   { name: "ICA", section: "Brands", page: 903, colors: ["#E3000B", "#EB1F07", "#FFFFFF"] },
-  /* ≈ Starbucks — green + dark green on cream */
-  { name: "Starbucks", section: "Brands", page: 931, colors: ["#00754A", "#1E3932", "#F2F0EB", "#FFFFFF"] },
+  /* ≈ Starbucks — Starbucks Green (#00704A) with the darker logo green (#006241, Pantone
+     3425 C) and House Green (#1E3932) on the warm cream ground */
+  { name: "Starbucks", section: "Brands", page: 931, colors: ["#00704A", "#006241", "#1E3932", "#F2F0EB", "#FFFFFF"] },
   /* ≈ Barbie — commonly cited Barbie Pink + light pink */
   { name: "Barbie", section: "Brands", page: 933, colors: ["#E0218A", "#F7B9D7", "#FFFFFF"] },
 
   /* ---- Editorial / expressive: photography, type and art direction carry as much as the logo colours ---- */
-  /* ≈ Mailchimp — "Cavendish Yellow" and "Peppercorn" are the official NAMES, but the current
-     public page exposes no hex; these are reference values */
+  /* ≈ Mailchimp — "Cavendish Yellow" and "Peppercorn" are the official NAMES and the only two
+     colours the brand-assets page names; checked again 2026-08 and it still publishes no hex
+     table, so there is no verifiable third colour to add */
   { name: "Mailchimp", section: "Brands", page: 915, colors: ["#FFE01B", "#241C15"] },
-  /* ≈ Dropbox — brand.dropbox.com describes a deliberately diverse system of Core Colors,
-     Accent Colors and Greys with no simple hex list; this is only the recognizable anchor
-     blue + digital ground, NOT the identity reduced to three values */
+  /* ≈ Dropbox — brand.dropbox.com names a deliberately wide system (Core: Dropbox Blue,
+     Coconut, Graphite; 16 accents from Azalea to Orchid; 20 greys) but publishes NO hex values
+     for any of it. So this stays the recognizable anchor blue + the two named core neutrals,
+     NOT a guessed reconstruction of the accents */
   { name: "Dropbox", section: "Brands", page: 916, colors: ["#0061FF", "#1E1919", "#F7F5F2"] },
 ];
