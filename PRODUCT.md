@@ -54,10 +54,14 @@ palettes nor its elimination method.
 ## Capabilities and Constraints
 
 Confirmed capabilities: section / hue / search / saved / built filtering; copy a
-hex or a palette; export in hex, CSS, SCSS, Tailwind, JSON, and W3C design
-tokens; build a system (core, any number of accents, one of five Neutrals
-scales); light and dark theme; live preview of the built system; shareable build
-links; contrast-aware label and `core-ink` colours; hand-maintained **brand-study
+hex or a palette; export in hex, CSS, SCSS, Tailwind (v3 config and a v4
+`@theme` block), a paste-in Framer sheet, JSON, and W3C design tokens — each
+grouped as primitives, roles, derived states and status; build a system (core,
+any number of accents, one of five Neutrals scales, and a display/text/mono
+typeface from a curated shortlist); light and dark theme; live preview of the
+built system across seven templates, its buttons pressing the real hover and
+active shades; shareable build links carrying colour, roles, order and type;
+contrast-aware label and `core-ink` colours; hand-maintained **brand-study
 palettes** (`brands.js` — Klarna, Stripe, ICA, Bolt, Netflix and ~30 others) in
 one **Brands** section that browses, builds and exports exactly like the book's
 pages; each entry records whether its hexes are officially published (✅) or
@@ -65,9 +69,13 @@ reference values (≈).
 
 Durable constraints:
 
-- **No runtime dependencies.** Nothing loaded from a CDN. *Currently violated:*
-  `index.html` pulls Geist and Geist Mono from Google Fonts. Future work must
-  self-host or replace those faces rather than add to the exception.
+- **No runtime dependencies, and nothing at load.** The app opens cold: Geist and
+  Geist Mono are self-hosted in `fonts/`, icons are inline. The one thing that
+  reaches the network is a **preview typeface the user picked** — a `<link>` to
+  Google Fonts or Fontshare, injected at the moment of the pick, once per family,
+  never on load and never for a system that has no type set. That exception is
+  the whole of it: the chrome's own faces stay self-hosted, and nothing else may
+  be added to the list.
 - **`colors.js` is generated, never authored.** `scripts/extract.py` is the only
   source of truth for the book's palette data. Hand-edits are lost on the next
   regeneration. `brands.js` is the one authored exception: hand-maintained brand
@@ -110,4 +118,5 @@ not invent any of them, and there is no audience to address with them.
    explanatory chrome, no first-run tour — speed for a returning expert instead.
 4. **Paste-ready or it didn't happen.** The tool's job ends at code in a real
    project, so export fidelity and format coverage outrank anything decorative.
-5. **Nothing loaded from a network at runtime.**
+5. **Nothing loaded from a network at load.** The only fetch the app ever makes
+   is the typeface a user chose for a preview, at the moment they choose it.

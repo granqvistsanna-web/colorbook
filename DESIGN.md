@@ -137,10 +137,11 @@ mono where a value must be read exactly. Motion is quick and functional — 120m
 state fades, one gentle ease, a single springy entrance curve for surfaces
 arriving on screen.
 
-The file is a single self-contained `index.html` with zero runtime network
-dependencies: Geist and Geist Mono are self-hosted variable fonts in `fonts/`
+The file is a single self-contained `index.html` that opens with zero network
+traffic: Geist and Geist Mono are self-hosted variable fonts in `fonts/`
 (GeistVariable.woff2, GeistMonoVariable.woff2, weights 100–900, `font-display:
-swap`), and icons are inline Phosphor symbol defs at the top of `<body>`.
+swap`), and icons are inline Phosphor symbol defs at the top of `<body>`. The
+single exception is a **preview typeface the user picks** — see *Preview type*.
 
 **Key Characteristics:**
 - Chrome is grayscale by law; every coloured pixel belongs to palette content or the user's built system.
@@ -179,7 +180,11 @@ On-content inks (labels sitting on palette colour, not on chrome): light text is
 ### Named Rules
 **The Grayscale-By-Law Rule.** Chrome is grayscale, no exceptions. Every coloured pixel on screen belongs to palette content (card bands, board cells, hue dots, neutral tiles, shelf strips) or to the user's built system (the preview painted via `--p-*` variables, its tags and chart). A new chrome element that "needs" colour is a design error; give it a surface step or the inverse pair instead.
 
-**The Content Exemption Rule.** The preview subtree (`.prev`, `.pal`) and anything painted from palette data is CONTENT, exempt from every chrome rule — it is painted entirely through `--p-bg/--p-surface/--p-line/--p-ink/--p-mut/--p-core/--p-core-ink` set from the built system, plus per-accent inks. Do not "fix" the preview to match the chrome; its whole job is to be the other world.
+**The Content Exemption Rule.** The preview subtree (`.prev`, `.pal`) and anything painted from palette data is CONTENT, exempt from every chrome rule — it is painted entirely through `--p-bg/--p-surface/--p-line/--p-ink/--p-mut/--p-core/--p-core-ink` set from the built system, plus per-accent inks, the state variables and the three type slots. Do not "fix" the preview to match the chrome; its whole job is to be the other world.
+
+**The Derived-State Rule.** A hover is a fact about a colour, not a second colour someone picks. Every state is computed in Lab and never chosen: `hover` presses L\* by 7 and `active` by 14, **away from the page** (down in a light theme, up in a dark one), flipping direction at the ends of the axis rather than shipping a state identical to its base. The tints — `core-subtle` (12%), `core-subtle-hover` (20%), `core-border` (34%) — are the core mixed into `bg` down the Lab line. The core carries the full ladder; accents carry `hover` and `active` only.
+
+**The Status Rule.** `success / warning / danger / info` are four jobs no colour book prints names for, so they are derived in three tiers and the export header always says which happened: **borrowed** (an accent within 24° of the canonical hue that already clears 3:1 against the page, used as-is), **tuned** (an accent near the hue that can't clear it — its *hue* is kept and lightness and chroma are rebuilt at the palette's own median chroma, because pressing a pale sand down to 3:1 just produces khaki), or **derived** (nothing near the hue, so the canonical hue at the palette's chroma). **The core is never eligible** — a warning wearing the brand colour lands a shade from `core-hover` and stops being a signal. No two statuses may borrow the same colour. Each carries `-ink`, `-subtle` and `-border`; the ink is picked by `bestInk()` on the WCAG ratio, not by `ink()`'s perceptual threshold, because on a mid orange the two disagree and the ratio has to win.
 
 **The One-Step-Up Rule.** Selected or active means exactly one surface step up plus brighter ink (bg-2 container → bg-3 segment, transparent chip → bg-3, ink-low → ink-hi). Never two steps, never a hue, never a border.
 
@@ -204,7 +209,7 @@ progress strip, contrast readouts, page numbers).
 - **Mono values** (Geist Mono, 11–13px, +.02–.04em): hex readouts (.58–.62rem on swatches), search input 13px, code panes 12px/1.7, tallies and ratios 11px.
 
 ### Named Rules
-**The Two-Voices Rule.** Tracked caps are reserved for labels — never for controls. Anything clickable speaks normal-case 13–14px/500. The single declared exception: format pickers (HEX/CSS/SCSS/Tailwind/JSON/tokens) are acronym rows — 11.5px/600/+.06em uppercase chips, in the export dialog and export tab only.
+**The Two-Voices Rule.** Tracked caps are reserved for labels — never for controls. Anything clickable speaks normal-case 13–14px/500. The single declared exception: format pickers (HEX/CSS/SCSS/Tailwind/Tailwind4/Framer/JSON/tokens) are acronym rows — 11.5px/600/+.06em uppercase chips, in the export dialog and export tab only.
 
 **The Mono-Means-Value Rule.** If a user might copy it, quote it, or compare digits, it is Geist Mono with tabular numerals. Prose and labels never are.
 
@@ -327,7 +332,16 @@ Palette colour is the button. Chosen = 2px `currentColor` inset outline; the cor
 Phosphor, **Fill weight**, inline `<symbol>` defs, drawn in `currentColor` so they ride the ink ladder and brighten with their label. Sized `1.05em` via `.i`. The one exception: the bare ✕ uses the **Bold** weight — its Fill variant is plated. New icons must join the symbol block, not arrive as external assets.
 
 ### Signature: the Preview
-The `.prev` page mock (nav/body/quote/field/footer — plus hero, article, cards, form, chart, and palette-sheet templates) is the app's centrepiece and is painted **entirely** by the built system through `--p-*` variables. Its regions are drop targets for neutral steps (`data-drop="role:*"`) and pulse `.flash` when their role moves. Nothing inside it uses chrome tokens except the shared font stacks; nothing outside it may use `--p-*`.
+The `.prev` page mock (nav/body/quote/field/footer — plus hero, article, cards, form, chart, and palette-sheet templates) is the app's centrepiece and is painted **entirely** by the built system through `--p-*` variables. Its regions are drop targets for neutral steps (`data-drop="role:*"`) and pulse `.flash` when their role moves. Nothing inside it uses chrome tokens except as a fallback; nothing outside it may use `--p-*`.
+
+The variables are colour, state and type: `--p-bg / -surface / -line / -ink / -mut / -core / -core-ink`, then `--p-hov / -act / -tint / -tint-hi / -cline` from the derived states, then `--p-display / -body / -mono`. Buttons carry real `:hover` and `:active` rules off `--p-hov` and `--p-act`, so a state is judged under a cursor rather than read as a swatch.
+
+**Hero** is the template that has to survive being called a website: a nav with somewhere to go, a display line at display size, copy at a real measure, two pressing buttons, proof, and a product shot carrying every accent at once. It is sized in `cqw` off `.prev`'s inline-size container, so the same markup reads as a landing page at any pane width.
+
+### Preview type
+Three slots — **Display**, **Text**, **Mono** — chosen per system from a curated shortlist of ~40 families (Sanna's *Usable Framer Fonts* list, reduced to the faces that resolve from a public CSS endpoint: Google Fonts, plus Gambarino from Fontshare). Twelve of the originals ship only inside Framer and are deliberately absent — a font that cannot render is not a choice.
+
+Type is part of the **system record** (`s.type`), not `ui`: it persists, travels in the `#b2=` share hash as the 11th element, and reaches every export. A family is fetched by injecting one `<link>` at the moment it is first painted, once per family. An unset slot falls back to the chrome's stack. Faces are never drawn in the chrome itself — the preview below the picker is the specimen.
 
 ## Do's and Don'ts
 
@@ -347,5 +361,6 @@ The `.prev` page mock (nav/body/quote/field/footer — plus hero, article, cards
 - **Don't** add a light theme to the chrome, or let the preview's light/dark toggle leak into app styling.
 - **Don't** hand-edit `colors.js` — it is generated by `scripts/extract.py` and hand edits are lost on regeneration.
 - **Don't** treat `ink()`'s #0A0A0A/#FFFFFF as chrome tokens — that pair is exported content, frozen by the tests.
-- **Don't** load anything from a network at runtime; fonts stay self-hosted in `fonts/`, icons stay inline Phosphor symbols.
+- **Don't** load anything from a network at load; the chrome's fonts stay self-hosted in `fonts/`, icons stay inline Phosphor symbols. A preview face the user picked is the one permitted fetch, and it happens on the pick, not before.
+- **Don't** set the chrome in a preview face. Type follows the same law colour does: `--p-display` / `--p-body` / `--p-mono` live inside `.prev`, and Geist keeps the tool's own voice.
 - **Don't** grow a swatch on hover inside a shared column, and don't hide a destructive action behind hover on coarse pointers (the ✕ pattern already handles this).

@@ -77,8 +77,10 @@
   :focus-visible { outline: 2px solid var(--ink-low); outline-offset: 2px; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-  /* tracked caps belong to section labels alone — controls speak in normal case, like the reference */
-  .lab, .neut b, .pnav {
+  /* tracked caps belong to section labels alone — controls speak in normal case, like the reference.
+     .pnav wears the same caps but not the same family: it sits inside a preview, where the face is
+     whatever the system picked. Its own rule is further down, with the rest of the page furniture. */
+  .lab, .neut b {
     font-family: var(--font-ui); font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
   }
   /* selection outlines out-rank the global focus ring — a focused selected control needs its own */
@@ -504,6 +506,22 @@
   .lad .rd { grid-column: 2; margin: -.15rem 0 .15rem; font-family: var(--font-mono); font-size: 11px; letter-spacing: .02em; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
   .lad .rd.bad { color: var(--ink-hi); font-weight: 500; }
   .lad .rd.bad::before { content: "⚠ "; }
+
+  /* ---- type: three decisions, three controls. The faces are never drawn in the chrome — Geist
+          keeps the tool's own voice, and the preview a few centimetres below is the specimen. ---- */
+  .tpick { display: grid; grid-template-columns: 5.4rem 1fr; gap: .5rem .6rem; align-items: center; }
+  .tpick > .rn { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: var(--ink-low); }
+  .tselw { position: relative; min-width: 0; }
+  .tselw::after { content: "▾"; position: absolute; right: .7rem; top: 50%; translate: 0 -50%; pointer-events: none; color: var(--ink-low); font-size: 11px; }
+  .tsel {
+    width: 100%; appearance: none; background: var(--bg-2); border: none; border-radius: var(--r-sm);
+    padding: .5rem 1.8rem .5rem .7rem; font-family: var(--font-ui); font-size: 13px; font-weight: 500; color: var(--ink-hi);
+    cursor: pointer; transition: background var(--t-fast) var(--ease);
+  }
+  .tsel:hover { background: var(--bg-3); }
+  .tsel:focus-visible { outline: 2px solid var(--ink-hi); outline-offset: 2px; }
+  /* the one place the app touches the network, said out loud at the moment it happens */
+  .tnote { grid-column: 1 / -1; font-family: var(--font-mono); font-size: 11px; letter-spacing: .02em; color: var(--ink-faint); margin-top: .1rem; }
   .rx { background: none; border: none; padding: .1rem; margin-left: .35rem; cursor: pointer; color: var(--ink-low); display: inline-flex; vertical-align: -.15em; transition: color var(--t-fast) var(--ease); }
   .rx .i { width: .85em; height: .85em; }
   .rx:hover { color: var(--ink-hi); }
@@ -539,12 +557,17 @@
     border: 1px dashed rgba(255,255,255,.22); border-radius: var(--r-md); padding: 1.7rem 1.2rem; text-align: center;
     font-weight: 500; font-size: 13px; color: var(--ink-faint);
   }
-  /* bg, surface and border are meant to sit close together — they only read as three roles when adjacent */
-  .prev { border: 1px solid var(--p-line); border-radius: var(--r-lg); overflow: hidden; background: var(--p-bg); color: var(--p-ink); container-type: inline-size; }
+  /* bg, surface and border are meant to sit close together — they only read as three roles when adjacent.
+     The three type slots land here too: --p-display for anything set large, --p-body for reading,
+     --p-mono for the technical voice. Unset slots fall back to the chrome's own stack. */
+  .prev { border: 1px solid var(--p-line); border-radius: var(--r-lg); overflow: hidden; background: var(--p-bg); color: var(--p-ink); container-type: inline-size;
+          font-family: var(--p-body, var(--font-ui)); font-synthesis-weight: none; }
   .prev * { border-color: var(--p-line); }
+  .prev h1, .prev h4, .prev blockquote, .prev .pxl, .prev .ptile b { font-family: var(--p-display, var(--font-ui)); }
   .pnav {
     display: flex; justify-content: space-between; align-items: center; gap: .5rem;
     background: var(--p-surface); border-bottom: 1px solid var(--p-line); padding: .55rem .8rem;
+    font-family: var(--p-body, var(--font-ui)); font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
     font-size: .55rem; color: var(--p-mut);
   }
   .pnav .brand { color: var(--p-ink); }
@@ -555,12 +578,20 @@
   .prev .pcap { color: var(--p-mut); }
   .prow { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-top: .9rem; }
   .prev .pbtn {
-    font-family: var(--font-ui); font-weight: 500; font-size: .6rem; letter-spacing: .16em; text-transform: uppercase;
+    font-family: var(--p-body, var(--font-ui)); font-weight: 500; font-size: .6rem; letter-spacing: .16em; text-transform: uppercase;
     background: var(--p-core); color: var(--p-core-ink); border: 1px solid var(--p-core); border-radius: 9px; padding: .55rem 1.1rem; cursor: default;
+    transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
   }
+  /* the derived states, live: the only honest way to show that a hover shade works is to let the
+     cursor find it on the same page the colour was judged on */
+  .prev .pbtn:hover { background: var(--p-hov); border-color: var(--p-hov); }
+  .prev .pbtn:active { background: var(--p-act); border-color: var(--p-act); }
   .prev .pbtn.sec { background: transparent; color: var(--p-ink); border-color: var(--p-line); }
+  .prev .pbtn.sec:hover { background: var(--p-tint); border-color: var(--p-cline); }
+  .prev .pbtn.sec:active { background: var(--p-tint-hi); }
+  .prev .pbtn.dis:hover, .prev .pbtn.dis:active { background: var(--p-surface); border-color: var(--p-line); }
   .ptags { display: flex; flex-wrap: wrap; gap: .3rem; }
-  .prev .tag { font-family: var(--font-mono); font-size: .58rem; border-radius: 6px; padding: .25rem .5rem; }
+  .prev .tag { font-family: var(--p-mono, var(--font-mono)); font-size: .58rem; border-radius: 6px; padding: .25rem .5rem; }
   /* the tool annotating the page: a failing text pairing stays pinned to the region it breaks,
      for as long as it is true. Chrome voice — opaque graphite — so the chip stays legible on
      any user palette, including the broken one it is reporting. */
@@ -580,24 +611,99 @@
   .plabel { font-size: .55rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 500; color: var(--p-mut); }
   .pfoot { border-top: 1px solid var(--p-line); background: var(--p-surface); padding: .7rem .8rem; font-size: .58rem; color: var(--p-mut); display: flex; justify-content: space-between; gap: .5rem; }
 
+  /* ---- hero: the one template that has to survive being called a website. Everything is sized in
+          cqw off .prev's inline-size container, so the same markup reads as a landing page in a
+          narrow rail pane and in a half-window preview — a display face judged at 17px isn't judged
+          at all. This is also the page where the derived states are visible: the field is core's
+          subtle tint, the outline button borrows core's border, and the buttons really do press. ---- */
+  /* a website nav is not a section label: normal case, the page's own text face, and enough air
+     between the link group and the account controls that "Journal Sign in" can't read as one item */
+  .hnav {
+    gap: clamp(.6rem, 2.6cqw, 1.4rem); text-transform: none; letter-spacing: 0; font-weight: 500;
+    font-size: clamp(.5rem, 1.85cqw, .68rem); padding: .7rem clamp(.7rem, 2.4cqw, 1.2rem);
+  }
+  .hnav .brand { font-family: var(--p-display, var(--font-ui)); font-size: clamp(.8rem, 3.4cqw, 1.15rem); font-weight: 600; letter-spacing: -.02em; margin-right: auto; color: var(--p-ink); }
+  .hlinks { display: flex; gap: clamp(.5rem, 2.2cqw, 1.1rem); }
+  .hlinks i { font-style: normal; }
+  .hnav .hgh { color: var(--p-ink); }
+  .hnav .pbtn { font-size: clamp(.45rem, 1.7cqw, .58rem); padding: .45rem .8rem; letter-spacing: .1em; }
+  @container (max-width: 24rem) { .hlinks, .hnav .hgh { display: none; } }
+  /* the tint is the whole argument for core-subtle: a field large enough to be wrong on */
+  .hfield {
+    background: linear-gradient(var(--p-tint), var(--p-bg) 78%);
+    padding: clamp(1.4rem, 7cqw, 3.6rem) clamp(1rem, 5cqw, 2.6rem) clamp(1.1rem, 4cqw, 2.2rem);
+    text-align: center;
+  }
+  .hpill {
+    display: inline-flex; align-items: center; gap: .4rem;
+    background: var(--p-surface); border: 1px solid var(--p-cline); border-radius: 999px;
+    padding: .3rem .7rem; font-size: clamp(.5rem, 1.9cqw, .64rem); color: var(--p-mut);
+  }
+  .hpill b { color: var(--p-core); font-weight: 500; }
+  .prev .hh {
+    font-size: clamp(1.5rem, 8.4cqw, 3.6rem); line-height: 1.03; letter-spacing: -.035em; font-weight: 600;
+    margin: clamp(.6rem, 2.6cqw, 1.2rem) 0 0; text-wrap: balance; color: var(--p-ink);
+  }
+  .prev .hsub {
+    font-size: clamp(.7rem, 2.5cqw, 1rem); line-height: 1.55; color: var(--p-mut);
+    max-width: 34em; margin: clamp(.5rem, 2cqw, .9rem) auto 0; text-wrap: pretty;
+  }
+  .hcta { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; margin-top: clamp(.8rem, 3cqw, 1.5rem); }
+  .hcta .pbtn { font-size: clamp(.5rem, 1.9cqw, .68rem); padding: .7rem 1.3rem; }
+  .prev .hnote { font-size: clamp(.48rem, 1.7cqw, .6rem); color: var(--p-mut); margin-top: .6rem; }
+  /* a product shot, because a hero without one is a quote card — and because surfaces, borders and
+     every accent at once is the hardest thing a palette is asked to do */
+  .hshot {
+    margin: clamp(1rem, 4cqw, 2rem) auto 0; max-width: 46em; text-align: left;
+    background: var(--p-surface); border: 1px solid var(--p-line); border-radius: clamp(8px, 1.6cqw, 14px);
+    overflow: hidden;
+  }
+  .hbar { display: flex; align-items: center; gap: .3rem; padding: .45rem .6rem; border-bottom: 1px solid var(--p-line); }
+  .hbar i { width: .4rem; height: .4rem; border-radius: 999px; background: var(--p-line); flex: none; }
+  .hbar .hurl {
+    margin-left: .5rem; flex: 1; background: var(--p-bg); border-radius: 999px; padding: .16rem .55rem;
+    font-family: var(--p-mono, var(--font-mono)); font-size: clamp(.42rem, 1.4cqw, .55rem); color: var(--p-mut);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .hshotb { display: grid; grid-template-columns: 1fr 1.35fr; gap: clamp(.5rem, 1.6cqw, .9rem); padding: clamp(.6rem, 2cqw, 1rem); background: var(--p-bg); }
+  @container (max-width: 22rem) { .hshotb { grid-template-columns: 1fr; } }
+  .hside { display: flex; flex-direction: column; gap: .35rem; }
+  .hside span {
+    display: flex; align-items: center; gap: .4rem; border-radius: 6px; padding: .3rem .45rem;
+    font-size: clamp(.45rem, 1.5cqw, .58rem); color: var(--p-mut);
+  }
+  .hside span.on { background: var(--p-tint); color: var(--p-ink); }
+  .hside i { width: .45rem; height: .45rem; border-radius: 2px; flex: none; }
+  .hmain { background: var(--p-surface); border: 1px solid var(--p-line); border-radius: 8px; padding: clamp(.5rem, 1.6cqw, .8rem); min-width: 0; }
+  .hmain .plabel { font-size: clamp(.42rem, 1.3cqw, .52rem); }
+  .hbars { display: flex; align-items: flex-end; gap: clamp(.2rem, .9cqw, .45rem); height: clamp(2.6rem, 11cqw, 5rem); margin-top: .5rem; }
+  .hbars i { flex: 1 1 0; border-radius: 2px 2px 0 0; min-width: 0; }
+  .htags { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .55rem; }
+  .htrust { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: clamp(.6rem, 2.6cqw, 1.4rem); margin-top: clamp(1rem, 4cqw, 2rem); }
+  .htrust span { font-size: clamp(.42rem, 1.4cqw, .55rem); letter-spacing: .14em; text-transform: uppercase; color: var(--p-mut); }
+  .htrust b {
+    font-family: var(--p-display, var(--font-ui)); font-size: clamp(.6rem, 2.1cqw, .85rem); font-weight: 600;
+    letter-spacing: -.01em; color: var(--p-mut); opacity: .75;
+  }
+
   /* ---- the other pages: each preview template leans on a different part of the system,
           so a weakness that one page hides, another shows ---- */
   .pxl { font-size: 1.7rem; font-weight: 500; letter-spacing: -.03em; line-height: 1.06; }
   .prev a { color: var(--p-core); text-underline-offset: 3px; }
-  .pcode { font-family: var(--font-mono); font-size: .66rem; background: var(--p-surface); border: 1px solid var(--p-line); border-radius: 5px; padding: .06rem .3rem; }
+  .pcode { font-family: var(--p-mono, var(--font-mono)); font-size: .66rem; background: var(--p-surface); border: 1px solid var(--p-line); border-radius: 5px; padding: .06rem .3rem; }
   .ptiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin-top: .8rem; }
   .ptile { background: var(--p-surface); border: 1px solid var(--p-line); border-radius: 9px; padding: .55rem .65rem; min-width: 0; }
   .ptile b { display: block; font-size: 1.05rem; font-weight: 500; letter-spacing: -.02em; margin-top: .2rem; }
   .ptable { margin-top: .8rem; border: 1px solid var(--p-line); border-radius: 9px; overflow: hidden; }
   .ptr { display: grid; grid-template-columns: 2fr .9fr .8fr; gap: .5rem; padding: .45rem .6rem; border-top: 1px solid var(--p-line); font-size: .68rem; align-items: center; }
   .ptr:first-child { border-top: none; background: var(--p-surface); color: var(--p-mut); font-size: .55rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 500; }
-  .ptag2 { justify-self: start; font-family: var(--font-mono); font-size: .56rem; border-radius: 5px; padding: .12rem .4rem; }
+  .ptag2 { justify-self: start; font-family: var(--p-mono, var(--font-mono)); font-size: .56rem; border-radius: 5px; padding: .12rem .4rem; }
   .pchk { display: flex; gap: .5rem; align-items: center; margin-top: .9rem; font-size: .74rem; }
   .pchk i { width: .8rem; height: .8rem; border-radius: 4px; background: var(--p-core); flex: none; }
   .pbtn.dis { background: var(--p-surface); color: var(--p-mut); border-color: var(--p-line); }
   .pchart { display: block; width: 100%; margin-top: .7rem; }
   .plegend { display: flex; gap: .9rem; flex-wrap: wrap; margin-top: .45rem; }
-  .plegend span { display: inline-flex; align-items: center; gap: .35rem; font-family: var(--font-mono); font-size: .58rem; color: var(--p-mut); }
+  .plegend span { display: inline-flex; align-items: center; gap: .35rem; font-family: var(--p-mono, var(--font-mono)); font-size: .58rem; color: var(--p-mut); }
   .plegend i { width: .7rem; height: .7rem; border-radius: 3px; }
 
   /* palette view: proportional colour field, no UI chrome — same swatch vocabulary as .cell
@@ -807,6 +913,31 @@ function lab(hex) {
   ].map((t) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116));
   return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
 }
+/* Lab back to sRGB — the inverse of lab(), so a derived state is a step through the space the
+   namer already trusts. Channels clamp at the gamut edge: a hover shade is a colour someone
+   paints a button with, not a colorimetric claim. */
+function labHex(L, A, B) {
+  const fy = (L + 16) / 116, fx = fy + A / 500, fz = fy - B / 200;
+  const un = (t) => (t ** 3 > 0.008856 ? t ** 3 : (t - 16 / 116) / 7.787);
+  const [x, y, z] = [un(fx) * 0.95047, un(fy), un(fz) * 1.08883];
+  return "#" + [
+    3.2406 * x - 1.5372 * y - 0.4986 * z,
+    -0.9689 * x + 1.8758 * y + 0.0415 * z,
+    0.0557 * x - 0.204 * y + 1.057 * z,
+  ].map((v) => {
+    v = v <= 0.0031308 ? 12.92 * v : 1.055 * Math.max(v, 0) ** (1 / 2.4) - 0.055;
+    return Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, "0").toUpperCase();
+  }).join("");
+}
+/* one perceptual step of lightness. dL is in L*, so the same number is the same apparent move on
+   every hue — which is the whole reason states are derived here instead of in HSL, where a 7%
+   press on yellow and on navy are not the same gesture at all. */
+const shade = (hex, dL) => { const [L, A, B] = lab(hex); return labHex(Math.min(100, Math.max(0, L + dL)), A, B); };
+/* t of a into b, straight down the Lab line between them */
+const mix = (a, b, t) => { const [x, y] = [lab(a), lab(b)]; return labHex(...[0, 1, 2].map((i) => y[i] + (x[i] - y[i]) * t)); };
+const chroma = (hex) => { const [, A, B] = lab(hex); return Math.hypot(A, B); };
+const hueAt = (hex) => { const [, A, B] = lab(hex); return (Math.atan2(B, A) * 180 / Math.PI + 360) % 360; };
+const hueGap = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
 const nameCache = new Map();
 let NAME_LABS = null; /* built on first use — grid render never pays for it */
 function nameOf(hex) {
@@ -929,13 +1060,16 @@ const boardView = () => (BOARD_VIEWS.includes(ui.board) ? ui.board : "ramps");
 const previewTpl = () => (TEMPLATES[ui.tpl] ? ui.tpl : "page");
 
 /* A system is a named record, not a slot on a page: one palette can carry three candidates.
-   { id, page, name, core, accent[], src{hex:page}, out[], neutral, dark, roles{role:step}, order, at }
-   order: null means accent order is derived from the board; an array is a dragged, deliberate order. */
+   { id, page, name, core, accent[], src{hex:page}, out[], neutral, dark, roles{role:step}, order, type, at }
+   order: null means accent order is derived from the board; an array is a dragged, deliberate order.
+   type: {display, body, mono} — a design decision like every other one here, so it lives on the
+   record and travels in the link, not in ui where the view preferences sit. */
 const SYS_KEY = "colorbook-systems";
 const uid = () => Math.random().toString(36).slice(2, 8);
 const blank = (page, name) => ({
   id: uid(), page, name: name || byPage.get(page)?.name || `p. ${page}`,
-  core: null, accent: [], src: {}, out: [], neutral: null, dark: false, roles: {}, order: null, at: new Date().toISOString().slice(0, 10),
+  core: null, accent: [], src: {}, out: [], neutral: null, dark: false, roles: {}, order: null, type: {},
+  at: new Date().toISOString().slice(0, 10),
 });
 /* v1 kept one build per palette page. Every core-bearing entry becomes a named system; empty ones
    are skipped. colorbook-builds is read, never written or cleared, so the old data survives. */
@@ -1268,6 +1402,7 @@ const slug = (p) => p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^
 const key = (p, i) => p.names?.[i] ?? `${slug(p)}-${i + 1}`;
 /* PDF p.4 — what each tier is for; only meaningful on a built system */
 const GUIDE = ["core — key brand moments, used with discipline", "accent — sparingly, for emphasis", "neutral — structure, backgrounds and body copy"];
+const STATE_NOTE = "state — hover, active and the tints are derived from the colour above them, not chosen";
 /* The header is the only part of a build that survives into a meeting three weeks later — the CSS file is
    what's open in the room, not this app. So it carries where it came from, what was ruled out, and the
    contrast answers, including which ramp step each role reads. */
@@ -1280,18 +1415,77 @@ const guide = (p, o, c = "") =>
     ...(p.tally ? [p.tally] : []),
     ...(p.checks.length ? [p.checks.join(" · ")] : []),
     ...(p.stepline ? [p.stepline] : []),
+    ...(p.statusline ? [p.statusline] : []),
+    ...(p.typeline ? [p.typeline] : []),
     ...GUIDE,
+    ...(Object.keys(p.states || {}).length ? [STATE_NOTE] : []),
   ].map((l) => `${o}${cmt(l)}${c}\n`).join("") : "");
+/* The file reads in the order the system was built: what was chosen, what the roles do with it,
+   what the states derive from that, and the four signals last. A palette that never went through
+   the rail has only the first block, which is an honest description of what it is. */
+function blocks(p) {
+  const end = p.colors.length;
+  const a = p.roleAt ?? end, b = p.stateAt ?? end, c = p.statusAt ?? end;
+  return [
+    ["", 0, a],
+    ["roles — the same hexes, named for the job they do", a, b],
+    ["states — derived from the colour above them, never chosen", b, c],
+    ["status — four jobs the palette doesn't print names for", c, end],
+  ].filter(([, i, j]) => j > i);
+}
+/* two slots can land on the same family, and a stylesheet should ask for it once */
+const faceList = (p) => [...new Set(SLOTS.map(([k]) => (p.type || {})[k]).filter(Boolean))];
+const imports = (p) => faceList(p).map((n) => `@import url("${fontHref(n)}");`).join("\n");
+const fontRows = (p, pre) => SLOTS.filter(([k]) => (p.type || {})[k])
+  .map(([k]) => `${pre}font-${k}: ${fontStack(p.type[k])};`);
+/* one grouped list, three punctuations — :root, $vars and @theme differ by prefix and comment style */
+function grouped(p, dec, o, c = "", fontPre = null) {
+  const out = blocks(p).map(([label, i, j]) =>
+    (label ? `${o}${label}${c}\n` : "") + p.colors.slice(i, j).map((h, k) => dec(key(p, i + k), h)).join("\n"));
+  const fonts = fontPre ? fontRows(p, fontPre) : [];
+  if (fonts.length) out.push(`${o}type — the faces this system was judged in${c}\n` + fonts.join("\n"));
+  return out.join("\n\n");
+}
 const FORMATS = {
   /* roles repeat hexes already listed above them — a flat hex dump stops at p.roleAt */
   hex:  { ext: "txt",  make: (p) => p.colors.slice(0, p.roleAt).join("\n") },
-  css:  { ext: "css",  make: (p) => `${guide(p, "/* ", " */")}:root {\n${p.colors.map((c, i) => `  --${key(p, i)}: ${c};`).join("\n")}\n}` },
-  scss: { ext: "scss", make: (p) => guide(p, "// ") + p.colors.map((c, i) => `$${key(p, i)}: ${c};`).join("\n") },
+  /* an @import has to come before any rule or the browser drops it, so type sits above the header */
+  css:  { ext: "css",  make: (p) => `${imports(p) ? imports(p) + "\n\n" : ""}${guide(p, "/* ", " */")}:root {\n${
+    grouped(p, (k, h) => `  --${k}: ${h};`, "  /* ", " */", "  --")}\n}` },
+  scss: { ext: "scss", make: (p) => `${imports(p) ? imports(p) + "\n\n" : ""}${guide(p, "// ")}${
+    grouped(p, (k, h) => `$${k}: ${h};`, "// ", "", "$")}` },
   tailwind: { ext: "js", make: (p) => `${guide(p, "// ")}colors: {\n  "${slug(p)}": {\n${p.colors.map((c, i) => `    "${p.names?.[i] ?? i + 1}": "${c}",`).join("\n")}\n  },\n},` },
+  /* v4 puts the whole theme in CSS: --color-* becomes bg-core, text-success-ink and the rest */
+  tailwind4: { ext: "css", make: (p) => `${imports(p) ? imports(p) + "\n\n" : ""}${guide(p, "/* ", " */")}@theme {\n${
+    grouped(p, (k, h) => `  --color-${k}: ${h};`, "  /* ", " */", "  --")}\n}` },
+  /* Framer takes neither CSS nor tokens — it takes someone typing into two panels, so this is the
+     list in the order those panels ask for it, with the contrast answers already worked out */
+  framer: { ext: "txt", make: (p) => {
+    const lines = [`${p.name}${p.src ? ` · ${p.src}` : ""}${p.names ? ` · ${p.dark ? "dark" : "light"} theme` : ""}`, ""];
+    blocks(p).forEach(([label, i, j]) => {
+      lines.push(label ? `— ${label.split(" — ")[0].toUpperCase()} —` : "— COLOR STYLES · Assets ▸ Colors ▸ + —");
+      p.colors.slice(i, j).forEach((h, k) => lines.push(`${key(p, i + k).padEnd(22)}${h}`));
+      lines.push("");
+    });
+    const faces = faceList(p);
+    if (faces.length) {
+      lines.push("— FONTS · Assets ▸ Fonts —");
+      SLOTS.filter(([k]) => (p.type || {})[k]).forEach(([k, lbl]) =>
+        lines.push(`${lbl.padEnd(10)}${p.type[k]} · ${FONT_BY.get(p.type[k])?.s === "fs" ? "Fontshare" : "Google Fonts"}`));
+      lines.push("");
+    }
+    if (p.checks?.length) lines.push("— CONTRAST —", ...p.checks);
+    return lines.join("\n").trimEnd();
+  } },
   json: { ext: "json", make: (p) => JSON.stringify({ name: p.name, section: p.section, page: p.page, colors: p.colors,
-    ...(p.names && { theme: p.dark ? "dark" : "light", source: p.src, names: p.names, contrast: p.checks, steps: p.steps, eliminated: p.eliminated }) }, null, 2) },
+    ...(p.names && { theme: p.dark ? "dark" : "light", source: p.src, names: p.names, contrast: p.checks, steps: p.steps,
+      eliminated: p.eliminated, states: p.states, status: p.status, statusFrom: p.from, type: p.type }) }, null, 2) },
   /* W3C design tokens — what Tokens Studio, Style Dictionary and Figma variable importers eat */
-  tokens: { ext: "json", make: (p) => JSON.stringify(Object.fromEntries(p.colors.map((c, i) => [key(p, i), { $type: "color", $value: c }])), null, 2) },
+  tokens: { ext: "json", make: (p) => JSON.stringify({
+    ...Object.fromEntries(p.colors.map((c, i) => [key(p, i), { $type: "color", $value: c }])),
+    ...Object.fromEntries(SLOTS.filter(([k]) => (p.type || {})[k])
+      .map(([k]) => [`font-${k}`, { $type: "fontFamily", $value: p.type[k] }])),
+  }, null, 2) },
 };
 let dlgPalette, dlgFormat = "hex";
 function openExport(p) {
@@ -1327,6 +1521,69 @@ function download(p, f) {
   setTimeout(() => URL.revokeObjectURL(url));
 }
 
+/* ---------- type: the other half of a system ----------
+   Sanna's Framer shortlist, kept to the faces that actually resolve from a public CSS endpoint.
+   Twelve of the originals — Aileron, Aspekta, BDO Grotesk, Coconat, Lanze, Mattone, Necto Mono,
+   Neutral Sans, Ortica Linear, Pretendard, Server Mono and Sneaky — ship inside Framer and have
+   nowhere to load from here, so they are not offered: a font you cannot see is not a choice you
+   can make.
+   Google returns whatever weights a family owns and quietly drops the rest, so one request string
+   covers all of them. Nothing is fetched until a face is picked — the app still opens cold, on
+   zero network, which is the rule this feature is allowed to bend and not break. */
+const FONTS = [
+  { n: "Inter", c: "sans", s: "g" }, { n: "Host Grotesk", c: "sans", s: "g" },
+  { n: "Google Sans Flex", c: "sans", s: "g" }, { n: "Figtree", c: "sans", s: "g" },
+  { n: "TASA Orbiter", c: "sans", s: "g" }, { n: "Instrument Sans", c: "sans", s: "g" },
+  { n: "Albert Sans", c: "sans", s: "g" }, { n: "Manrope", c: "sans", s: "g" },
+  { n: "Outfit", c: "sans", s: "g" }, { n: "Poppins", c: "sans", s: "g" },
+  { n: "Sen", c: "sans", s: "g" }, { n: "Spline Sans", c: "sans", s: "g" },
+  { n: "Afacad", c: "sans", s: "g" }, { n: "Alatsi", c: "sans", s: "g" },
+  { n: "Almarai", c: "sans", s: "g" }, { n: "National Park", c: "sans", s: "g" },
+  { n: "Akshar", c: "sans", s: "g" },
+  { n: "STIX Two Text", c: "serif", s: "g", f: "serif" }, { n: "Playfair", c: "serif", s: "g", f: "serif" },
+  { n: "Libre Baskerville", c: "serif", s: "g", f: "serif" }, { n: "Platypi", c: "serif", s: "g", f: "serif" },
+  { n: "Hedvig Letters Serif", c: "serif", s: "g", f: "serif" }, { n: "Castoro", c: "serif", s: "g", f: "serif" },
+  { n: "Quattrocento", c: "serif", s: "g", f: "serif" }, { n: "Radley", c: "serif", s: "g", f: "serif" },
+  { n: "Bellefair", c: "serif", s: "g", f: "serif" }, { n: "Nanum Myeongjo", c: "serif", s: "g", f: "serif" },
+  { n: "Anton", c: "display", s: "g" }, { n: "League Gothic", c: "display", s: "g" },
+  { n: "Freeman", c: "display", s: "g" }, { n: "Gambarino", c: "display", s: "fs", f: "serif" },
+  { n: "Pinyon Script", c: "display", s: "g", f: "cursive" },
+  { n: "IBM Plex Mono", c: "mono", s: "g", f: "monospace" }, { n: "Lilex", c: "mono", s: "g", f: "monospace" },
+  { n: "Noto Naskh Arabic", c: "script", s: "g", f: "serif" }, { n: "Scheherazade New", c: "script", s: "g", f: "serif" },
+  { n: "Tiro Bangla", c: "script", s: "g", f: "serif" }, { n: "Jomolhari", c: "script", s: "g", f: "serif" },
+  { n: "Nuosu SIL", c: "script", s: "g", f: "serif" }, { n: "Tai Heritage Pro", c: "script", s: "g", f: "serif" },
+];
+const FONT_BY = new Map(FONTS.map((f) => [f.n, f]));
+const HREF = {
+  g: (n) => `https://fonts.googleapis.com/css2?family=${n.replace(/ /g, "+")}:wght@400;500;600;700&display=swap`,
+  fs: (n) => `https://api.fontshare.com/v2/css?f[]=${n.toLowerCase().replace(/ /g, "-")}@400,500,700&display=swap`,
+};
+/* the CSS someone pastes into their own project, and the line this app injects, are the same line —
+   so what the preview shows is what the export promises */
+const fontHref = (name) => { const d = FONT_BY.get(name); return d ? HREF[d.s](d.n) : null; };
+const fontStack = (name) => { const d = FONT_BY.get(name); return d ? `"${d.n}", ${d.f || "sans-serif"}` : null; };
+const linked = new Set();
+function loadFont(name) {
+  if (!FONT_BY.has(name) || linked.has(name)) return;
+  linked.add(name);
+  const l = document.createElement("link");
+  l.rel = "stylesheet";
+  l.href = fontHref(name);
+  l.dataset.font = name;
+  document.head.append(l);
+}
+/* three slots, because that is how many decisions a page actually makes about type */
+const SLOTS = [
+  ["display", "Display", ["display", "serif", "sans", "script"]],
+  ["body", "Text", ["sans", "serif", "script"]],
+  ["mono", "Mono", ["mono"]],
+];
+/* a record can name a face this build of the app no longer offers — same problem as a ghost
+   neutral, same answer: resolve in one place, and let everything downstream see null */
+const faceOf = (s, slot) => { const n = obj(s.type)[slot]; return FONT_BY.has(n) ? n : null; };
+const typeOf = (s) => Object.fromEntries(SLOTS.map(([k]) => [k, faceOf(s, k)]));
+const anyType = (s) => SLOTS.some(([k]) => faceOf(s, k));
+
 /* ---------- build a system (PDF pp. 4–5) ---------- */
 const NEUTRALS = PALETTES.filter((p) => p.section === "Neutrals");
 /* a record can name a scale this colors.js no longer has — a stale link, or a regenerated book.
@@ -1349,6 +1606,69 @@ const PAIR = {
 const stepOf = (s, role) => s.roles?.[role] ?? ROLE_STEP[role];
 /* dark is the same role indices mirrored — the 11-step ramp itself never flips */
 const readStep = (s, role) => (s.dark ? 10 - stepOf(s, role) : stepOf(s, role));
+
+/* ---------- states: a hover is a fact about a colour, not a second colour someone picks ----------
+   The press runs down the L* axis in a light theme and up in a dark one — a control under a finger
+   moves away from its page, not simply darker. Where there is nothing left to press against, at the
+   ends of the axis, the direction flips: a state identical to its base is a lie in a stylesheet.
+   The tints are the same colour laid over the background at low weight — the field a hero sits on,
+   the row behind a selected item, the border that belongs to the brand and not to the neutral ramp. */
+const PRESS = { hover: 7, active: 14 };
+const TINT = { subtle: 0.12, "subtle-hover": 0.2, border: 0.34 };
+function press(hex, dL, dark) {
+  const dir = dark ? 1 : -1;
+  const out = shade(hex, dir * dL);
+  return out === hex.toUpperCase() ? shade(hex, -dir * dL) : out;
+}
+/* full: the core, which also owns the tints. Accents get the two presses and nothing more —
+   six accents each carrying five extra tokens is a stylesheet nobody reads. */
+function statesFor(hex, bg, dark, full) {
+  const out = {};
+  Object.entries(PRESS).forEach(([k, dL]) => (out[k] = press(hex, dL, dark)));
+  if (full) Object.entries(TINT).forEach(([k, t]) => (out[k] = mix(hex, bg, t)));
+  return out;
+}
+
+/* ---------- status: four jobs every product has, and no colour book prints under those names ----
+   Where the system already owns a colour of roughly the right hue, that colour takes the job — a
+   borrowed accent keeps the page in one voice. Where it doesn't, the hue is synthesised at the
+   chroma and lightness the rest of the system runs at, so the warning doesn't arrive from someone
+   else's brand. Either way it then has to clear 3:1 against the page or it isn't a signal, and the
+   export header says which of the two happened. */
+const STATUS = { success: "#16A34A", warning: "#D97706", danger: "#DC2626", info: "#2563EB" };
+const mid = (xs) => xs.slice().sort((a, b) => a - b)[Math.floor(xs.length / 2)];
+/* ink() picks the label colour a swatch looks right in. A status colour carries sentence-length
+   text, so its ink is picked by the ratio instead — on a mid orange those two disagree, and the
+   one that wins here has to be the one WCAG would score. */
+const bestInk = (hex) => (ratio("#0A0A0A", hex) >= ratio("#FFFFFF", hex) ? "#0A0A0A" : "#FFFFFF");
+/* acc, not the core: the core is the brand, and a warning painted in the brand colour is not a
+   warning — it lands a shade away from core-hover and stops being a signal at all. Accents can
+   hold a second job; the colour the whole page is built around cannot. */
+function statusFor(core, acc, bg, dark) {
+  const chr = [core, ...acc].filter((c) => c && chroma(c) > 8).map(chroma);
+  const C = chr.length ? Math.min(70, Math.max(28, mid(chr))) : 45;
+  const L0 = dark ? 66 : 48;
+  const out = {}, from = {}, used = new Set();
+  Object.entries(STATUS).forEach(([k, ref]) => {
+    const H = hueAt(ref);
+    /* one borrowed colour cannot hold two jobs — a danger that reads as a warning is worse than
+       a derived one, so a hue already spoken for falls through to synthesis */
+    const near = acc.filter((c) => !used.has(c) && chroma(c) >= 18 && hueGap(hueAt(c), H) <= 24)
+      .sort((a, b) => hueGap(hueAt(a), H) - hueGap(hueAt(b), H))[0];
+    if (near) used.add(near);
+    /* An accent that already clears the page does the job as it is. One that can't — a pale sand
+       asked to be a warning — still owns the palette's idea of that hue, so the hue is kept and
+       only lightness and chroma are rebuilt; pressing a pale yellow down to 3:1 instead just
+       produces khaki. Only when nothing in the palette is near does the canonical hue get used. */
+    const usable = near && ratio(near, bg) >= 3;
+    const rad = (hueAt(near || ref) * Math.PI) / 180;
+    let hex = usable ? near : labHex(L0, C * Math.cos(rad), C * Math.sin(rad));
+    for (let i = 0; i < 24 && ratio(hex, bg) < 3; i++) hex = shade(hex, dark ? 2 : -2);
+    out[k] = hex;
+    from[k] = usable ? "borrowed" : near ? "tuned" : "derived";
+  });
+  return { out, from };
+}
 
 /* accent order is derived — board column, then step. Never click order: the ordinal ends up
    in a CSS file where it looks semantic, so it has to be a fact about the colour. */
@@ -1393,21 +1713,56 @@ function system(p, s) {
      each tag with its own ink(); the export now says the same thing. */
   acc.forEach((c, i) => (roles[`accent-${i + 1}-ink`] = ink(c)));
   Object.entries(roles).forEach(([k, c]) => { colors.push(c); names.push(k); });
+  /* ---- states and status: derived from what is already here, never chosen. Both need a page to
+          sit on, so neither exists until the system has a neutral as well as a core. ---- */
+  const states = {}, status = {};
+  let from = {};
+  if (s.core && n) {
+    Object.entries(statesFor(s.core, roles.bg, s.dark, true)).forEach(([k, c]) => (states[`core-${k}`] = c));
+    acc.forEach((c, i) => Object.entries(statesFor(c, roles.bg, s.dark, false))
+      .forEach(([k, v]) => (states[`accent-${i + 1}-${k}`] = v)));
+    const st = statusFor(s.core, acc, roles.bg, s.dark);
+    from = st.from;
+    Object.entries(st.out).forEach(([k, c]) => {
+      status[k] = c;
+      status[`${k}-ink`] = bestInk(c);
+      status[`${k}-subtle`] = mix(c, roles.bg, TINT.subtle);
+      status[`${k}-border`] = mix(c, roles.bg, TINT.border);
+    });
+  }
+  const stateAt = colors.length;
+  Object.entries(states).forEach(([k, c]) => { colors.push(c); names.push(k); });
+  const statusAt = colors.length;
+  Object.entries(status).forEach(([k, c]) => { colors.push(c); names.push(k); });
+  const type = typeOf(s);
   /* the contrast question gets asked in every room and is pure arithmetic — compute it, never ask her to record it */
   const checks = [];
   if (n) checks.push(`text on bg ${contrast(roles.text, roles.bg)}`, `muted on surface ${contrast(roles["text-muted"], roles.surface)}`);
   if (s.core) checks.push(`ink on core ${contrast(roles["core-ink"], s.core)}`);
+  /* the pressed state is the one that ships and the one nobody re-checks — a button spends its
+     loudest moment there, under a cursor, still carrying the ink chosen for its resting colour */
+  if (states["core-hover"]) checks.push(`ink on core-hover ${contrast(roles["core-ink"], states["core-hover"])}`);
   /* the tally is arithmetic about THIS page. Accents drawn from another page — and colours a
      regenerated colors.js no longer prints — are counted apart instead of inflating the numerator,
      which is what turned "3 of 27 chosen" into a claim about colours p.72 does not contain. */
   const here = (c) => !!p && p.colors.includes(c);
   const home = (s.core && here(s.core) ? 1 : 0) + s.accent.filter(here).length;
   const away = (s.core ? 1 : 0) + s.accent.length - home;
+  /* which four names were the palette's own and which had to be invented is the first thing anyone
+     asks of a status ramp, so the file answers it before being asked */
+  const HOW = { borrowed: "borrowed from the palette", tuned: "tuned to the palette's own hue", derived: "derived at the palette's chroma" };
+  const groups = Object.keys(HOW).map((w) => {
+    const ks = Object.keys(from).filter((k) => from[k] === w);
+    return ks.length ? `${ks.join(" & ")} ${HOW[w]}` : "";
+  }).filter(Boolean);
   return {
     name: s.name, section: p?.section ?? "", page: s.page, colors, names, neutral: n, roles, steps, roleAt,
+    states, status, from, stateAt, statusAt, type,
     dark: !!s.dark, checks, src: sources(s), eliminated: s.out.length,
     tally: p ? `${home} of ${p.colors.length} chosen · ${s.out.length} eliminated${away ? ` · ${away} from other pages` : ""}` : "",
     stepline: n ? "roles read " + ROLES.map((r) => `${r}=${steps[r]}`).join(" ") : "",
+    statusline: groups.length ? "status — " + groups.join(", ") : "",
+    typeline: anyType(s) ? "type — " + SLOTS.filter(([k]) => type[k]).map(([k, lbl]) => `${lbl.toLowerCase()} ${type[k]}`).join(" · ") : "",
   };
 }
 
@@ -1416,10 +1771,15 @@ function system(p, s) {
    byte for byte. v1's readable #b= is still decoded — links already in the wild have to keep working. */
 const b64 = (s) => btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 const unb64 = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)));
-/* the 10th element is the dragged accent order — appended, so every pre-order link stays decodable */
-const encodeSys = (s) =>
-  "#b2=" + b64(JSON.stringify([s.page, s.name, s.core, s.accent, s.neutral, s.dark ? 1 : 0, s.roles, s.out, s.src,
-    ...(Array.isArray(s.order) && s.order.length ? [s.order] : [])]));
+/* the 10th element is the dragged accent order and the 11th the type — both appended, so every
+   older link stays decodable. Type needs the order slot filled to hold its position, which is why
+   a typed build with a derived order writes an explicit null there rather than skipping it. */
+const encodeSys = (s) => {
+  const ty = Object.fromEntries(Object.entries(typeOf(s)).filter(([, v]) => v));
+  const ord = Array.isArray(s.order) && s.order.length ? s.order : null;
+  const tail = Object.keys(ty).length ? [ord, ty] : (ord ? [ord] : []);
+  return "#b2=" + b64(JSON.stringify([s.page, s.name, s.core, s.accent, s.neutral, s.dark ? 1 : 0, s.roles, s.out, s.src, ...tail]));
+};
 /* A hash is untrusted input: hand-truncated, half-pasted, or written against an older format.
    Every path returns a fully-shaped record or null — never a partial one, and never a throw. */
 const str = (v) => (typeof v === "string" ? v : null);
@@ -1428,15 +1788,19 @@ const str = (v) => (typeof v === "string" ? v : null);
 const steps = (v) => Object.fromEntries(Object.entries(obj(v))
   .filter(([r, i]) => ROLES.includes(r) && Number.isInteger(i) && i >= 0 && i <= 10));
 const hexes = (v) => arr(v).filter((c) => typeof c === "string" && /^#[0-9A-Fa-f]{6}$/.test(c));
+/* a link can name a slot that doesn't exist or a face this build doesn't carry — the same ghost
+   problem as a stale neutral, dropped here rather than left for the loader to chase */
+const faces = (v) => Object.fromEntries(Object.entries(obj(v))
+  .filter(([k, n]) => SLOTS.some(([s2]) => s2 === k) && FONT_BY.has(n)));
 function decodeSys(hash) {
   try {
     const m2 = hash.match(/^#b2=(.+)/);
     if (m2) {
-      const [page, name, core, accent, neutral, dark, roles, out, src, order] = JSON.parse(unb64(m2[1]));
+      const [page, name, core, accent, neutral, dark, roles, out, src, order, type] = JSON.parse(unb64(m2[1]));
       const ord = hexes(order);
       return Object.assign(blank(page, str(name)), { core: hexes([core])[0] ?? null, accent: hexes(accent),
         neutral: str(neutral), dark: !!dark, roles: steps(roles), out: hexes(out), src: obj(src),
-        order: ord.length ? ord : null });
+        order: ord.length ? ord : null, type: faces(type) });
     }
     const m = hash.match(/^#b=(.+)/);
     if (!m) return null;
@@ -1624,6 +1988,7 @@ function renderProg(s) {
     [`${s.out.length} out`, s.out.length > 0, "b1"],
     [n ? s.neutral.toLowerCase() : "neutral —", !!n, "b2"],
     [n ? (bad.length ? `${bad.length} below AA` : "roles AA") : "roles —", !!n && !bad.length, "b3"],
+    [anyType(s) ? "type ✓" : "type —", anyType(s), "b4"],
   ];
   segs.forEach(([txt, done, stage], i) => {
     if (i) prog.append(el("span", "sep", "·"));
@@ -1767,12 +2132,32 @@ function buildBuildTab(body, p, s) {
     body.append(d);
   }
 
+  /* --- ④ type: a display face, a text face and a mono. Collapsed until one is picked — a colour
+     system is still a colour system without type, and the shortlist shouldn't nag from the top --- */
+  {
+    const t = typeOf(s), picked = SLOTS.filter(([k]) => t[k]);
+    const d = el("details", "roles");
+    d.dataset.stage = "b4";
+    d.open = picked.length > 0;
+    const sum = el("summary", "lab",
+      `<span>④ Type</span><span class="tally">${picked.length ? esc(picked.map(([k]) => t[k]).join(" · ")) : "system default"}</span>`);
+    if (picked.length) {
+      const r = el("button", "act"); r.dataset.k = "tyreset"; r.textContent = "reset all";
+      r.onclick = (e) => { e.preventDefault(); e.stopPropagation(); withUndo("type reset", () => { open.type = {}; }); };
+      sum.append(r);
+    }
+    d.append(sum, typePicker(s, t));
+    body.append(d);
+  }
+
   /* --- theme + preview: its own pane below the scroller, not the last thing in it. The preview is
      ~800px of page; at the end of the controls you had to scroll away from every control to see it,
      and pinning it with position:sticky just covered whatever sat in the gap. A sibling pane keeps
      it in shot while the board, the tiles and the ladder scroll independently above. --- */
   const pane = $("#rPrevPane");
-  const pl = el("p", "lab", "<span>Preview</span>");
+  /* the states are only believable under a cursor, and nobody hovers a picture — so say it once */
+  const pl = el("p", "lab", `<span>Preview</span>${
+    s.core && neutralOf(s) ? '<span class="tally">buttons press — hover one</span>' : ""}`);
   const ctrls = el("span", "pctrls");
   const views = el("span", "themes");
   Object.keys(TEMPLATES).forEach((v) => {
@@ -1822,6 +2207,44 @@ function buildBuildTab(body, p, s) {
   exp.onclick = () => { tab = "export"; renderRail(); };
   exp.disabled = !sys.colors.length;
   $("#rAct").append(link, exp);
+}
+
+/* One select per slot, grouped the way the shortlist reads: a display face may be a serif, a text
+   face may not be a display cut, and mono is its own short world. The face is applied on change and
+   nothing else moves — the preview under the pane is the only feedback this control owes. */
+const CATS = { sans: "Sans", serif: "Serif", display: "Display", mono: "Mono", script: "Other scripts" };
+function typePicker(s, t) {
+  const wrap = el("div", "tpick");
+  SLOTS.forEach(([slot, label, cats]) => {
+    wrap.append(el("span", "rn", label));
+    const w = el("span", "tselw");
+    const sel = el("select", "tsel");
+    sel.dataset.k = "ty" + slot;
+    sel.setAttribute("aria-label", `${label} face`);
+    sel.append(new Option("System default", ""));
+    cats.forEach((c) => {
+      const list = FONTS.filter((f) => f.c === c);
+      if (!list.length) return;
+      const g = document.createElement("optgroup");
+      g.label = CATS[c];
+      list.forEach((f) => g.append(new Option(f.n, f.n)));
+      sel.append(g);
+    });
+    sel.value = t[slot] || "";
+    sel.onchange = () => {
+      /* the record only ever holds slots that are set — an empty string in the hash would be a
+         face nobody picked, and faces() would drop it on the way back in anyway */
+      const next = { ...obj(s.type) };
+      if (sel.value) next[slot] = sel.value; else delete next[slot];
+      s.type = next;
+      persistSystems();
+      renderRail();
+    };
+    w.append(sel);
+    wrap.append(w);
+  });
+  wrap.append(el("p", "tnote", "faces load from Google Fonts / Fontshare the moment one is picked — nothing before that"));
+  return wrap;
 }
 
 function chunk(arr, n) {
@@ -2084,15 +2507,32 @@ function previewNode() {
     <div class="pfoot" data-drop="role:surface"><span>© 2026 Acme</span><span>Privacy · Terms</span></div>`);
 }
 
-/* repaints a preview node only — never touches the export pane, so the rail's own re-render can't flicker it */
+/* the picked faces reach the preview and nowhere else — the same law that keeps every coloured
+   pixel inside the palette keeps every non-Geist letterform inside the page being judged.
+   Loading happens here, at the moment a face is first painted, and once per family. */
+function fontVars(type) {
+  return SLOTS.map(([k]) => {
+    const n = type[k];
+    if (n) loadFont(n);
+    return [`--p-${k}`, n ? fontStack(n) : `var(--font-${k === "mono" ? "mono" : "ui"})`];
+  });
+}
+/* repaints a preview node only — never touches the export pane, so the rail's own re-render can't
+   flicker it. setProperty rather than cssText: a caller that already dressed the node (the compare
+   tray drops the border) shouldn't have that undone by a repaint. */
 function paintPreview(node, p, s) {
   if (!node || !s.core || !neutralOf(s)) return;
-  const r = system(p, s).roles;
-  node.style.cssText = [
-    `--p-bg:${r.bg}`, `--p-surface:${r.surface}`, `--p-line:${r.border}`,
-    `--p-ink:${r.text}`, `--p-mut:${r["text-muted"]}`,
-    `--p-core:${s.core}`, `--p-core-ink:${r["core-ink"]}`,
-  ].join(";");
+  const sys = system(p, s);
+  const r = sys.roles, st = sys.states;
+  [
+    ["--p-bg", r.bg], ["--p-surface", r.surface], ["--p-line", r.border],
+    ["--p-ink", r.text], ["--p-mut", r["text-muted"]],
+    ["--p-core", s.core], ["--p-core-ink", r["core-ink"]],
+    /* the derived states, so a button in the preview presses the colour the export ships */
+    ["--p-hov", st["core-hover"]], ["--p-act", st["core-active"]],
+    ["--p-tint", st["core-subtle"]], ["--p-tint-hi", st["core-subtle-hover"]], ["--p-cline", st["core-border"]],
+    ...fontVars(sys.type),
+  ].forEach(([k, v]) => node.style.setProperty(k, v));
   /* every accent, not just accent-1 — picking six and seeing one is how you ship a system you never saw */
   const acc = orderedOf(s);
   const tags = node.querySelector(".ptags");
@@ -2172,15 +2612,45 @@ function paintPalette(node, p, s) {
    one page hides, another shows. hero → text at display weight; article → long-form reading and
    links; cards → surfaces and borders in bulk; form → field and button states; chart → the accents
    together as series. All painted through the same --p-* variables paintPreview sets. ---------- */
-function heroNode() {
-  return el("div", "prev", `
-    <div class="pnav" data-drop="role:surface"><span class="brand">Acme</span><span>Work · Studio · Journal</span><span class="pill">Contact</span></div>
-    <div class="pbody" data-drop="role:bg">
-      <p class="plabel" data-drop="role:text-muted">New — V2.1</p>
-      <h4 class="pxl" data-drop="role:text" style="margin-top:.4rem">Ship the system,<br>not the swatch</h4>
-      <p class="pcap" data-drop="role:text-muted">Display type is where thin strokes meet your background —
-         a weight body copy never reaches, on the largest field the system paints.</p>
-      <div class="prow"><span class="pbtn">Start building</span><span class="pbtn sec">Read the method</span></div>
+/* The hero is the page most systems are actually chosen on, so it is a whole one: a real nav with
+   somewhere to go, a display line at display size, copy at a readable measure, two buttons that
+   press, proof, and a product shot carrying every accent at once. Nothing here is decoration —
+   each region is a role or a state that would otherwise only ever be seen as a swatch. */
+function heroNode(p, s) {
+  const acc = orderedOf(s);
+  const a = (i) => (acc.length ? acc[i % acc.length] : s.core);
+  const bars = [46, 72, 58, 84, 63, 91, 74].map((h, i) =>
+    `<i style="height:${h}%;background:${i === 5 ? "var(--p-core)" : a(i)}"></i>`).join("");
+  const tags = (acc.length ? acc : [s.core]).slice(0, 4)
+    .map((c, i) => `<span class="ptag2" style="background:${c};color:${ink(c)}">accent ${i + 1}</span>`).join("");
+  const side = ["Overview", "Systems", "Exports", "Team"]
+    .map((t, i) => `<span class="${i === 0 ? "on" : ""}"><i style="background:${a(i)}"></i>${t}</span>`).join("");
+  return el("div", "prev hero", `
+    <div class="pnav hnav" data-drop="role:surface">
+      <span class="brand">Acme</span>
+      <span class="hlinks"><i>Product</i><i>Method</i><i>Pricing</i><i>Journal</i></span>
+      <span class="hgh">Sign in</span>
+      <span class="pbtn">Get started</span>
+    </div>
+    <div class="hfield" data-drop="role:bg">
+      <span class="hpill"><b>New</b> V2.1 — states are derived now</span>
+      <h1 class="hh" data-drop="role:text">Ship the system,<br>not the swatch</h1>
+      <p class="hsub" data-drop="role:text-muted">One core, eleven neutrals and every state in between — judged
+         on a page at the size it will be read, then exported as the tokens your build already expects.</p>
+      <div class="hcta"><span class="pbtn">Start building</span><span class="pbtn sec">Read the method</span></div>
+      <p class="hnote">Free while the book is in beta · No card</p>
+      <div class="hshot" data-drop="role:surface">
+        <div class="hbar"><i></i><i></i><i></i><span class="hurl">acme.studio/overview</span></div>
+        <div class="hshotb">
+          <div class="hside">${side}</div>
+          <div class="hmain">
+            <p class="plabel">Sessions by quarter</p>
+            <div class="hbars">${bars}</div>
+            <div class="htags">${tags}</div>
+          </div>
+        </div>
+      </div>
+      <div class="htrust"><span>Trusted by</span><b>Norrsken</b><b>Welcom</b><b>Docket</b><b>Aster &amp; Co</b></div>
     </div>
     <div class="pfoot" data-drop="role:surface"><span>© 2026 Acme</span><span>Privacy · Terms</span></div>`);
 }
@@ -2279,7 +2749,7 @@ function chartNode(p, s) {
 const painted = (n, p, s) => { paintPreview(n, p, s); return n; };
 const TEMPLATES = {
   page:    { make: (p, s) => painted(previewNode(), p, s) },
-  hero:    { make: (p, s) => painted(heroNode(), p, s) },
+  hero:    { make: (p, s) => painted(heroNode(p, s), p, s) },
   article: { make: (p, s) => painted(articleNode(), p, s) },
   cards:   { make: (p, s) => painted(cardsNode(p, s), p, s) },
   form:    { make: (p, s) => painted(formNode(), p, s) },
@@ -2606,11 +3076,13 @@ console.assert(NEUTRALS.every((n) => n.colors.length === 11 && lum(n.colors[0]) 
   console.assert(orderedOf(fx).join() === ordered(fx).join(), "no-order build must derive its order");
   const FROZEN_CSS = `/* T · Bold 23 p. 72 + Stone p. 7 · light theme */
 /* 3 of 27 chosen · 0 eliminated */
-/* text on bg 16.7:1 AAA · muted on surface 7.0:1 AAA · ink on core 7.3:1 AAA */
+/* text on bg 16.7:1 AAA · muted on surface 7.0:1 AAA · ink on core 7.3:1 AAA · ink on core-hover 5.8:1 AA */
 /* roles read bg=neutral-11 surface=neutral-10 border=neutral-9 text-muted=neutral-5 text=neutral-2 */
+/* status — success & warning tuned to the palette's own hue, danger & info derived at the palette's chroma */
 /* core — key brand moments, used with discipline */
 /* accent — sparingly, for emphasis */
 /* neutral — structure, backgrounds and body copy */
+/* state — hover, active and the tints are derived from the colour above them, not chosen */
 :root {
   --core: #FF7500;
   --accent-1: #FFE4AB;
@@ -2626,6 +3098,8 @@ console.assert(NEUTRALS.every((n) => n.colors.length === 11 && lum(n.colors[0]) 
   --neutral-9: #E7E5E4;
   --neutral-10: #F5F5F4;
   --neutral-11: #FAFAF9;
+
+  /* roles — the same hexes, named for the job they do */
   --bg: #FAFAF9;
   --surface: #F5F5F4;
   --border: #E7E5E4;
@@ -2634,6 +3108,35 @@ console.assert(NEUTRALS.every((n) => n.colors.length === 11 && lum(n.colors[0]) 
   --core-ink: #0A0A0A;
   --accent-1-ink: #0A0A0A;
   --accent-2-ink: #FFFFFF;
+
+  /* states — derived from the colour above them, never chosen */
+  --core-hover: #E86200;
+  --core-active: #D15000;
+  --core-subtle: #FFEADD;
+  --core-subtle-hover: #FFE0CB;
+  --core-border: #FFCDAB;
+  --accent-1-hover: #EAD098;
+  --accent-1-active: #D6BD86;
+  --accent-2-hover: #00B049;
+  --accent-2-active: #009D38;
+
+  /* status — four jobs the palette doesn't print names for */
+  --success: #00872C;
+  --success-ink: #FFFFFF;
+  --success-subtle: #E1ECDF;
+  --success-border: #B2D3B1;
+  --warning: #8E6E00;
+  --warning-ink: #FFFFFF;
+  --warning-subtle: #EFE8DB;
+  --warning-border: #DAC8A7;
+  --danger: #D03C31;
+  --danger-ink: #FFFFFF;
+  --danger-subtle: #FAE4DF;
+  --danger-border: #F6BCB0;
+  --info: #4769E0;
+  --info-ink: #FFFFFF;
+  --info-subtle: #E8E7F7;
+  --info-border: #C6C6F2;
 }`;
   console.assert(FORMATS.css.make(system(p, fx)) === FROZEN_CSS, "the export drifted from the frozen baseline");
 
@@ -2729,6 +3232,127 @@ console.assert(NEUTRALS.every((n) => n.colors.length === 11 && lum(n.colors[0]) 
     "a template without a muted region must still anchor the chip somewhere");
   console.assert(TEMPLATES.palette.make(p, bad).querySelectorAll(".pwarn").length === 0,
     "the palette sheet shows colours, not judgements — no chips there");
+}
+{ /* ---- derived states: the arithmetic that now ships inside other people's stylesheets ---- */
+  console.assert(["#FF7500", "#0C0A09", "#FAFAF9", "#00C45B", "#FFFFFF"].every((h) => {
+    const [L, A, B] = lab(h), back = labHex(L, A, B);
+    return rgb(back).every((v, i) => Math.abs(v - rgb(h)[i]) <= 1);
+  }), "labHex must invert lab() to within a channel step");
+  console.assert(shade("#FF7500", -7) !== "#FF7500" && lum(shade("#FF7500", -7)) < lum("#FF7500"), "shade(-) must darken");
+  console.assert(mix("#000000", "#FFFFFF", 0) === "#FFFFFF" && mix("#000000", "#FFFFFF", 1) === "#000000",
+    "mix at the ends must return the ends", [mix("#000000", "#FFFFFF", 0), mix("#000000", "#FFFFFF", 1)]);
+
+  /* the press runs away from the page, and turns around rather than doing nothing */
+  console.assert(lum(press("#FF7500", 7, false)) < lum("#FF7500"), "light theme must press down");
+  console.assert(lum(press("#FF7500", 7, true)) > lum("#FF7500"), "dark theme must press up");
+  console.assert(press("#000000", 7, false) !== "#000000" && lum(press("#000000", 7, false)) > 0,
+    "black has nowhere to darken — the press must flip rather than ship a state identical to its base");
+  console.assert(press("#FFFFFF", 7, true) !== "#FFFFFF", "white in a dark theme must flip the same way");
+
+  const p = byPage.get(72);
+  const mk = (extra) => system(p, Object.assign(blank(72, "S"), { core: "#FF7500", accent: ["#FFE4AB", "#00C45B"], neutral: "Stone" }, extra));
+  [["light", mk({})], ["dark", mk({ dark: true })]].forEach(([theme, sys]) => {
+    console.assert(sys.states["core-hover"] !== sys.states["core-active"] && sys.states["core-hover"] !== "#FF7500",
+      `${theme}: hover, active and base must be three colours`, sys.states);
+    console.assert(new Set(Object.values(sys.status).filter((_, i) => i % 4 === 0)).size === 4,
+      `${theme}: two status colours must never collapse into one`, sys.status);
+    Object.keys(STATUS).forEach((k) => {
+      console.assert(ratio(sys.status[k], sys.roles.bg) >= 3,
+        `${theme}: ${k} must clear 3:1 against the page or it is not a signal`, [sys.status[k], fmt(ratio(sys.status[k], sys.roles.bg))]);
+      console.assert(ratio(sys.status[`${k}-ink`], sys.status[k]) >= 4.5,
+        `${theme}: ${k}-ink must clear AA on its own fill`, [sys.status[`${k}-ink`], fmt(ratio(sys.status[`${k}-ink`], sys.status[k]))]);
+      /* the core is the brand — a warning wearing it lands a shade from core-hover and stops warning */
+      console.assert(sys.status[k] !== "#FF7500", `${theme}: the core must never be handed a status job`, k);
+    });
+  });
+  /* bestInk answers the ratio, not the eye: on a mid orange those two disagree and WCAG wins */
+  console.assert(bestInk("#EA6600") === "#0A0A0A" && ink("#EA6600") === "#FFFFFF",
+    "bestInk must outrank the perceptual pick where they disagree", [bestInk("#EA6600"), ink("#EA6600")]);
+  /* a system with no accents has nothing to borrow, and must still produce four usable signals */
+  const bare = system(p, Object.assign(blank(72, "B"), { core: "#FF7500", neutral: "Stone" }));
+  console.assert(Object.values(bare.from).every((w) => w === "derived") &&
+    Object.keys(STATUS).every((k) => ratio(bare.status[k], bare.roles.bg) >= 3), "an accentless system still needs status", bare.from);
+  /* half a system has no page to sit on, so it derives nothing rather than guessing at one */
+  console.assert(Object.keys(system(p, Object.assign(blank(72, "H"), { core: "#FF7500" })).states).length === 0,
+    "no neutral means no states — there is no background to tint against");
+}
+{ /* ---- type: the catalogue, the loader and the record ---- */
+  console.assert(new Set(FONTS.map((f) => f.n)).size === FONTS.length, "a family must appear in the catalogue once");
+  console.assert(FONTS.every((f) => ["g", "fs"].includes(f.s) && CATS[f.c]), "every face needs a real source and category", FONTS.filter((f) => !CATS[f.c]));
+  console.assert(SLOTS.every(([, , cats]) => cats.some((c) => FONTS.some((f) => f.c === c))), "a slot with nothing to offer is a dead control");
+  console.assert(fontHref("Inter") === "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+    "google href shape", fontHref("Inter"));
+  console.assert(fontHref("Gambarino") === "https://api.fontshare.com/v2/css?f[]=gambarino@400,500,700&display=swap",
+    "fontshare href shape", fontHref("Gambarino"));
+  console.assert(fontStack("Playfair") === '"Playfair", serif' && fontStack("Inter") === '"Inter", sans-serif',
+    "a stack must name a generic fallback", [fontStack("Playfair"), fontStack("Inter")]);
+  console.assert(fontHref("Nope") === null && fontStack("Nope") === null, "an unknown family resolves to null, not a bad URL");
+
+  const p = byPage.get(72);
+  const t = Object.assign(blank(72, "T"), { core: "#FF7500", accent: ["#00C45B"], neutral: "Stone",
+    type: { display: "Anton", body: "Inter", mono: "Lilex" } });
+  console.assert(anyType(t) && typeOf(t).display === "Anton", "typeOf must read the record");
+  /* a face this build no longer carries is a ghost, resolved to null in one place like a stale scale */
+  const ghost = Object.assign(structuredClone(t), { type: { display: "Sneaky", body: "Inter", nope: "Inter" } });
+  console.assert(faceOf(ghost, "display") === null && typeOf(ghost).body === "Inter",
+    "a family the catalogue dropped must resolve to null, not reach the loader", typeOf(ghost));
+
+  /* the link carries type, and a build without type still encodes exactly as it did before it existed */
+  const round = decodeSys(encodeSys(t));
+  console.assert(JSON.stringify(typeOf(round)) === JSON.stringify(typeOf(t)), "type was lost in the hash", round.type);
+  console.assert(FORMATS.css.make(system(p, round)) === FORMATS.css.make(system(p, t)), "a typed link must reproduce its export");
+  const plain = Object.assign(structuredClone(t), { type: {} });
+  console.assert(JSON.parse(unb64(encodeSys(plain).slice(4))).length === 9, "an untyped build must not grow the hash", encodeSys(plain));
+  console.assert(JSON.parse(unb64(encodeSys(t).slice(4))).length === 11, "type rides in the 11th slot, order holding the 10th");
+  /* order and type share the tail — carrying one must not cost the other */
+  const both = decodeSys(encodeSys(Object.assign(structuredClone(t), { order: ["#00C45B"] })));
+  console.assert(both.order.join() === "#00C45B" && typeOf(both).display === "Anton",
+    "order and type must both survive the tail they share", [both.order, both.type]);
+  console.assert(Object.keys(faces({ display: "Sneaky", nope: "Inter", body: 7 })).length === 0,
+    "an unknown face, an unknown slot and a non-string must all be dropped from a hash");
+
+  /* the faces reach the export the same way they reach the preview */
+  const sys = system(p, t);
+  const css = FORMATS.css.make(sys);
+  console.assert(css.startsWith('@import url("https://fonts.googleapis.com/css2?family=Anton'),
+    "an @import must be the first thing in the file or the browser drops it", css.slice(0, 60));
+  console.assert(css.includes('--font-display: "Anton", sans-serif;') && css.includes("/* type — the faces this system was judged in */"),
+    "the type block is missing from the css export");
+  console.assert(sys.typeline === "type — display Anton · text Inter · mono Lilex", "typeline", sys.typeline);
+  console.assert(JSON.parse(FORMATS.tokens.make(sys))["font-display"]?.$type === "fontFamily", "tokens must carry the faces too");
+  console.assert(FORMATS.framer.make(sys).includes("Display   Anton · Google Fonts"), "the framer sheet must name the source to load from");
+  /* two slots on one family should ask for it once */
+  const same = system(p, Object.assign(structuredClone(t), { type: { display: "Inter", body: "Inter" } }));
+  console.assert(FORMATS.css.make(same).split("@import").length === 2, "one family, one @import");
+  /* an untyped system must not emit an empty import line or an empty type block */
+  const bare = FORMATS.css.make(system(p, plain));
+  console.assert(!bare.includes("@import") && !bare.includes("--font-"), "no type picked means no type in the file");
+
+  /* every format has to survive both a built system and a raw palette off the shelf */
+  Object.entries(FORMATS).forEach(([k, f]) => {
+    [sys, byPage.get(72)].forEach((subject, i) => {
+      let out = null;
+      try { out = f.make(subject); } catch (e) { out = null; }
+      console.assert(typeof out === "string" && out.length > 0, `format ${k} failed on ${i ? "a raw palette" : "a built system"}`);
+    });
+  });
+}
+{ /* ---- the hero is a page now: it has to keep the drop regions and paint every accent ---- */
+  const p = byPage.get(72);
+  const s = Object.assign(blank(72, "H"), { core: "#FF7500", accent: ["#FFE4AB", "#00C45B", "#3767C8"], neutral: "Stone" });
+  const n = TEMPLATES.hero.make(p, s);
+  console.assert(n.querySelectorAll('[data-drop^="role:"]').length >= 3, "the hero lost its drop regions");
+  console.assert(n.querySelector(".hh") && n.querySelector(".hshot") && n.querySelector(".htrust"),
+    "a hero without a headline, a shot and its proof is a quote card");
+  console.assert(n.querySelectorAll(".hbars i").length === 7 && n.querySelectorAll(".htags .ptag2").length === 3,
+    "the shot must carry the accents, all of them", n.querySelectorAll(".htags .ptag2").length);
+  console.assert(n.style.getPropertyValue("--p-hov") && n.style.getPropertyValue("--p-tint"),
+    "the preview needs the state variables or the buttons cannot press");
+  /* an unpicked slot falls back to the chrome's stack rather than leaving the page unstyled */
+  console.assert(n.style.getPropertyValue("--p-body").includes("var(--font-ui)"), "an unset slot must fall back", n.style.getPropertyValue("--p-body"));
+  /* the shot is drawn from the system, so a one-colour system still renders a whole page */
+  const thin = TEMPLATES.hero.make(p, Object.assign(blank(72, "T"), { core: "#FF7500", neutral: "Stone" }));
+  console.assert(thin.querySelectorAll(".hbars i").length === 7, "a hero with no accents must still draw its chart in the core");
 }
 { /* colour names: local list, curated set wins ties, every colour gets a nearest name */
   console.assert(typeof COLOR_NAMES !== "undefined" && COLOR_NAMES.length > 5000, "names.js missing or truncated", COLOR_NAMES?.length);
