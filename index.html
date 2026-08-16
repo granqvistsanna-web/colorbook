@@ -239,6 +239,8 @@
   .nrow b { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 500; color: var(--ink-hi); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .nrow code { font-family: var(--font-mono); font-size: 11px; color: var(--ink-low); }
   .nrow .nd { font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); width: 3.2rem; text-align: right; font-variant-numeric: tabular-nums; }
+  /* a # still being typed: the grid waits instead of pretending to search */
+  .nwait { grid-column: 1 / -1; text-align: center; padding: 2.2rem 1rem; color: var(--ink-faint); font-size: 13px; font-family: var(--font-mono); }
 
   .colophon {
     border-top: 1px solid var(--hairline); margin: 0 clamp(1.5rem, 5vw, 5rem); padding: 1.2rem 0 3.5rem;
@@ -994,7 +996,15 @@ function render() {
 }
 
 function renderGrid() {
-  const list = PALETTES.filter((p) =>
+  /* a hex — or a # still being typed — is a question about a colour, not a text filter.
+     The namer answers it alone; the library steps back until the query stops being a colour.
+     A bare word that merely spells in hex ("decade") only counts at exactly six digits. */
+  const cq = state.q.match(/^#([0-9a-f]{0,6})$/) ?? state.q.match(/^([0-9a-f]{6})$/);
+  const digits = cq ? cq[1] : null;
+  const full = digits && (digits.length === 6 || digits.length === 3)
+    ? "#" + (digits.length === 3 ? [...digits].map((c) => c + c).join("") : digits).toUpperCase()
+    : null;
+  const list = digits !== null ? [] : PALETTES.filter((p) =>
     (!state.section || p.section === state.section) &&
     (!state.hue || p.hues.has(state.hue)) &&
     (!state.savedOnly || saved.has(p.page)) &&
@@ -1002,11 +1012,9 @@ function renderGrid() {
 
   const grid = $("#grid");
   grid.className = "";
-  /* a typed hex is a question about a colour — answer with names first; palettes holding that
-     exact hex (if any) still list below */
-  const qhex = state.q.match(/^#?([0-9a-f]{6}|[0-9a-f]{3})$/)?.[1];
-  grid.innerHTML = list.length || qhex ? "" : '<p class="empty">No palettes match — loosen a filter.</p>';
-  if (qhex) grid.append(namerFor("#" + (qhex.length === 3 ? [...qhex].map((c) => c + c).join("") : qhex).toUpperCase()));
+  grid.innerHTML = list.length || digits !== null ? "" : '<p class="empty">No palettes match — loosen a filter.</p>';
+  if (full) grid.append(namerFor(full));
+  else if (digits !== null) grid.append(el("p", "nwait", "a colour is 3 or 6 hex digits — keep typing"));
   list.forEach((p, i) => {
     const drawing = drawFrom === p.page;
     const n = sysOf(p.page).length;
@@ -1044,7 +1052,9 @@ function renderGrid() {
     card.querySelector(".draw")?.addEventListener("click", () => { drawFrom = drawing ? null : p.page; render(); });
     grid.append(card);
   });
-  $("#meta").textContent = `${list.length} of ${PALETTES.length} palettes · ${sections.length} sections · ${PALETTES.reduce((n, p) => n + p.colors.length, 0)} colours`;
+  $("#meta").textContent = digits !== null
+    ? `naming ${full ?? "…"}`
+    : `${list.length} of ${PALETTES.length} palettes · ${sections.length} sections · ${PALETTES.reduce((n, p) => n + p.colors.length, 0)} colours`;
 }
 
 /* ---- the namer: type a hex in search, get ranked name suggestions — click one to copy it ---- */
@@ -2738,9 +2748,16 @@ console.assert(NEUTRALS.every((n) => n.colors.length === 11 && lum(n.colors[0]) 
   const wasQ = state.q;
   state.q = "#ff69b4"; renderGrid();
   console.assert($("#grid .namer") && $("#grid .namer .nrow b").textContent === "Hot Pink", "a hex query must render the namer");
-  console.assert(!$("#grid .empty"), "the namer is an answer — no empty-state message beside it");
+  console.assert(!$("#grid .card") && !$("#grid .empty"), "a colour query generates — it must not also search");
+  console.assert($("#meta").textContent === "naming #FF69B4", "the meta line must say what the grid is doing", $("#meta").textContent);
+  state.q = "ff69b4"; renderGrid();
+  console.assert($("#grid .namer") && !$("#grid .card"), "a bare 6-digit hex is still a colour query");
+  state.q = "#fab"; renderGrid();
+  console.assert($("#grid .namer .nswatch span:last-child").textContent === "FFAABB", "#-prefixed 3-digit hexes must expand");
+  state.q = "#ff69"; renderGrid();
+  console.assert(!$("#grid .namer") && !$("#grid .card") && $("#grid .nwait"), "a # being typed must wait, not search");
   state.q = "fab"; renderGrid();
-  console.assert($("#grid .namer .nswatch span:last-child").textContent === "FFAABB", "3-digit hexes must expand");
+  console.assert(!$("#grid .namer"), "a bare word that happens to spell in hex stays a text search");
   state.q = wasQ; renderGrid();
 }
 /* the self-checks above drive the real toast pipeline — a fresh load must not greet her with a
