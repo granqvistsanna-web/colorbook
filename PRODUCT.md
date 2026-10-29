@@ -69,13 +69,13 @@ reference values (≈).
 
 Durable constraints:
 
-- **No runtime dependencies, and nothing at load.** The app opens cold: Geist and
-  Geist Mono are self-hosted in `fonts/`, icons are inline. The one thing that
-  reaches the network is a **preview typeface the user picked** — a `<link>` to
-  Google Fonts or Fontshare, injected at the moment of the pick, once per family,
-  never on load and never for a system that has no type set. That exception is
-  the whole of it: the chrome's own faces stay self-hosted, and nothing else may
-  be added to the list.
+- **No runtime dependencies beyond the design system.** The chrome loads two
+  stylesheets at start: Inter from Google Fonts and the Pumice tokens
+  (`granqvistsanna-web.github.io/pumice/tokens.css`). Icons are inline. The only
+  other thing that reaches the network is a **preview typeface the user picked** —
+  a `<link>` to Google Fonts or Fontshare, injected at the moment of the pick,
+  once per family, never on load and never for a system that has no type set.
+  Nothing else may be added to the list.
 - **`colors.js` is generated, never authored.** `scripts/extract.py` is the only
   source of truth for the book's palette data. Hand-edits are lost on the next
   regeneration. `brands.js` is the one authored exception: hand-maintained brand

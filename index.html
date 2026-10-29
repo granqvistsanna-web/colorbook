@@ -5,111 +5,68 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Colourbook — palette library</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><rect width=%228%22 height=%228%22 fill=%22%23C8451F%22/><rect x=%228%22 width=%228%22 height=%228%22 fill=%22%23F2C230%22/><rect y=%228%22 width=%228%22 height=%228%22 fill=%22%233767C8%22/><rect x=%228%22 y=%228%22 width=%228%22 height=%228%22 fill=%22%231D1A16%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap">
+<link rel="stylesheet" href="https://granqvistsanna-web.github.io/pumice/tokens.css">
 <style>
-  @font-face {
-    font-family: "Geist";
-    src: url("fonts/GeistVariable.woff2") format("woff2");
-    font-weight: 100 900;
-    font-display: swap;
-  }
-  @font-face {
-    font-family: "Geist Mono";
-    src: url("fonts/GeistMonoVariable.woff2") format("woff2");
-    font-weight: 100 900;
-    font-display: swap;
-  }
-
-  /* ============ Graphite Console tokens ============
-     Chrome is grayscale — two ladders, a hairline, and one inverse accent. Elevation is lightness,
-     never shadow. Every colored pixel on screen belongs to the palettes, which is the point. */
+  /* ============ Pumice ============
+     Every token — ink ladder, washes, pills, 28px cards, springs, the three shadows — comes from
+     Pumice's tokens.css above. Nothing on this page redefines a Pumice name, so its dark rules
+     always win; the page's own values use names Pumice does not (--gut). The chrome is ink on
+     wash and every coloured pixel on screen still belongs to the palettes. */
   :root {
-    /* surface ladder */
-    --bg-0: #0f0f0f;   /* canvas */
-    --bg-1: #171717;   /* panel / card */
-    --bg-2: #222222;   /* control at rest */
-    --bg-3: #2e2e2e;   /* active / selected */
-    --bg-4: #3a3a3a;   /* hover on raised */
-    --hairline: rgba(255,255,255,.08);
-
-    /* ink ladder */
-    --ink-hi: #f2f2f2;
-    --ink-mid: #b3b3b3;
-    --ink-low: #8a8a8a;
-    --ink-faint: #5f5f5f;
-
-    /* inverse pair — the only accent the chrome is allowed */
-    --inverse-bg: #ffffff;
-    --inverse-ink: #101010;
-
-    /* radius */
-    --r-xs: 6px; --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 20px; --r-pill: 999px;
-
-    /* size & rhythm */
-    --row-h: 48px;
-    --pad-control: 16px;
-
-    --font-ui: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    --font-mono: "Geist Mono", ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
-
-    --ease: cubic-bezier(.25,.1,.25,1);
-    --t-fast: 120ms;
-    --t-med: 180ms;
+    --gut: clamp(16px, 5vw, 80px);
+    /* Lucide chevron-down, used as a mask so it takes any ink */
+    --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   }
-  /* dark-only by design — the system commits to one world */
-  html { color-scheme: dark; }
   * { box-sizing: border-box; margin: 0; }
   body {
-    background: var(--bg-0);
-    color: var(--ink-mid);
-    font-family: var(--font-ui);
-    font-size: 15px;
-    line-height: 1.55;
+    background: var(--bg); color: var(--ink-2);
+    font: 400 15px/1.5 var(--font-ui); font-feature-settings: "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
+    transition: background-color var(--t-fade), color var(--t-color);
   }
+  button, input, select { font-family: inherit; }
+  /* code reads in Inter with tabular figures — no monospace anywhere in the chrome */
+  code, kbd, samp, pre { font-family: var(--font-ui); font-variant-numeric: tabular-nums; }
   /* building is its own screen — the header, toolbar and grid aren't part of that task, so they
      step out rather than compete with the board for room. Except while picking: an accent can be
      drawn from another page, and the button that does it lives on a card, so the grid has to come
      back or the feature is unreachable — which is exactly what hiding it unconditionally did. */
   body.rail:not(.pick) :is(.masthead, .toolbar, #grid, .colophon) { display: none; }
   body.rail.pick #rail { display: none; }
-  @keyframes railin { from { opacity: 0; transform: translateY(6px); } }
-  ::selection { background: var(--inverse-bg); color: var(--inverse-ink); }
-  :focus-visible { outline: 2px solid var(--ink-low); outline-offset: 2px; }
+  @keyframes railin { from { opacity: 0; translate: 0 6px; } }
+  ::selection { background: var(--ink); color: var(--on-ink); }
+  :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+  /* every display rule here would otherwise out-rank the UA's [hidden] */
+  [hidden] { display: none !important; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-  /* tracked caps belong to section labels alone — controls speak in normal case, like the reference.
-     .pnav wears the same caps but not the same family: it sits inside a preview, where the face is
-     whatever the system picked. Its own rule is further down, with the rest of the page furniture. */
-  .lab, .neut b {
-    font-family: var(--font-ui); font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
-  }
+  /* icons: Lucide geometry on a 24 grid, round 2px stroke, ink-3 at rest */
+  svg.i { width: var(--icon); height: var(--icon); display: block; flex: none; fill: none; stroke: currentColor; stroke-width: var(--icon-stroke); stroke-linecap: round; stroke-linejoin: round; }
+  :is(.btn, .chip, .tchip, .tx, .rx) svg.i { width: var(--icon-sm); height: var(--icon-sm); }
+
   /* selection outlines out-rank the global focus ring — a focused selected control needs its own */
   :is(.cell.on, .step[aria-pressed="true"], .neut[aria-pressed="true"], .dot[aria-pressed="true"], .lsw.on):focus-visible {
-    outline: 2px solid var(--ink-hi); outline-offset: 2px;
+    outline: 2px solid var(--ink); outline-offset: 2px;
   }
 
-  header.masthead { padding: clamp(3.5rem, 8vw, 6rem) clamp(1.5rem, 5vw, 5rem) 2.5rem; }
-  .masthead h1 {
-    color: var(--ink-hi);
-    font-size: clamp(3rem, 8vw, 6rem);
-    font-weight: 700;
-    letter-spacing: -.03em;
-    line-height: .96;
-  }
+  header.masthead { padding: 72px var(--gut) 32px; }
+  .masthead h1 { color: var(--ink); font-size: 40px; line-height: 1.1; font-weight: 500; letter-spacing: -.02em; }
   .masthead h1 em { font-style: normal; color: inherit; }
   .masthead .meta {
-    margin-top: 2.2rem; padding-top: .9rem; border-top: 1px solid var(--hairline); color: var(--ink-low);
-    font-family: var(--font-ui); font-weight: 600; font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
-    font-variant-numeric: tabular-nums;
-    display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    margin-top: 12px; color: var(--ink-4); font-size: 13px; line-height: 1.5; font-variant-numeric: tabular-nums;
+    display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
   }
 
+  /* sticky frosted bar */
   .toolbar {
     position: sticky; top: 0; z-index: 30;
-    background: var(--bg-0);
-    border-bottom: 1px solid var(--hairline);
-    padding: .8rem clamp(1.5rem, 5vw, 5rem);
-    display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.5rem;
+    background: var(--frost);
+    backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px);
+    padding: 12px var(--gut);
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
   }
   /* the search, the way back and the two view chips share the first row; filters take the second */
   .toolbar .search { order: -3; }
@@ -118,75 +75,80 @@
   .toolbar .spacer { order: -2; }
   #savedChip, #shelfChip { order: -1; }
   .toolbar .search {
-    display: flex; align-items: center; gap: .6rem;
-    height: var(--row-h); background: var(--bg-2); border-radius: var(--r-md);
-    padding: 0 var(--pad-control); color: var(--ink-faint); width: 17rem;
-    transition: background var(--t-fast) var(--ease);
+    display: flex; align-items: center; gap: var(--s-4);
+    height: var(--h-field); background: var(--wash); border-radius: var(--r-pill);
+    padding: 0 14px; color: var(--ink-4); width: 17rem; max-width: 100%; font-size: 14px;
+    transition: background var(--t-color), box-shadow var(--t-color);
   }
-  .toolbar .search:hover { background: var(--bg-3); }
-  .toolbar .search:focus-within { outline: 2px solid var(--ink-low); outline-offset: 2px; }
-  .toolbar .search svg { flex: none; }
+  .toolbar .search:hover { background: var(--wash-2); }
+  .toolbar .search:focus-within { box-shadow: var(--ring); background: var(--bg); }
+  .toolbar .search svg.i { color: var(--ink-3); }
   .toolbar input {
-    flex: 1; min-width: 0; font-family: var(--font-mono); font-size: 13px; color: var(--ink-hi);
+    flex: 1; min-width: 0; font: inherit; color: var(--ink); font-variant-numeric: tabular-nums;
     background: none; border: 0; outline: none; padding: 0;
   }
-  .toolbar input::placeholder { color: var(--ink-faint); }
-  #sections { display: flex; flex-wrap: wrap; gap: .15rem .2rem; }
-  /* chips: quiet normal-case controls; the active one steps one surface up. Bare in a row they
-     filter; inside a bg-2 container (.rtabs, .themes) they read as a segmented control. */
+  .toolbar input::placeholder { color: var(--ink-4); }
+  #sections { display: flex; flex-wrap: wrap; gap: var(--s-3); }
+  /* chips: Pumice pills on a wash; the pressed one fills with ink. Inside a segmented container
+     (.rtabs, .themes, the format pickers) they drop the wash and the active one lifts instead. */
   .chip {
-    font-family: var(--font-ui); font-size: 13px; font-weight: 500;
-    background: none; border: none; border-radius: 10px; padding: .45rem .85rem; cursor: pointer; color: var(--ink-low);
-    transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+    height: var(--h-chip); padding: 0 14px; border: 0; border-radius: var(--r-pill);
+    background: var(--wash); color: var(--ink-2); font: 500 14px/1 var(--font-ui); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--s-3); white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    transition: background var(--t-color), color var(--t-color), scale var(--t-press) var(--spring-soft);
   }
-  .chip:hover { color: var(--ink-hi); }
-  .chip[aria-pressed="true"] { background: var(--bg-3); color: var(--ink-hi); }
-  .chip:disabled { opacity: .35; cursor: default; }
+  .chip:hover { background: var(--wash-2); color: var(--ink); }
+  .chip:active { scale: var(--press-chip); }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); }
+  .chip:disabled { opacity: .4; cursor: default; scale: 1; }
   /* the way back is the loudest chip on the bar */
-  .chip.back { background: var(--bg-2); color: var(--ink-hi); }
-  .chip.back:hover { background: var(--bg-3); }
+  .chip.back { background: var(--ink); color: var(--on-ink); }
+  .chip.back:hover { background: var(--ink); opacity: .86; }
   /* while picking, the system rides the toolbar — what you have, next to the way back */
   .picksys { display: inline-flex; gap: 2px; align-items: center; }
   /* display:inline-flex would out-rank the UA's [hidden] rule — an invisible zero-width flex
-     item still owns a toolbar gap, which shoved the search 1.5rem off the content edge */
+     item still owns a toolbar gap, which shoved the search off the content edge */
   .picksys[hidden] { display: none; }
-  .picksys i { width: .85rem; height: .85rem; border-radius: 3px; border: 1px solid var(--hairline); }
-  .dots { display: flex; gap: .8rem; align-items: center; }
+  .picksys i { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--hairline); }
+  .dots { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
   .dot {
-    width: .8rem; height: .8rem; border-radius: 50%; border: 1px solid rgba(255,255,255,.16);
-    cursor: pointer; padding: 0; transition: transform var(--t-fast) var(--ease); position: relative;
+    width: 14px; height: 14px; border-radius: 50%; border: 0; box-shadow: inset 0 0 0 1px var(--rule);
+    cursor: pointer; padding: 0; position: relative;
+    transition: scale var(--t-press) var(--spring-soft);
   }
-  /* the dot stays 13px; the hit area is a transparent 25px overlay, so aiming is not part of the task */
+  /* the dot stays 14px; the hit area is a transparent overlay, so aiming is not part of the task */
   .dot::before { content: ""; position: absolute; inset: -6px; border-radius: 50%; }
-  .dot:hover { transform: scale(1.12); }
-  .dot[aria-pressed="true"] { outline: 2px solid var(--ink-hi); outline-offset: 2px; }
+  .dot:hover { scale: 1.12; }
+  .dot:active { scale: var(--press-icon); }
+  .dot[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 2px; }
   .spacer { flex: 1; }
 
   main {
-    padding: 2.5rem clamp(1.5rem, 5vw, 5rem) 6rem;
-    display: grid; gap: clamp(1.25rem, 2.2vw, 2rem);
+    padding: 32px var(--gut) 96px;
+    display: grid; gap: clamp(12px, 1.6vw, 20px);
     grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
   }
   .card {
-    background: var(--bg-1);
-    border-radius: var(--r-lg); overflow: hidden;
+    background: var(--wash);
+    border-radius: var(--r-card); overflow: hidden;
     display: flex; flex-direction: column;
-    animation: rise .45s cubic-bezier(.16,1,.3,1) backwards;
-    transition: background var(--t-fast) var(--ease);
+    animation: rise var(--t-rise) var(--rise) backwards;
+    transition: background var(--t-color);
   }
-  .card:hover { background: var(--bg-2); }
-  .card.drawing { outline: 2px solid var(--ink-hi); outline-offset: 2px; }
-  @keyframes rise { from { opacity: 0; transform: translateY(5px); } }
+  .card:hover { background: var(--wash-2); }
+  .card.drawing { outline: 2px solid var(--ink); outline-offset: 2px; }
+  @keyframes rise { from { opacity: 0; translate: 0 10px; } }
 
-  .bands { display: flex; height: 10rem; background: var(--bg-2); }
+  .bands { display: flex; height: 10rem; background: var(--wash); }
   .band {
-    flex: 1 1 0; min-width: 0; border: none; cursor: copy; padding: .4rem .3rem;
+    flex: 1 1 0; min-width: 0; border: none; cursor: copy; padding: 8px 4px;
     display: flex; align-items: flex-start; justify-content: center;
-    transition: flex-grow .28s cubic-bezier(.16,1,.3,1);
+    transition: flex-grow var(--t-move) var(--spring-soft);
   }
   .band span {
-    font-family: var(--font-mono); font-size: .62rem; letter-spacing: .03em;
-    opacity: 0; transition: opacity var(--t-med) var(--ease); white-space: nowrap;
+    font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums;
+    opacity: 0; transition: opacity var(--t-fade); white-space: nowrap;
   }
   .band:hover, .band:focus-visible { flex-grow: 1.8; }
   .band:hover span, .band:focus-visible span { opacity: 1; }
@@ -199,124 +161,142 @@
   .card.drawing .band.on { outline: 2px solid currentColor; outline-offset: -2px; }
   .card.drawing .band span { opacity: 1; }
 
-  .card footer { padding: 1rem 1.1rem 1.1rem; border-top: 1px solid var(--hairline); }
-  .card .row1 { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
-  .card h3 { font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: var(--ink-hi); }
-  .card .page { font-family: var(--font-mono); font-size: 11px; letter-spacing: .02em; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
-  .card .row2 { margin-top: .6rem; display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
-  .card .sec { font-size: 12px; font-weight: 400; color: var(--ink-low); }
-  /* the row gap moves into the buttons' own padding, so the target grows without the row growing */
-  .acts { display: flex; flex-wrap: wrap; gap: 0 .35rem; margin: -.45rem -.5rem -.45rem 0; }
+  .card footer { padding: 16px 20px 18px; }
+  .card .row1 { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-4); }
+  .card h3 { font-size: 15px; font-weight: 500; letter-spacing: -.01em; color: var(--ink); }
+  .card .page { font-size: 12px; font-weight: 500; color: var(--ink-4); font-variant-numeric: tabular-nums; }
+  .card .row2 { margin-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: var(--s-4); }
+  .card .sec { font-size: 13px; color: var(--ink-4); }
+  /* quiet pill actions; the row gap moves into the buttons' own padding */
+  .acts { display: flex; flex-wrap: wrap; gap: 2px; margin: -6px -10px -6px 0; }
   .acts button {
-    font-family: var(--font-ui); font-size: 13px; font-weight: 500;
-    background: none; border: none; border-radius: var(--r-xs); padding: .4rem .5rem; cursor: pointer; color: var(--ink-low);
-    transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+    height: var(--h-chip); padding: 0 12px; font: 500 13px/1 var(--font-ui);
+    background: none; border: none; border-radius: var(--r-pill); cursor: pointer; color: var(--ink-3);
+    transition: color var(--t-color), background var(--t-color), scale var(--t-press) var(--spring-soft);
   }
-  .acts button:hover { color: var(--ink-hi); }
-  .acts .save[aria-pressed="true"], .acts .draw[aria-pressed="true"] { background: var(--bg-3); color: var(--ink-hi); }
+  .acts button:hover { color: var(--ink); background: var(--wash); }
+  .acts button:active { scale: var(--press-chip); }
+  .acts .save[aria-pressed="true"], .acts .draw[aria-pressed="true"], .acts .pn[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); }
 
-  .empty { grid-column: 1 / -1; text-align: center; padding: 6rem 1rem; color: var(--ink-low); font-size: 15px; }
+  .empty { grid-column: 1 / -1; text-align: center; padding: 96px 16px; color: var(--ink-4); font-size: 15px; }
 
   /* ---- the namer: a typed hex is a question about a colour, not a filter — the grid answers
           with ranked name suggestions before any palettes ---- */
-  .namer { grid-column: 1 / -1; background: var(--bg-1); border-radius: var(--r-lg); padding: .35rem 1.25rem 1.15rem; }
-  .namer .lab { margin-top: .85rem; }
-  .namerbody { display: flex; gap: 1.1rem; align-items: stretch; flex-wrap: wrap; }
+  .namer { grid-column: 1 / -1; background: var(--wash); border-radius: var(--r-card); padding: 4px 20px 20px; }
+  .namer .lab { margin-top: 16px; }
+  .namerbody { display: flex; gap: 16px; align-items: stretch; flex-wrap: wrap; }
   .nswatch {
-    flex: 0 0 11rem; min-height: 8.5rem; border-radius: var(--r-sm); border: 1px solid var(--hairline);
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15rem;
+    flex: 0 0 11rem; max-width: 100%; min-height: 8.5rem; border-radius: var(--r-inner); box-shadow: inset 0 0 0 1px var(--hairline);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   }
   .nswatch.lt { color: rgba(255,255,255,.95); }
   .nswatch.dk { color: rgba(0,0,0,.8); }
-  .nswatch .rl { font-weight: 600; font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; }
-  .nswatch span:last-child { font-family: var(--font-mono); font-size: .72rem; }
-  .nlist { flex: 1 1 16rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 2px .6rem; align-content: center; }
+  .nswatch .rl { font-weight: 500; font-size: 12px; }
+  .nswatch span:last-child { font-size: 12px; font-variant-numeric: tabular-nums; }
+  .nlist { flex: 1 1 16rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr)); gap: 2px 8px; align-content: center; }
   .nrow {
-    display: flex; align-items: center; gap: .6rem; height: 40px; padding: 0 .6rem; border-radius: var(--r-sm);
-    background: none; border: none; font: inherit; cursor: pointer; text-align: left;
-    transition: background var(--t-fast) var(--ease);
+    display: flex; align-items: center; gap: 10px; height: var(--h-row); padding: 0 10px; border-radius: var(--r-inner);
+    background: none; border: none; font: inherit; cursor: pointer; text-align: left; min-width: 0;
+    transition: background var(--t-color);
   }
-  .nrow:hover { background: var(--bg-2); }
-  .nrow i { width: 1.4rem; height: 1.4rem; border-radius: 6px; border: 1px solid var(--hairline); flex: none; }
-  .nrow b { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 500; color: var(--ink-hi); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .nrow code { font-family: var(--font-mono); font-size: 11px; color: var(--ink-low); }
-  .nrow .nd { font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); width: 3.2rem; text-align: right; font-variant-numeric: tabular-nums; }
+  .nrow:hover { background: var(--wash); }
+  .nrow i { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--hairline); flex: none; }
+  .nrow b { flex: 1; min-width: 0; font-size: 14px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nrow code { font: 400 12px/1 var(--font-ui); color: var(--ink-4); font-variant-numeric: tabular-nums; }
+  .nrow .nd { font-size: 11px; color: var(--ink-4); width: 3.2rem; text-align: right; font-variant-numeric: tabular-nums; }
   /* a # still being typed: the grid waits instead of pretending to search */
-  .nwait { grid-column: 1 / -1; text-align: center; padding: 2.2rem 1rem; color: var(--ink-faint); font-size: 13px; font-family: var(--font-mono); }
+  .nwait { grid-column: 1 / -1; text-align: center; padding: 36px 16px; color: var(--ink-4); font-size: 13px; font-variant-numeric: tabular-nums; }
 
   .colophon {
-    border-top: 1px solid var(--hairline); margin: 0 clamp(1.5rem, 5vw, 5rem); padding: 1.2rem 0 3.5rem;
-    font-size: 12px; color: var(--ink-faint);
+    border-top: 1px solid var(--hairline); margin: 0 var(--gut); padding: 20px 0 56px;
+    font-size: 13px; color: var(--ink-4);
   }
 
+  /* modal: an elevated sheet that floats */
   dialog {
     margin: auto; /* the * reset above removes the UA centering */
-    background: var(--bg-1); color: var(--ink-mid); border: 1px solid var(--hairline);
-    border-radius: var(--r-xl); overflow: auto;
-    padding: 0; width: min(34rem, calc(100vw - 2rem));
+    background: var(--elev); color: var(--ink-2); border: 0;
+    border-radius: var(--r-card); overflow: auto; box-shadow: var(--menu-ring), var(--float);
+    padding: 0; width: min(34rem, calc(100vw - 32px));
     max-height: 92svh;
   }
-  dialog::backdrop { background: rgba(0,0,0,.6); }
-  /* modal anatomy from the reference: centred title, close ✕ floating top-right */
-  dialog header { position: relative; display: flex; justify-content: center; align-items: center; padding: 1.6rem 3rem .9rem; }
-  dialog h3 { font-weight: 700; font-size: 20px; letter-spacing: -.01em; color: var(--ink-hi); text-align: center; }
-  dialog header button { position: absolute; top: 1.1rem; right: 1.1rem; background: none; border: none; padding: .35rem; cursor: pointer; color: var(--ink-low); display: flex; border-radius: var(--r-xs); transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
-  dialog header button:hover { color: var(--ink-hi); background: var(--bg-3); }
-  dialog p { margin: 0; padding: 0 1.5rem 1.25rem; color: var(--ink-low); font-size: 14px; line-height: 1.55; }
+  dialog::backdrop { background: var(--veil, rgba(0,0,0,.35)); backdrop-filter: blur(12px) saturate(1.3); -webkit-backdrop-filter: blur(12px) saturate(1.3); }
+  /* centred title, close x floating top-right */
+  dialog header { position: relative; display: flex; justify-content: center; align-items: center; padding: 26px 56px 14px; }
+  dialog h3 { font-weight: 500; font-size: 17px; line-height: 1.25; letter-spacing: -.02em; color: var(--ink); text-align: center; }
+  dialog p { margin: 0; padding: 0 24px 20px; color: var(--ink-4); font-size: 14px; line-height: 1.55; }
 
-  /* Phosphor glyphs (Fill weight; bare ✕ rides the Bold weight — its Fill variant is plated),
-     drawn in currentColor so they sit on the ink ladder and brighten with their label. */
-  .i { width: 1.05em; height: 1.05em; display: block; flex: none; }
-  dialog nav { display: flex; gap: .2rem; padding: 0 1.5rem .9rem; flex-wrap: wrap; }
+  /* tool: icon button whose backdrop grows in on hover */
+  .ricon, dialog header button {
+    position: relative; width: 36px; height: 36px; flex: none; border: 0; padding: 0; border-radius: var(--r-pill);
+    background: none; color: var(--ink-3); display: grid; place-items: center; cursor: pointer;
+    transition: color var(--t-color);
+  }
+  :is(.ricon, dialog header button)::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: rgba(var(--ink-rgb), .08); opacity: 0; scale: .86; transition: opacity 150ms, scale var(--t-press) var(--spring-soft); }
+  :is(.ricon, dialog header button):hover { color: var(--ink); }
+  :is(.ricon, dialog header button):is(:hover, :focus-visible)::before { opacity: 1; scale: 1; }
+  :is(.ricon, dialog header button) > svg { position: relative; transition: scale var(--t-press) var(--spring-soft); }
+  :is(.ricon, dialog header button):active > svg { scale: var(--press-icon); transition-duration: 90ms; }
+  dialog header button { position: absolute; top: 14px; right: 14px; }
+
   dialog pre {
-    margin: 0 1.5rem; padding: 1rem; background: var(--bg-0); border-radius: var(--r-sm);
-    font-family: var(--font-mono); font-size: 12px; line-height: 1.7; color: var(--ink-mid);
+    margin: 0 24px; padding: 16px; background: var(--wash); border-radius: 20px;
+    font: 400 12.5px/1.7 var(--font-ui); font-variant-numeric: tabular-nums; color: var(--ink-2);
     max-height: 46vh; overflow: auto;
   }
-  dialog footer { display: flex; gap: .6rem; justify-content: flex-end; padding: 1.25rem 1.5rem 1.5rem; }
+  dialog footer { display: flex; gap: var(--s-4); justify-content: flex-end; padding: 20px 24px 24px; }
   .btn {
-    font-family: var(--font-ui); font-weight: 600; font-size: 14px;
-    border: none; border-radius: var(--r-md); background: var(--inverse-bg); color: var(--inverse-ink);
-    height: var(--row-h); padding: 0 22px; cursor: pointer;
-    transition: filter var(--t-fast) var(--ease), background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+    height: var(--h-button); padding: 0 20px; border: 0; border-radius: var(--r-pill);
+    background: var(--ink); color: var(--on-ink); font: 500 15px/1 var(--font-ui); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--s-4); white-space: nowrap;
+    transition: opacity var(--t-fade), scale var(--t-press) var(--spring-soft), background var(--t-color), color var(--t-color);
   }
-  .btn:hover:not(:disabled) { filter: brightness(.92); }
-  .btn.ghost { background: var(--bg-2); color: var(--ink-mid); font-weight: 500; }
-  .btn.ghost:hover:not(:disabled) { background: var(--bg-3); color: var(--ink-hi); filter: none; }
-  .btn:disabled { opacity: .35; cursor: not-allowed; }
+  .btn:hover:not(:disabled) { opacity: .86; }
+  .btn:active:not(:disabled) { scale: var(--press); }
+  .btn.ghost { background: var(--wash); color: var(--ink); }
+  .btn.ghost:hover:not(:disabled) { opacity: 1; background: var(--wash-2); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* segmented controls: a wash track, the active segment an elevated pill */
+  .rtabs, .themes, dialog nav, .rbody.export nav {
+    display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; border-radius: 18px; background: var(--wash);
+  }
+  :is(.rtabs, .themes, dialog nav, .rbody.export nav) .chip { background: none; color: var(--ink-3); font-size: 13px; }
+  :is(.rtabs, .themes, dialog nav, .rbody.export nav) .chip:hover { background: none; color: var(--ink); }
+  :is(.rtabs, .themes, dialog nav, .rbody.export nav) .chip:active { scale: 1; }
+  :is(.rtabs, .themes, dialog nav, .rbody.export nav) .chip[aria-pressed="true"] { background: var(--elev); color: var(--ink); box-shadow: var(--shadow-1); }
+  dialog nav { margin: 0 24px 14px; }
 
   /* ================= the rail — where a system is built (book pp. 4–5) ================= */
   #rail {
     position: fixed; inset: 0; margin: 0 auto; width: min(38rem, 100%); z-index: 40;
-    background: var(--bg-0);
+    background: var(--bg);
     display: none; flex-direction: column;
   }
-  body.rail #rail { display: flex; animation: railin .3s cubic-bezier(.16,1,.3,1); }
+  body.rail #rail { display: flex; animation: railin var(--t-open) var(--rise); }
 
-  .rhead { flex: none; padding: 1.1rem 1.25rem .9rem; border-bottom: 1px solid var(--hairline); }
-  .rtop { display: flex; align-items: center; gap: .6rem; }
+  .rhead { flex: none; padding: 14px 20px 14px; border-bottom: 1px solid var(--hairline); }
+  .rtop { display: flex; align-items: center; gap: var(--s-2); }
   #rname {
-    flex: 1; min-width: 0; font-family: var(--font-ui); font-size: 17px; font-weight: 600; letter-spacing: -.01em;
-    background: none; border: none; border-bottom: 1px solid transparent; color: var(--ink-hi);
-    padding: .1rem 0; outline: none;
+    flex: 1; min-width: 0; height: var(--h-field); margin-left: -12px; padding: 0 12px;
+    font: 500 17px/1.25 var(--font-ui); letter-spacing: -.02em; color: var(--ink);
+    background: none; border: 0; border-radius: var(--r-pill); outline: none;
+    transition: background var(--t-color), box-shadow var(--t-color);
   }
-  #rname:hover { border-bottom-color: var(--hairline); }
-  #rname:focus { border-bottom-color: var(--ink-low); }
-  .rhead .src { display: block; margin-top: .35rem; font-size: 12px; color: var(--ink-low); }
+  #rname:hover { background: var(--wash); }
+  #rname:focus { background: var(--bg); box-shadow: var(--ring); }
+  .rhead .src { display: block; margin-top: 4px; font-size: 13px; color: var(--ink-4); }
   /* the method as a strip: each segment is a fact about the build and a link to the stage that changes it */
-  .rprog { display: flex; flex-wrap: wrap; gap: .1rem .4rem; align-items: baseline; margin-top: .5rem; }
-  .rprog button { background: none; border: none; padding: .15rem 0; cursor: pointer; font-family: var(--font-mono); font-size: 11px; letter-spacing: .02em; color: var(--ink-low); font-variant-numeric: tabular-nums; transition: color var(--t-fast) var(--ease); }
-  .rprog button.done { color: var(--ink-mid); }
-  .rprog button:hover { color: var(--ink-hi); }
-  .rprog .sep { color: var(--ink-faint); font-size: 11px; }
-  /* Build/Export as a full-width segmented control — container bg-2, active segment one step up */
-  .rtabs { display: flex; gap: 2px; margin-top: .8rem; background: var(--bg-2); border-radius: var(--r-md); padding: 3px; }
-  .rtabs .chip { flex: 1 1 0; text-align: center; padding: .55rem 1rem; font-size: 14px; border-radius: 9px; }
-  .rtabs .chip:not([aria-pressed="true"]):hover { color: var(--ink-mid); background: none; }
-  .ricon { background: none; border: none; padding: .4rem; cursor: pointer; color: var(--ink-low); font-size: 1rem; line-height: 1; display: flex; border-radius: var(--r-xs); transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
-  .ricon:hover { color: var(--ink-hi); background: var(--bg-3); }
+  .rprog { display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: baseline; margin-top: 6px; }
+  .rprog button { background: none; border: none; padding: 2px 0; cursor: pointer; font: 500 12px/1.6 var(--font-ui); color: var(--ink-4); font-variant-numeric: tabular-nums; transition: color var(--t-color); }
+  .rprog button.done { color: var(--ink-2); }
+  .rprog button:hover { color: var(--ink); }
+  .rprog .sep { color: var(--ink-5); font-size: 12px; }
+  /* Build/Export: a full-width segmented control */
+  .rtabs { display: flex; margin-top: 12px; }
+  .rtabs .chip { flex: 1 1 0; font-size: 14px; }
 
-  .rbody { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 0 1.25rem 1.4rem; }
+  .rbody { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 0 20px 22px; }
   .rbody.export { display: flex; flex-direction: column; padding-bottom: 0; }
   /* The preview is ~800px of page. At the end of a 1600px scroller you had to scroll away from every
      control to see it. Its own pane keeps it in shot while the board, tiles and ladder scroll above.
@@ -328,12 +308,12 @@
      ends up sitting on top of the preview. */
   .rprev:not(:empty) {
     flex: 0 0 auto; display: flex; flex-direction: column; overflow: hidden;
-    border-top: 1px solid var(--hairline); padding: 0 1.25rem .9rem;
+    border-top: 1px solid var(--hairline); padding: 0 20px 14px;
   }
-  .rprev .lab { flex: none; margin-top: .75rem; }
+  .rprev .lab { flex: none; margin-top: 12px; }
   #rPrev { flex: none; max-height: min(32svh, 20rem); overflow: auto; overscroll-behavior: contain; }
-  .ract { flex: none; border-top: 1px solid var(--hairline); padding: .85rem 1.25rem; display: flex; gap: .55rem; }
-  .ract .btn { flex: 1; padding: 0 .5rem; text-align: center; }
+  .ract { flex: none; border-top: 1px solid var(--hairline); padding: 14px 20px; display: flex; gap: var(--s-4); }
+  .ract .btn { flex: 1; padding: 0 8px; }
 
   /* Wide screens: controls left, preview right. Stacked, the preview could only ever have the ~32svh
      the controls could spare it; beside them it gets the full height of the window and is finally
@@ -351,7 +331,7 @@
     .rbody { grid-area: body; }
     .ract  { grid-area: act; }
     .rprev:not(:empty) {
-      grid-area: prev; border-top: none; border-left: 1px solid var(--hairline); padding: 0 1.4rem 1.3rem;
+      grid-area: prev; border-top: none; border-left: 1px solid var(--hairline); padding: 0 22px 20px;
     }
     /* uncapped, this track grows with the window past any window a "page" is meant to be judged at —
        50rem matches the ~800px the pane exists to show, so it stops stretching past every ordinary desktop width */
@@ -363,48 +343,53 @@
     }
   }
 
+  /* section labels: Pumice h3 — 13/500 ink, normal case */
   .lab {
-    font-size: 11px; color: var(--ink-low);
-    margin: 1.6rem 0 .6rem;
-    display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .3rem .75rem;
+    font-size: 13px; font-weight: 500; line-height: 1.5; color: var(--ink);
+    margin: 24px 0 10px;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px;
   }
-  .lab .act { font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-mid); background: none; border: none; padding: 0; cursor: pointer; font-family: var(--font-ui); transition: color var(--t-fast) var(--ease); }
-  .lab .act:hover { color: var(--ink-hi); }
-  .lab .tally { color: var(--ink-faint); font-family: var(--font-mono); letter-spacing: .02em; text-transform: none; font-variant-numeric: tabular-nums; }
-  .themes { display: flex; flex-wrap: wrap; gap: .1rem .15rem; }
+  .lab .act {
+    height: var(--h-chip); padding: 0 12px; border: 0; border-radius: var(--r-pill);
+    background: var(--wash); color: var(--ink-2); font: 500 13px/1 var(--font-ui); cursor: pointer;
+    transition: color var(--t-color), background var(--t-color), scale var(--t-press) var(--spring-soft);
+  }
+  .lab .act:hover { color: var(--ink); background: var(--wash-2); }
+  .lab .act:active { scale: var(--press-chip); }
+  .lab .tally { color: var(--ink-4); font-size: 12px; font-weight: 400; font-variant-numeric: tabular-nums; }
   .themes .chip { text-transform: capitalize; }
   /* format pickers are acronym rows — the one place the control voice stays uppercase */
-  dialog nav .chip, .rbody.export nav .chip { font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-  .pctrls { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .8rem; }
+  dialog nav .chip, .rbody.export nav .chip { font-size: 12px; letter-spacing: .01em; text-transform: uppercase; }
+  .pctrls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
 
   /* ---- ramp board: the palette regrouped into the tint/shade columns the book prints ----
      Columns run to a common height and their cells share it, so a two-step ramp and a five-step
      ramp both read as ramps instead of leaving a staircase of holes down the right of the rail. */
-  .board { display: flex; gap: 1px; height: calc(var(--rows) * 2.35rem); border-radius: var(--r-sm); overflow: hidden; }
+  .board { display: flex; gap: 1px; height: calc(var(--rows) * 2.35rem); border-radius: var(--r-inner); overflow: hidden; }
   .col { flex: 1 1 0; min-width: 0; height: 100%; display: flex; flex-direction: column; gap: 1px; }
   .cell {
     position: relative; border: none; padding: 0; cursor: pointer; flex: 1 1 0; min-height: 0;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .05rem;
-    transition: flex-grow var(--t-med) var(--ease);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    transition: flex-grow var(--t-fade);
   }
   .cell.lt { color: rgba(255,255,255,.95); }
   .cell.dk { color: rgba(0,0,0,.8); }
   .cell.core { flex-grow: 1.7; }
-  .cell span { font-family: var(--font-mono); font-size: .58rem; letter-spacing: .04em; color: currentColor; }
-  .cell .rl { font-family: var(--font-ui); font-weight: 600; font-size: .5rem; letter-spacing: .16em; text-transform: uppercase; }
+  .cell span { font-variant-numeric: tabular-nums; font-size: 10px; font-weight: 500; color: currentColor; }
+  .cell .rl { font-weight: 500; font-size: 10px; letter-spacing: .01em; }
   .cell.on { outline: 2px solid currentColor; outline-offset: -2px; z-index: 1; }
   /* the top 40% of a cell sets the core; a hairline draws the split on hover so the two targets are visible */
   .cell::before {
     content: ""; position: absolute; inset: 0 0 60% 0; pointer-events: none;
-    border-bottom: 1px solid currentColor; opacity: 0; transition: opacity var(--t-fast) var(--ease);
+    border-bottom: 1px solid currentColor; opacity: 0; transition: opacity var(--t-color);
   }
   .cell:hover::before, .cell:focus-visible::before { opacity: .8; }
   .cell.core::before { display: none; }
   /* An unchosen swatch used to answer nothing on hover — not its hex, not what the hairline divided.
      Now the top zone names itself and the hex reads out, so both targets are discoverable in place
      instead of only in the screen-reader instructions. */
-  .cell .cue { position: absolute; top: .28rem; left: 0; right: 0; text-align: center; }
-  .cell .cue, .cell .hx { opacity: 0; transition: opacity var(--t-fast) var(--ease); }
+  .cell .cue { position: absolute; top: 4px; left: 0; right: 0; text-align: center; }
+  .cell .cue, .cell .hx { opacity: 0; transition: opacity var(--t-color); }
   .cell:hover .cue, .cell:focus-visible .cue,
   .cell:hover .hx, .cell:focus-visible .hx { opacity: 1; }
   /* the hovered swatch reads as the target without growing — a swelling cell drags every neighbour
@@ -423,36 +408,37 @@
 
   /* list: every verb a labelled button — the arrangement where nothing hides in a hover or a cap */
   .blist { display: flex; flex-direction: column; }
-  .lrow { display: flex; align-items: center; gap: .7rem; padding: .3rem 0; border-bottom: 1px solid var(--hairline); }
-  .lrow .lsw { width: 2.2rem; height: 1.5rem; border: none; border-radius: var(--r-xs); cursor: pointer; flex: none; }
-  .lrow .lsw.on { outline: 2px solid var(--ink-hi); outline-offset: 1px; }
+  .lrow { display: flex; align-items: center; gap: 10px; min-height: var(--h-row); padding: 4px 0; border-bottom: 1px solid var(--hairline); }
+  .lrow .lsw { width: 36px; height: 24px; border: none; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--hairline); cursor: pointer; flex: none; }
+  .lrow .lsw.on { outline: 2px solid var(--ink); outline-offset: 1px; }
   .lrow.out .lsw { opacity: .55; }
-  .lrow .lhex { font-family: var(--font-mono); font-size: 12px; width: 4.4rem; color: var(--ink-mid); }
-  .lrow.out .lhex { text-decoration: line-through; color: var(--ink-faint); }
+  .lrow .lhex { font-variant-numeric: tabular-nums; font-size: 12px; width: 4.4rem; color: var(--ink-2); }
+  .lrow.out .lhex { text-decoration: line-through; color: var(--ink-4); }
   /* the colour's name — the list is the closer-inspection surface, so the name lives here */
-  .lrow .lname { flex: 1; min-width: 0; font-size: 12px; color: var(--ink-low); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .lrow.out .lname { color: var(--ink-faint); }
-  .lrow .lrole { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: var(--ink-low); }
-  .lrow .act { font-family: var(--font-ui); font-weight: 500; font-size: 13px; color: var(--ink-mid); background: none; border: none; padding: .3rem 0; cursor: pointer; transition: color var(--t-fast) var(--ease); }
-  .lrow .act:hover { color: var(--ink-hi); }
+  .lrow .lname { flex: 1; min-width: 0; font-size: 13px; color: var(--ink-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lrow.out .lname { color: var(--ink-4); }
+  .lrow .lrole { font-size: 11px; letter-spacing: .01em; font-weight: 500; color: var(--ink-3); }
+  .lrow .act { height: var(--h-chip); padding: 0 10px; font: 500 13px/1 var(--font-ui); color: var(--ink-3); background: none; border: none; border-radius: var(--r-pill); cursor: pointer; transition: color var(--t-color), background var(--t-color), scale var(--t-press) var(--spring-soft); }
+  .lrow .act:hover { color: var(--ink); background: var(--wash); }
+  .lrow .act:active { scale: var(--press-chip); }
 
   /* ---- the tray: the system itself, chip by chip. The one surface where a build is listed whole —
           including accents borrowed from pages the board can't show — and picked apart or reordered. ---- */
-  .tray { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; min-height: 2.75rem; border: 1px dashed rgba(255,255,255,.22); border-radius: var(--r-md); padding: .45rem; }
-  .tray .none { font-size: 13px; font-weight: 500; color: var(--ink-faint); padding: 0 .4rem; }
-  .tchip { display: inline-flex; align-items: center; gap: .45rem; background: var(--bg-2); border-radius: var(--r-pill); padding: .35rem .7rem .35rem .4rem; position: relative; transition: background var(--t-fast) var(--ease); }
-  .tchip:hover { background: var(--bg-3); }
-  .tchip:focus-visible { outline: 2px solid var(--ink-low); outline-offset: 2px; }
+  .tray { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 46px; border: 1px dashed var(--rule); border-radius: var(--r-menu); padding: 6px; }
+  .tray .none { font-size: 13px; color: var(--ink-4); padding: 0 8px; }
+  .tchip { display: inline-flex; align-items: center; gap: 6px; height: var(--h-chip); background: var(--wash); border-radius: var(--r-pill); padding: 0 12px 0 5px; position: relative; transition: background var(--t-color), scale var(--t-press) var(--spring-soft); }
+  .tchip:hover { background: var(--wash-2); }
+  .tchip:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
   .tchip.lifting { opacity: .3; }
-  .tchip i { width: 1.1rem; height: 1.1rem; border-radius: 50%; border: 1px solid var(--hairline); }
-  .tchip .tl { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: var(--ink-low); }
-  .tchip code { font-family: var(--font-mono); font-size: 12px; color: var(--ink-hi); }
-  .tchip .tp { font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); }
-  .tchip.corechip { background: var(--bg-3); cursor: pointer; }
-  .tx { background: none; border: none; padding: .1rem; margin: 0 -.25rem 0 -.15rem; cursor: pointer; color: var(--ink-low); display: flex; opacity: 0; transition: opacity var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
-  .tx .i { width: .85em; height: .85em; }
+  .tchip i { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--hairline); }
+  .tchip .tl { font-size: 11px; letter-spacing: .01em; font-weight: 500; color: var(--ink-3); }
+  .tchip code { font-size: 13px; font-weight: 500; color: var(--ink); }
+  .tchip .tp { font-variant-numeric: tabular-nums; font-size: 11px; color: var(--ink-4); }
+  .tchip.corechip { background: var(--wash-2); cursor: pointer; }
+  .tx { width: 22px; height: 22px; border-radius: 50%; background: none; border: none; padding: 0; margin: 0 -6px 0 -2px; cursor: pointer; color: var(--ink-3); display: grid; place-items: center; opacity: 0; transition: opacity var(--t-fade), color var(--t-color), background var(--t-color); }
+  .tx:hover { background: var(--wash); }
   .tchip:hover .tx, .tchip:focus-within .tx { opacity: 1; }
-  .tx:hover { color: var(--ink-hi); }
+  .tx:hover { color: var(--ink); }
   @media (pointer: coarse) { .tx { opacity: 1; } }
 
   /* Five 1.5rem ramp strips were near-indistinguishable, and Neutral and Zinc genuinely share their
@@ -461,7 +447,7 @@
   .neuts {
     display: grid; grid-auto-flow: column; grid-auto-columns: minmax(4.5rem, 1fr);
     gap: 1px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: thin;
-    border-radius: var(--r-sm);
+    border-radius: var(--r-inner);
   }
   /* flex, not block: a button with a fixed height centres its content box, which floats the nav bar
      off the top edge and stops the tile reading as a page */
@@ -471,12 +457,12 @@
     background: var(--t-bg); outline-offset: -2px;
   }
   .neut > * { flex: none; }
-  .neut:hover { outline: 1px solid var(--ink-low); outline-offset: -1px; }
-  .neut[aria-pressed="true"] { outline: 2px solid var(--ink-hi); }
+  .neut:hover { outline: 1px solid var(--ink-3); outline-offset: -1px; }
+  .neut[aria-pressed="true"] { outline: 2px solid var(--ink); }
   /* the name rides the nav bar in the scale's own text colour — the label is itself a text-on-surface sample */
   .neut b {
     display: block; background: var(--t-surface); border-bottom: 1px solid var(--t-line); color: var(--t-ink);
-    padding: .3rem .4rem; font-size: .5rem; letter-spacing: .08em;
+    padding: 4px 6px; font-size: 10px; font-weight: 500;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   /* bars, not copy: at 4.5rem wide real text is illegible, and the undertone is what's being judged */
@@ -489,59 +475,61 @@
   /* the summary carries the .lab voice and its own caret — the default triangle sits off the baseline */
   details.roles > summary { cursor: pointer; list-style: none; }
   details.roles > summary::-webkit-details-marker { display: none; }
-  details.roles > summary > span:first-child::after { content: " +"; font-family: var(--font-mono); }
-  details.roles[open] > summary > span:first-child::after { content: " −"; }
-  details.roles > summary:hover { color: var(--ink-hi); }
-  .lad { display: grid; grid-template-columns: 5.4rem 1fr; gap: .35rem .6rem; align-items: center; }
-  .lad > .rn { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: var(--ink-low); }
-  .lad > .rn.moved { color: var(--ink-hi); }
-  .steps { display: flex; gap: 1px; border-radius: var(--r-xs); overflow: hidden; }
-  .step { flex: 1 1 0; height: 1.15rem; border: none; padding: 0; cursor: pointer; position: relative; }
-  .step[aria-pressed="true"] { outline: 2px solid var(--ink-hi); outline-offset: -2px; z-index: 2; }
+  details.roles > summary > span:first-child { display: inline-flex; align-items: center; gap: 4px; }
+  details.roles > summary > span:first-child::after { content: ""; width: var(--icon-sm); height: var(--icon-sm); background: var(--ink-3); -webkit-mask: var(--chev) center / contain no-repeat; mask: var(--chev) center / contain no-repeat; transition: rotate var(--t-press) var(--settle); }
+  details.roles[open] > summary > span:first-child::after { rotate: 180deg; }
+  details.roles > summary:hover > span:first-child::after { background: var(--ink); }
+  .lad { display: grid; grid-template-columns: 5.4rem 1fr; gap: 6px 10px; align-items: center; }
+  .lad > .rn { font-size: 12px; font-weight: 500; color: var(--ink-3); }
+  .lad > .rn.moved { color: var(--ink); }
+  .steps { display: flex; gap: 1px; border-radius: var(--r-bar); overflow: hidden; }
+  .step { flex: 1 1 0; height: 20px; border: none; padding: 0; cursor: pointer; position: relative; }
+  .step[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: -2px; z-index: 2; }
   /* ghost mark — the nearest step that clears AA, shown before you click it */
   .step.fix::after {
     content: ""; position: absolute; inset: auto .18rem .18rem .18rem; height: 2px;
-    background: var(--inverse-bg); box-shadow: 0 0 0 1px rgba(0,0,0,.6);
+    background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.6);
   }
-  .lad .rd { grid-column: 2; margin: -.15rem 0 .15rem; font-family: var(--font-mono); font-size: 11px; letter-spacing: .02em; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
-  .lad .rd.bad { color: var(--ink-hi); font-weight: 500; }
+  .lad .rd { grid-column: 2; margin: -2px 0 2px; font-size: 12px; color: var(--ink-4); font-variant-numeric: tabular-nums; }
+  .lad .rd.bad { color: var(--ink); font-weight: 500; }
   .lad .rd.bad::before { content: "⚠ "; }
 
-  /* ---- type: three decisions, three controls. The faces are never drawn in the chrome — Geist
+  /* ---- type: three decisions, three controls. The faces are never drawn in the chrome — Inter
           keeps the tool's own voice, and the preview a few centimetres below is the specimen. ---- */
-  .tpick { display: grid; grid-template-columns: 5.4rem 1fr; gap: .5rem .6rem; align-items: center; }
-  .tpick > .rn { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: var(--ink-low); }
+  .tpick { display: grid; grid-template-columns: 5.4rem minmax(0, 1fr); gap: 8px 10px; align-items: center; }
+  .tpick > .rn { font-size: 12px; font-weight: 500; color: var(--ink-3); }
   .tselw { position: relative; min-width: 0; }
-  .tselw::after { content: "▾"; position: absolute; right: .7rem; top: 50%; translate: 0 -50%; pointer-events: none; color: var(--ink-low); font-size: 11px; }
+  .tselw::after { content: ""; position: absolute; right: 14px; top: 50%; translate: 0 -50%; width: var(--icon-sm); height: var(--icon-sm); pointer-events: none; background: var(--ink-3); -webkit-mask: var(--chev) center / contain no-repeat; mask: var(--chev) center / contain no-repeat; }
   .tsel {
-    width: 100%; appearance: none; background: var(--bg-2); border: none; border-radius: var(--r-sm);
-    padding: .5rem 1.8rem .5rem .7rem; font-family: var(--font-ui); font-size: 13px; font-weight: 500; color: var(--ink-hi);
-    cursor: pointer; transition: background var(--t-fast) var(--ease);
+    width: 100%; height: var(--h-field); appearance: none; background: var(--wash); border: none; border-radius: var(--r-pill);
+    padding: 0 38px 0 14px; font: 500 14px/1 var(--font-ui); color: var(--ink);
+    cursor: pointer; transition: background var(--t-color);
   }
-  .tsel:hover { background: var(--bg-3); }
-  .tsel:focus-visible { outline: 2px solid var(--ink-hi); outline-offset: 2px; }
+  .tsel optgroup { font-weight: 500; }
+  .tsel:hover { background: var(--wash-2); }
+  .tsel:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
   /* the one place the app touches the network, said out loud at the moment it happens */
-  .tnote { grid-column: 1 / -1; font-family: var(--font-mono); font-size: 11px; letter-spacing: .02em; color: var(--ink-faint); margin-top: .1rem; }
-  .rx { background: none; border: none; padding: .1rem; margin-left: .35rem; cursor: pointer; color: var(--ink-low); display: inline-flex; vertical-align: -.15em; transition: color var(--t-fast) var(--ease); }
-  .rx .i { width: .85em; height: .85em; }
-  .rx:hover { color: var(--ink-hi); }
+  .tnote { grid-column: 1 / -1; font-size: 12px; color: var(--ink-4); margin-top: 2px; }
+  .rx { width: 22px; height: 22px; border-radius: 50%; background: none; border: none; padding: 0; margin-left: 4px; cursor: pointer; color: var(--ink-3); display: inline-grid; place-items: center; vertical-align: middle; transition: color var(--t-color), background var(--t-color); }
+  .rx:hover { background: var(--wash); }
+  .rx:hover { color: var(--ink); }
 
   /* the ramp as a drag source — the same eleven steps the ladder reads, liftable onto a role or the page */
-  .rstrip { display: flex; gap: 1px; margin: .2rem 0 0; border-radius: var(--r-xs); overflow: hidden; }
-  .rstrip .rstep { flex: 1 1 0; height: 1.7rem; }
+  .rstrip { display: flex; gap: 1px; margin: 4px 0 0; border-radius: var(--r-bar); overflow: hidden; }
+  .rstrip .rstep { flex: 1 1 0; height: 28px; }
   .rstrip .rstep:hover { box-shadow: inset 0 0 0 1px currentColor; }
   .rstep.lt { color: rgba(255,255,255,.95); }
   .rstep.dk { color: rgba(0,0,0,.8); }
-  .stripcue { font-family: var(--font-mono); font-size: 11px; letter-spacing: .02em; color: var(--ink-low); margin: .3rem 0 .6rem; }
+  .stripcue { font-size: 12px; color: var(--ink-4); margin: 6px 0 10px; }
 
   /* ---- drag: what's liftable says so, what's under a lift says what it would mean ---- */
   .grab { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
   body.dragging, body.dragging * { cursor: grabbing !important; }
   /* .dghost, not .ghost — the rail's secondary buttons already own that name.
-     The lifted chip is the system's one glow — an interactive handle in flight, like the pad dot. */
-  .dghost { position: fixed; left: 0; top: 0; z-index: 80; pointer-events: none; display: flex; align-items: center; gap: .45rem; background: var(--inverse-bg); color: var(--inverse-ink); border-radius: var(--r-pill); padding: .3rem .8rem .3rem .35rem; font-size: 12px; letter-spacing: .04em; font-weight: 600; box-shadow: 0 0 14px 5px rgba(255,255,255,.18); }
-  .dghost i { width: 1rem; height: 1rem; border-radius: 50%; border: 1px solid rgba(0,0,0,.18); }
-  .dghost .gbadge { font-family: var(--font-mono); font-weight: 500; letter-spacing: .02em; }
+     The lifted chip floats, so it is the one thing here wearing the float shadow. */
+  .dghost { position: fixed; left: 0; top: 0; z-index: 80; pointer-events: none; display: flex; align-items: center; gap: 6px; height: var(--h-chip); background: var(--ink); color: var(--on-ink); border-radius: var(--r-pill); padding: 0 12px 0 5px; font-size: 12px; font-weight: 500; box-shadow: var(--float); }
+  .dghost i { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(var(--on-ink-rgb), .25); }
+  .dghost .gbadge { font-variant-numeric: tabular-nums; font-weight: 500; }
   .dghost .gbadge:empty { display: none; }
   [data-drop].dropok { outline: 2px solid currentColor; outline-offset: -2px; }
   [data-drop].dropbad { outline: 2px dashed currentColor; outline-offset: -2px; opacity: .85; }
@@ -554,13 +542,13 @@
           and both ink pairings are all on screen at once. Painted entirely by the built system's own
           colours (--p-*) — the one place the chrome's grayscale rules do not reach, by design. ---- */
   .unbuilt {
-    border: 1px dashed rgba(255,255,255,.22); border-radius: var(--r-md); padding: 1.7rem 1.2rem; text-align: center;
-    font-weight: 500; font-size: 13px; color: var(--ink-faint);
+    border: 1px dashed var(--rule); border-radius: var(--r-card); padding: 28px 20px; text-align: center;
+    font-size: 13px; color: var(--ink-4);
   }
   /* bg, surface and border are meant to sit close together — they only read as three roles when adjacent.
      The three type slots land here too: --p-display for anything set large, --p-body for reading,
-     --p-mono for the technical voice. Unset slots fall back to the chrome's own stack. */
-  .prev { border: 1px solid var(--p-line); border-radius: var(--r-lg); overflow: hidden; background: var(--p-bg); color: var(--p-ink); container-type: inline-size;
+     --p-mono for the technical voice. Unset slots fall back to the chrome's own face, Inter. */
+  .prev { border: 1px solid var(--p-line); border-radius: var(--r-card); overflow: hidden; background: var(--p-bg); color: var(--p-ink); container-type: inline-size;
           font-family: var(--p-body, var(--font-ui)); font-synthesis-weight: none; }
   .prev * { border-color: var(--p-line); }
   .prev h1, .prev h4, .prev blockquote, .prev .pxl, .prev .ptile b { font-family: var(--p-display, var(--font-ui)); }
@@ -580,7 +568,7 @@
   .prev .pbtn {
     font-family: var(--p-body, var(--font-ui)); font-weight: 500; font-size: .6rem; letter-spacing: .16em; text-transform: uppercase;
     background: var(--p-core); color: var(--p-core-ink); border: 1px solid var(--p-core); border-radius: 9px; padding: .55rem 1.1rem; cursor: default;
-    transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+    transition: background var(--t-color), border-color var(--t-color);
   }
   /* the derived states, live: the only honest way to show that a hover shade works is to let the
      cursor find it on the same page the colour was judged on */
@@ -591,19 +579,19 @@
   .prev .pbtn.sec:active { background: var(--p-tint-hi); }
   .prev .pbtn.dis:hover, .prev .pbtn.dis:active { background: var(--p-surface); border-color: var(--p-line); }
   .ptags { display: flex; flex-wrap: wrap; gap: .3rem; }
-  .prev .tag { font-family: var(--p-mono, var(--font-mono)); font-size: .58rem; border-radius: 6px; padding: .25rem .5rem; }
+  .prev .tag { font-family: var(--p-mono, var(--font-ui)); font-size: .58rem; border-radius: 6px; padding: .25rem .5rem; }
   /* the tool annotating the page: a failing text pairing stays pinned to the region it breaks,
-     for as long as it is true. Chrome voice — opaque graphite — so the chip stays legible on
+     for as long as it is true. Chrome voice — Pumice's dark glass tag — so the chip stays legible on
      any user palette, including the broken one it is reporting. */
   .pwarn {
-    position: absolute; top: .3rem; right: .3rem; z-index: 3;
-    background: var(--bg-0); color: var(--ink-hi); border: 1px solid rgba(255,255,255,.14);
-    border-radius: var(--r-xs); padding: .18rem .5rem;
-    font-family: var(--font-mono); font-size: 11px; letter-spacing: .02em; font-variant-numeric: tabular-nums;
-    cursor: pointer; transition: background var(--t-fast) var(--ease);
+    position: absolute; top: 6px; right: 6px; z-index: 3;
+    height: 24px; padding: 0 10px; border: 0; border-radius: var(--r-pill);
+    background: var(--scrim); color: #fff; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    font: 500 11px/1 var(--font-ui); letter-spacing: .01em; font-variant-numeric: tabular-nums;
+    cursor: pointer; transition: opacity var(--t-fade), scale var(--t-press) var(--spring-soft);
   }
-  .prev .pwarn { border-color: rgba(255,255,255,.14); }
-  .pwarn:hover { background: var(--bg-2); }
+  .pwarn:hover { opacity: .86; }
+  .pwarn:active { scale: var(--press-chip); }
   .psec { border-top: 1px solid var(--p-line); padding: 1rem; }
   .prev blockquote { font-size: .95rem; line-height: 1.4; letter-spacing: -.01em; border-left: 2px solid var(--p-core); padding-left: .75rem; }
   .pfield { background: var(--p-surface); border: 1px solid var(--p-line); border-radius: 9px; padding: .5rem .6rem; font-size: .72rem; color: var(--p-mut); margin-top: .35rem; }
@@ -662,7 +650,7 @@
   .hbar i { width: .4rem; height: .4rem; border-radius: 999px; background: var(--p-line); flex: none; }
   .hbar .hurl {
     margin-left: .5rem; flex: 1; background: var(--p-bg); border-radius: 999px; padding: .16rem .55rem;
-    font-family: var(--p-mono, var(--font-mono)); font-size: clamp(.42rem, 1.4cqw, .55rem); color: var(--p-mut);
+    font-family: var(--p-mono, var(--font-ui)); font-size: clamp(.42rem, 1.4cqw, .55rem); color: var(--p-mut);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .hshotb { display: grid; grid-template-columns: 1fr 1.35fr; gap: clamp(.5rem, 1.6cqw, .9rem); padding: clamp(.6rem, 2cqw, 1rem); background: var(--p-bg); }
@@ -690,25 +678,25 @@
           so a weakness that one page hides, another shows ---- */
   .pxl { font-size: 1.7rem; font-weight: 500; letter-spacing: -.03em; line-height: 1.06; }
   .prev a { color: var(--p-core); text-underline-offset: 3px; }
-  .pcode { font-family: var(--p-mono, var(--font-mono)); font-size: .66rem; background: var(--p-surface); border: 1px solid var(--p-line); border-radius: 5px; padding: .06rem .3rem; }
+  .pcode { font-family: var(--p-mono, var(--font-ui)); font-size: .66rem; background: var(--p-surface); border: 1px solid var(--p-line); border-radius: 5px; padding: .06rem .3rem; }
   .ptiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin-top: .8rem; }
   .ptile { background: var(--p-surface); border: 1px solid var(--p-line); border-radius: 9px; padding: .55rem .65rem; min-width: 0; }
   .ptile b { display: block; font-size: 1.05rem; font-weight: 500; letter-spacing: -.02em; margin-top: .2rem; }
   .ptable { margin-top: .8rem; border: 1px solid var(--p-line); border-radius: 9px; overflow: hidden; }
   .ptr { display: grid; grid-template-columns: 2fr .9fr .8fr; gap: .5rem; padding: .45rem .6rem; border-top: 1px solid var(--p-line); font-size: .68rem; align-items: center; }
   .ptr:first-child { border-top: none; background: var(--p-surface); color: var(--p-mut); font-size: .55rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 500; }
-  .ptag2 { justify-self: start; font-family: var(--p-mono, var(--font-mono)); font-size: .56rem; border-radius: 5px; padding: .12rem .4rem; }
+  .ptag2 { justify-self: start; font-family: var(--p-mono, var(--font-ui)); font-size: .56rem; border-radius: 5px; padding: .12rem .4rem; }
   .pchk { display: flex; gap: .5rem; align-items: center; margin-top: .9rem; font-size: .74rem; }
   .pchk i { width: .8rem; height: .8rem; border-radius: 4px; background: var(--p-core); flex: none; }
   .pbtn.dis { background: var(--p-surface); color: var(--p-mut); border-color: var(--p-line); }
   .pchart { display: block; width: 100%; margin-top: .7rem; }
   .plegend { display: flex; gap: .9rem; flex-wrap: wrap; margin-top: .45rem; }
-  .plegend span { display: inline-flex; align-items: center; gap: .35rem; font-family: var(--p-mono, var(--font-mono)); font-size: .58rem; color: var(--p-mut); }
+  .plegend span { display: inline-flex; align-items: center; gap: .35rem; font-family: var(--p-mono, var(--font-ui)); font-size: .58rem; color: var(--p-mut); }
   .plegend i { width: .7rem; height: .7rem; border-radius: 3px; }
 
   /* palette view: proportional colour field, no UI chrome — same swatch vocabulary as .cell
      (rl label + mono hex) but always shown, since this sheet is read, not clicked. */
-  .pal { border: 1px solid var(--hairline); border-radius: var(--r-lg); overflow: hidden; }
+  .pal { box-shadow: inset 0 0 0 1px var(--hairline); border-radius: var(--r-card); overflow: hidden; }
   .pf-field, .pf-row, .pf-ramp { display: flex; }
   .pf-field { min-height: 6rem; }
   .pf-row { min-height: 5rem; border-top: 1px solid var(--hairline); }
@@ -716,53 +704,56 @@
   .pf-sw { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15rem; }
   .pf-sw.lt { color: rgba(255,255,255,.95); }
   .pf-sw.dk { color: rgba(0,0,0,.8); }
-  .pf-sw span { font-family: var(--font-mono); font-size: .58rem; letter-spacing: .04em; color: currentColor; }
-  .pf-sw .rl { font-family: var(--font-ui); font-weight: 600; font-size: .5rem; letter-spacing: .14em; text-transform: uppercase; }
+  .pf-sw span { font-variant-numeric: tabular-nums; font-size: 10px; font-weight: 500; color: currentColor; }
+  .pf-sw .rl { font-weight: 500; font-size: 10px; letter-spacing: .01em; }
   /* the human name under the token name — the sheet reads like a brand guideline page */
-  .pf-sw .pf-name { font-family: var(--font-ui); font-size: .55rem; font-weight: 500; opacity: .85; max-width: 96%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pf-sw .pf-name { font-size: 10px; font-weight: 500; opacity: .85; max-width: 96%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pf-ramp .pf-sw .rl { display: none; }
-  .pf-ramp .pf-sw span:last-child { font-size: .48rem; }
+  .pf-ramp .pf-sw span:last-child { font-size: 9px; }
 
   /* ---- export owns the rail floor when export is the task ---- */
-  .rbody.export nav { display: flex; gap: .2rem; flex-wrap: wrap; padding: 1rem 0 .7rem; flex: none; }
+  .rbody.export nav { flex: none; align-self: flex-start; margin: 16px 0 12px; }
   .rbody.export pre {
-    flex: 1; min-height: 18rem; margin: 0 0 1.15rem; padding: 1rem;
-    background: var(--bg-1); border-radius: var(--r-md);
-    font-family: var(--font-mono); font-size: 12px; line-height: 1.7; color: var(--ink-mid); overflow: auto;
+    flex: 1; min-height: 18rem; margin: 0 0 18px; padding: 16px;
+    background: var(--wash); border-radius: 20px;
+    font-size: 12.5px; line-height: 1.7; color: var(--ink-2); overflow: auto;
   }
-  .exsum { margin-top: 1.4rem; background: var(--bg-1); border: none; border-radius: var(--r-md); padding: .8rem .9rem; cursor: pointer; width: 100%; text-align: left; transition: background var(--t-fast) var(--ease); }
-  .exsum:hover { background: var(--bg-2); }
-  .exsum b { display: block; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: var(--ink-low); }
-  .exsum code { display: block; margin-top: .35rem; font-family: var(--font-mono); font-size: 12px; color: var(--ink-hi); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .exsum { margin-top: 22px; background: var(--wash); border: none; border-radius: 20px; padding: 14px 16px; cursor: pointer; width: 100%; text-align: left; transition: background var(--t-color), scale var(--t-press) var(--spring-soft); }
+  .exsum:hover { background: var(--wash-2); }
+  .exsum:active { scale: .985; }
+  .exsum b { display: block; font-size: 12px; font-weight: 500; color: var(--ink-3); }
+  .exsum code { display: block; margin-top: 4px; font-size: 13px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* ---- shelf: how you recognise a system three weeks later ---- */
   .shelf .card footer { border-top: none; }
   .shelfstrip { display: flex; height: 5rem; }
   .shelfstrip i { flex: 1 1 0; }
-  .shelf .card.pin { outline: 2px solid var(--ink-hi); outline-offset: 2px; }
+  .shelf .card.pin { outline: 2px solid var(--ink); outline-offset: 2px; }
 
   /* ---- compare tray: candidates side by side on one scroll ---- */
-  #cmp { position: fixed; inset: 0; z-index: 60; background: var(--bg-0); display: none; flex-direction: column; }
+  #cmp { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: none; flex-direction: column; }
   body.cmp #cmp { display: flex; }
   body.cmp { overflow: hidden; }
-  .cmphead { flex: none; border-bottom: 1px solid var(--hairline); padding: .9rem clamp(1rem, 3vw, 2rem); display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-  .cmphead h2 { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-hi); }
-  .cmpbody { flex: 1; overflow: auto; display: flex; align-items: flex-start; background: var(--bg-0); }
-  .cmpcol { flex: 1 1 0; min-width: 17rem; background: var(--bg-0); }
+  .cmphead { flex: none; border-bottom: 1px solid var(--hairline); padding: 12px var(--gut); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; }
+  .cmphead h2 { font-size: 14px; font-weight: 500; line-height: 1.4; color: var(--ink); }
+  .cmpbody { flex: 1; overflow: auto; display: flex; align-items: flex-start; background: var(--bg); }
+  .cmpcol { flex: 1 1 0; min-width: 17rem; background: var(--bg); }
   .cmpcol + .cmpcol { border-left: 1px solid var(--hairline); }
-  .cmpname { padding: .7rem .8rem; border-bottom: 1px solid var(--hairline); background: var(--bg-1); position: sticky; top: 0; z-index: 1; }
-  .cmpname b { display: block; font-size: 14px; font-weight: 600; letter-spacing: -.01em; color: var(--ink-hi); }
-  .cmpname span { font-size: 12px; color: var(--ink-low); }
+  .cmpcol .prev { border-radius: 0; }
+  .cmpname { padding: 12px 16px; background: var(--frost); backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px); position: sticky; top: 0; z-index: 1; }
+  .cmpname b { display: block; font-size: 14px; font-weight: 500; letter-spacing: -.01em; color: var(--ink); }
+  .cmpname span { font-size: 13px; color: var(--ink-4); }
 
-  /* the toast borrows the inverse pair — the loudest thing the chrome is allowed to be */
+  /* the toast fills with ink — the loudest thing the chrome is allowed to be — and floats */
   #toast {
-    position: fixed; left: 50%; bottom: 1.75rem; translate: -50% 0; z-index: 70;
-    background: var(--inverse-bg); color: var(--inverse-ink); font-size: 13px; font-weight: 600; letter-spacing: .01em;
-    border-radius: var(--r-pill); padding: .65rem 1.2rem; font-variant-numeric: tabular-nums;
-    opacity: 0; pointer-events: none; transition: opacity .25s, translate .25s;
+    position: fixed; left: 50%; bottom: 28px; translate: -50% 0; z-index: 70;
+    max-width: calc(100vw - 32px); width: max-content;
+    background: var(--ink); color: var(--on-ink); font-size: 14px; font-weight: 500;
+    border-radius: var(--r-pill); padding: 11px 20px; font-variant-numeric: tabular-nums; box-shadow: var(--float);
+    opacity: 0; pointer-events: none; transition: opacity var(--t-fade), translate var(--t-move) var(--spring);
   }
   #toast.show { opacity: 1; translate: -50% -4px; pointer-events: auto; }
-  #toast .tundo { background: none; border: none; color: inherit; font: inherit; letter-spacing: inherit; margin-left: 1rem; padding: 0; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  #toast .tundo { background: none; border: none; color: inherit; font: inherit; margin-left: 16px; padding: 0; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
   @media (max-width: 900px) {
     .cmpcol { min-width: 82vw; }
@@ -772,6 +763,18 @@
   /* a coarse pointer is the actual thing being served here, not a narrow window */
   @media (pointer: coarse) {
     .board { height: calc(var(--rows) * 3rem); }
+    /* touch targets: 44px on fingers */
+    .chip, .btn, .acts button, .lab .act, .lrow .act, .tsel, .toolbar .search, #rname { height: var(--h-touch); }
+    .ricon, dialog header button { width: var(--h-touch); height: var(--h-touch); }
+    .rprog button { min-height: var(--h-touch); }
+    .tx, .rx { width: 32px; height: 32px; }
+    .tchip { height: 40px; }
+    .dot::before { inset: -15px; }
+    .acts { margin-block: -10px; }
+  }
+  @media (max-width: 760px) {
+    .masthead h1 { font-size: 32px; }
+    header.masthead { padding-top: 48px; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
@@ -781,25 +784,18 @@
 <body>
 
 <!--
-THESIS: a dark monochrome console where the 202 palettes are the only colour on screen — refusing the gallery-white swatch-site default.
-OWN-WORLD: Graphite Console — 5-step grayscale surface ladder (#0f0f0f→#3a3a3a, elevation is lightness, no shadows), 4-step ink ladder, white inverse pair as the sole accent, hairline dividers; tracked caps for section labels only, controls in normal-case 13–14px/500 like the Arqé source app; segmented controls (container bg-2, active segment bg-3), Geist + Geist Mono self-hosted, Phosphor Fill glyphs.
-STORY: Sanna opens the library, the chrome recedes, colour reads true against neutral graphite; she filters, builds a system, exports code.
-FIRST VIEWPORT: COLOURBOOK wordmark in one colour (ink-hi) over a hairline meta line; sticky graphite toolbar — magnifier search field with Saved/Systems beside it, normal-case section chips and hue dots below; palette cards as bg-1 panels whose bands carry all the colour.
-FORM: Graphite Console, user-pinned (adopted from image-compressor, tightened against Arqé app screenshots mid-build) — pinned direction beats the roll, no seed key.
-FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+SYSTEM: Pumice — tokens linked from granqvistsanna-web.github.io/pumice/tokens.css, light-first and
+following the system theme. Chrome is ink on washes: pill controls, 28px cards, segmented controls
+with an elevated active pill, Inter 400/500 with tabular figures, Lucide-geometry icons, springy
+press scales. Every coloured pixel on screen belongs to the palettes. See DESIGN.md.
 -->
 
-<!-- the icon set: Phosphor, Fill weight (the bare ✕ rides Bold — its Fill variant is plated), currentColor on the ink ladder -->
+<!-- Icons: Lucide geometry on a 24 grid, drawn as round 2px strokes by svg.i -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-  <symbol id="i-dup" viewBox="0 0 256 256" fill="currentColor">
-    <path d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32Zm-8,128H176V88a8,8,0,0,0-8-8H96V48H208Z"/>
-  </symbol>
-  <symbol id="i-del" viewBox="0 0 256 256" fill="currentColor">
-    <path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm16,136a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"/>
-  </symbol>
-  <symbol id="i-close" viewBox="0 0 256 256" fill="currentColor">
-    <path d="M208.49,191.51a12,12,0,0,1-17,17L128,145,64.49,208.49a12,12,0,0,1-17-17L111,128,47.51,64.49a12,12,0,0,1,17-17L128,111l63.51-63.52a12,12,0,0,1,17,17L145,128Z"/>
-  </symbol>
+  <symbol id="i-dup" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+  <symbol id="i-del" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
 </svg>
 
 <header class="masthead">
@@ -812,7 +808,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   <button class="chip back" id="backChip" hidden></button>
   <span class="picksys" id="pickSys" hidden aria-hidden="true"></span>
   <div class="search">
-    <svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"/></svg>
+    <svg class="i" aria-hidden="true"><use href="#i-search"/></svg>
     <input id="q" type="search" placeholder="Search name, section, hex…" aria-label="Search palettes">
   </div>
   <div id="sections"></div>
@@ -1238,7 +1234,7 @@ function renderShelf() {
     card.innerHTML = `
       <div class="shelfstrip">${strip.length
         ? strip.map((c) => `<i style="background:${c}"></i>`).join("")
-        : '<i style="background:var(--bg-3)"></i>'}</div>
+        : '<i style="background:var(--wash-2)"></i>'}</div>
       <footer>
         <div class="row1"><h3>${esc(s.name)}</h3><span class="page">${esc(s.at)}</span></div>
         <div class="row2">
@@ -1250,7 +1246,7 @@ function renderShelf() {
             <button class="pn" aria-pressed="${pinned.has(s.id)}">${pinned.has(s.id) ? "Pinned" : "Pin"}</button>
             <button class="dl">Delete</button>
           </span>
-          ${pinned.size > 1 ? '<button class="cmpBtn acts" style="font:inherit;background:none;border:none;cursor:pointer;color:var(--ink-hi);font-size:13px;font-weight:500">Compare ' + pinned.size + '</button>' : ""}
+          ${pinned.size > 1 ? '<button class="cmpBtn acts" style="font:inherit;background:none;border:none;cursor:pointer;color:var(--ink);font-size:13px;font-weight:500">Compare ' + pinned.size + '</button>' : ""}
         </div>
       </footer>`;
     card.querySelector(".op").onclick = () => { open = s; tab = "build"; drawFrom = null; picking = false; state.view = "grid"; render(); };
@@ -2508,13 +2504,13 @@ function previewNode() {
 }
 
 /* the picked faces reach the preview and nowhere else — the same law that keeps every coloured
-   pixel inside the palette keeps every non-Geist letterform inside the page being judged.
+   pixel inside the palette keeps every non-Inter letterform inside the page being judged.
    Loading happens here, at the moment a face is first painted, and once per family. */
 function fontVars(type) {
   return SLOTS.map(([k]) => {
     const n = type[k];
     if (n) loadFont(n);
-    return [`--p-${k}`, n ? fontStack(n) : `var(--font-${k === "mono" ? "mono" : "ui"})`];
+    return [`--p-${k}`, n ? fontStack(n) : "var(--font-ui)"];
   });
 }
 /* repaints a preview node only — never touches the export pane, so the rail's own re-render can't
@@ -2739,7 +2735,7 @@ function chartNode(p, s) {
         <svg class="pchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Bar chart drawn with the system's accents">
           <g stroke="var(--p-line)" stroke-width="1">${grid}</g>
           ${bars}
-          <g fill="var(--p-mut)" font-size="7.5" style="font-family:var(--font-mono)">${labels}</g>
+          <g fill="var(--p-mut)" font-size="7.5" style="font-family:var(--p-mono, var(--font-ui))">${labels}</g>
         </svg>
         <div class="plegend">${series.map((c, i) =>
           `<span><i style="background:${c}"></i>${acc.length ? "accent-" + (i + 1) : "core"}</span>`).join("")}</div>
