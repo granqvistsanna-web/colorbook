@@ -775,6 +775,11 @@
   @media (max-width: 760px) {
     .masthead h1 { font-size: 32px; }
     header.masthead { padding-top: 48px; }
+    /* one row that scrolls sideways, edge to edge, instead of four rows of chips */
+    #sections { flex: 1 1 100%; min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+      margin-inline: calc(-1 * var(--gut)); padding-inline: var(--gut); scroll-padding-inline: var(--gut); }
+    #sections::-webkit-scrollbar { display: none; }
+    #sections > .chip { flex: none; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
@@ -2242,7 +2247,7 @@ function typePicker(s, t) {
     w.append(sel);
     wrap.append(w);
   });
-  wrap.append(el("p", "tnote", "faces load from Google Fonts / Fontshare the moment one is picked — nothing before that"));
+  wrap.append(el("p", "tnote", "each face loads from Google Fonts / Fontshare the first time a preview shows it, once per family"));
   return wrap;
 }
 
