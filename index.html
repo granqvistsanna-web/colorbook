@@ -39,8 +39,21 @@
   @keyframes railin { from { opacity: 0; translate: 0 6px; } }
   ::selection { background: var(--ink); color: var(--on-ink); }
 
+  /* Like-pop: on set only, the button presses in, springs back and throws a ring and eight ink dots */
+  .pop { position: relative; animation: pop-press 480ms var(--spring); }
+  .pop::before, .pop::after { content: ""; position: absolute; pointer-events: none; }
+  .pop::after { inset: -3px; border-radius: inherit; box-shadow: 0 0 0 2px var(--ink); opacity: 0; animation: pop-ring 520ms var(--settle); }
+  .pop::before { left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; opacity: 0; animation: pop-dots 560ms var(--settle); }
+  @keyframes pop-press { 30% { scale: .88; } }
+  @keyframes pop-ring { from { opacity: .4; scale: .92; } to { opacity: 0; scale: 1.35; } }
+  @keyframes pop-dots {
+    0%, 45% { opacity: 1; }
+    from { box-shadow: 0 -10px var(--ink), 9px -7px var(--ink), 14px 0 var(--ink), 9px 7px var(--ink), 0 10px var(--ink), -9px 7px var(--ink), -14px 0 var(--ink), -9px -7px var(--ink); }
+    to { opacity: 0; box-shadow: 0 -22px 0 -1px var(--ink), 21px -16px 0 -1px var(--ink), 30px 0 0 -1px var(--ink), 21px 16px 0 -1px var(--ink), 0 22px 0 -1px var(--ink), -21px 16px 0 -1px var(--ink), -30px 0 0 -1px var(--ink), -21px -16px 0 -1px var(--ink); }
+  }
+
   /* Toolbox bar: the same on every tool page. Full width inside --gutter, "Toolbox / tool" left, actions right */
-  .tb-bar { position: sticky; top: 0; z-index: 20; background: var(--frost);
+  .tb-bar { position: relative; z-index: 20; background: var(--frost);
     -webkit-backdrop-filter: saturate(1.4) blur(12px); backdrop-filter: saturate(1.4) blur(12px); }
   .tb-bar-in { height: var(--h-topbar); display: flex; align-items: center; gap: var(--s-4);
     padding-left: max(var(--gutter), env(safe-area-inset-left, 0px)); padding-right: max(var(--gutter), env(safe-area-inset-right, 0px)); }
@@ -799,9 +812,19 @@
       margin-inline: calc(-1 * var(--gut)); padding-inline: var(--gut); scroll-padding-inline: var(--gut); }
     #sections::-webkit-scrollbar { display: none; }
     #sections > .chip { flex: none; }
+    /* Pumice opening search: a round button that grows into the field and pushes Saved and Systems along */
+    .toolbar .spacer { display: none; }
+    .toolbar .search {
+      flex: 0 0 auto; width: var(--h-touch); padding: 0 0 0 14px; gap: 0; overflow: hidden; cursor: pointer;
+      transition: flex-grow var(--t-open) var(--spring-soft), padding var(--t-open) var(--spring-soft), gap var(--t-open) var(--spring-soft), background var(--t-color), box-shadow var(--t-color);
+    }
+    .toolbar .search input { width: 0; flex: 1 1 0; opacity: 0; font-size: 16px; transition: opacity var(--t-fade); }
+    .toolbar .search:is(:focus-within, :has(input:not(:placeholder-shown))) { flex-grow: 1; padding: 0 14px; gap: var(--s-4); cursor: text; }
+    .toolbar .search:is(:focus-within, :has(input:not(:placeholder-shown))) input { opacity: 1; transition-delay: 90ms; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    .pop, .pop::before, .pop::after { animation: none; }
   }
 </style>
 <script src="https://granqvistsanna-web.github.io/mascot.js" defer></script>
@@ -839,10 +862,10 @@ press scales. Every coloured pixel on screen belongs to the palettes. See DESIGN
   <!-- only while picking: the way back to the system you left open, and the system itself in miniature -->
   <button class="chip back" id="backChip" hidden></button>
   <span class="picksys" id="pickSys" hidden aria-hidden="true"></span>
-  <div class="search">
+  <label class="search" for="q">
     <svg class="i" aria-hidden="true"><use href="#i-search"/></svg>
     <input id="q" type="search" placeholder="Search name, section, hex…" aria-label="Search palettes">
-  </div>
+  </label>
   <div id="sections"></div>
   <div class="dots" id="dots" role="group" aria-label="Filter by hue"></div>
   <span class="spacer"></span>
@@ -1077,6 +1100,9 @@ const obj = (v) => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
 /* a system name is user text and arrives from shared links — never interpolate one raw */
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const saved = new Set(arr(load("colorbook-saved", "[]")));
+// the Save that was just set pops once on its next render; restored saves never do
+let popPage = null;
+function nudge(el, cls, ms) { clearTimeout(el._nudge); el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); el._nudge = setTimeout(function () { el.classList.remove(cls); }, ms || 600); }
 const persist = () => localStorage.setItem("colorbook-saved", JSON.stringify([...saved]));
 const state = { q: "", section: null, hue: null, savedOnly: false, view: "grid" };
 /* app-level view preferences — how she looks at a build, never what the build is:
@@ -1207,7 +1233,12 @@ function renderGrid() {
       </footer>`;
     card.querySelectorAll(".band").forEach((b) => (b.onclick = () =>
       drawing ? drawAccent(b.dataset.hex, p.page) : copy(b.dataset.hex, `${nameOf(b.dataset.hex)} · ${b.dataset.hex} copied`)));
-    card.querySelector(".save").onclick = () => { saved.has(p.page) ? saved.delete(p.page) : saved.add(p.page); persist(); render(); };
+    const save = card.querySelector(".save");
+    if (popPage === p.page) { popPage = null; nudge(save, "pop"); }
+    save.onclick = () => {
+      if (saved.has(p.page)) saved.delete(p.page); else { saved.add(p.page); popPage = p.page; }
+      persist(); render();
+    };
     card.querySelector(".cpy").onclick = () => copy(p.colors.join(", "), "palette copied");
     card.querySelector(".exp").onclick = () => openExport(p);
     card.querySelector(".bld")?.addEventListener("click", () => openFor(p));
