@@ -55,17 +55,8 @@
   header.masthead { padding: 72px var(--gut) 32px; }
   .masthead h1 { color: var(--ink); font-size: 40px; line-height: 1.1; font-weight: 500; letter-spacing: -.02em; }
   .masthead h1 em { font-style: normal; color: inherit; }
-  /* Pumice's count pill: the live tally reads as a status, not a caption */
-  #meta {
-    /* 16px rather than a pill radius, so a phone-width tally that wraps to two lines still reads as one shape */
-    min-height: 32px; padding: 7px 14px; border-radius: 16px; box-shadow: var(--ring); line-height: 1.35;
-    display: inline-flex; align-items: center; gap: var(--s-4); color: var(--ink); font-weight: 500;
-  }
-  #meta::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--ok);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 20%, transparent); }
   .masthead .meta {
-    align-items: center;
-    margin-top: 16px; color: var(--ink-4); font-size: 13px; line-height: 1.5; font-variant-numeric: tabular-nums;
+    margin-top: 12px; color: var(--ink-4); font-size: 13px; line-height: 1.5; font-variant-numeric: tabular-nums;
     display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
   }
 
@@ -828,7 +819,7 @@ press scales. Every coloured pixel on screen belongs to the palettes. See DESIGN
 <header class="masthead">
   <a href="https://granqvistsanna-web.github.io/" data-toolbox-home style="margin-bottom:20px">Toolbox</a>
   <h1>COLOUR<em>BOOK</em></h1>
-  <div class="meta"><span id="meta">—</span><span>V1.0 — 2026</span></div>
+  <div class="meta"><span>V1.0 — 2026</span></div>
 </header>
 
 <div class="toolbar">
@@ -1210,9 +1201,6 @@ function renderGrid() {
     card.querySelector(".draw")?.addEventListener("click", () => { drawFrom = drawing ? null : p.page; render(); });
     grid.append(card);
   });
-  $("#meta").textContent = digits !== null
-    ? `naming ${full ?? "…"}`
-    : `${list.length} of ${PALETTES.length} palettes · ${sections.length} sections · ${PALETTES.reduce((n, p) => n + p.colors.length, 0)} colours`;
 }
 
 /* ---- the namer: type a hex in search, get ranked name suggestions — click one to copy it ---- */
@@ -1246,7 +1234,6 @@ function renderShelf() {
   grid.className = "shelf";
   if (!systems.length) {
     grid.innerHTML = '<p class="empty">No systems yet — open a palette and press build.</p>';
-    $("#meta").textContent = `0 systems`;
     return;
   }
   grid.innerHTML = "";
@@ -1292,7 +1279,6 @@ function renderShelf() {
     card.querySelector(".cmpBtn")?.addEventListener("click", openCompare);
     grid.append(card);
   });
-  $("#meta").textContent = `${systems.length} system${systems.length === 1 ? "" : "s"} · ${pinned.size} pinned`;
 }
 
 /* ---------- copy + toast ---------- */
@@ -3397,7 +3383,6 @@ console.assert(NEUTRALS.every((n) => n.colors.length === 11 && lum(n.colors[0]) 
   state.q = "#ff69b4"; renderGrid();
   console.assert($("#grid .namer") && $("#grid .namer .nrow b").textContent === "Hot Pink", "a hex query must render the namer");
   console.assert(!$("#grid .card") && !$("#grid .empty"), "a colour query generates — it must not also search");
-  console.assert($("#meta").textContent === "naming #FF69B4", "the meta line must say what the grid is doing", $("#meta").textContent);
   state.q = "ff69b4"; renderGrid();
   console.assert($("#grid .namer") && !$("#grid .card"), "a bare 6-digit hex is still a colour query");
   state.q = "#fab"; renderGrid();
