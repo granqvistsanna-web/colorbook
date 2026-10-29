@@ -16,7 +16,7 @@
      always win; the page's own values use names Pumice does not (--gut). The chrome is ink on
      wash and every coloured pixel on screen still belongs to the palettes. */
   :root {
-    --gut: clamp(16px, 5vw, 80px);
+    --gut: var(--gutter);
     /* Lucide chevron-down, used as a mask so it takes any ink */
     --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   }
@@ -34,10 +34,20 @@
      step out rather than compete with the board for room. Except while picking: an accent can be
      drawn from another page, and the button that does it lives on a card, so the grid has to come
      back or the feature is unreachable — which is exactly what hiding it unconditionally did. */
-  body.rail:not(.pick) :is(.masthead, .toolbar, #grid, .colophon) { display: none; }
+  body.rail:not(.pick) :is(.tb-bar, .masthead, .toolbar, #grid, .colophon) { display: none; }
   body.rail.pick #rail { display: none; }
   @keyframes railin { from { opacity: 0; translate: 0 6px; } }
   ::selection { background: var(--ink); color: var(--on-ink); }
+
+  /* Toolbox bar: the same on every tool page. Full width inside --gutter, "Toolbox / tool" left, actions right */
+  .tb-bar { position: sticky; top: 0; z-index: 20; background: var(--frost);
+    -webkit-backdrop-filter: saturate(1.4) blur(12px); backdrop-filter: saturate(1.4) blur(12px); }
+  .tb-bar-in { height: var(--h-topbar); display: flex; align-items: center; gap: var(--s-4);
+    padding-left: max(var(--gutter), env(safe-area-inset-left, 0px)); padding-right: max(var(--gutter), env(safe-area-inset-right, 0px)); }
+  .tb-bar [data-toolbox-home] { --tb-size: 30px; font-size: 15px; }
+  .tb-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 15px/1 var(--font-ui); color: var(--ink); }
+  .tb-end { margin-left: auto; display: flex; align-items: center; gap: var(--s-4); flex: none; }
+  .tb-end a { text-decoration: none; }
   :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
   /* every display rule here would otherwise out-rank the UA's [hidden] */
   [hidden] { display: none !important; }
@@ -52,7 +62,7 @@
     outline: 2px solid var(--ink); outline-offset: 2px;
   }
 
-  header.masthead { padding: 72px var(--gut) 32px; }
+  header.masthead { padding: 48px var(--gut) 32px; }
   .masthead h1 { color: var(--ink); font-size: 40px; line-height: 1.1; font-weight: 500; letter-spacing: -.02em; }
   .masthead h1 em { font-style: normal; color: inherit; }
 
@@ -262,6 +272,7 @@
   .btn:hover:not(:disabled) { opacity: .86; }
   .btn:active:not(:disabled) { scale: var(--press); }
   .btn.ghost { background: var(--wash); color: var(--ink); }
+  .btn.sm { height: var(--h-nav); padding: 0 16px; font-size: 14px; }
   .btn.ghost:hover:not(:disabled) { opacity: 1; background: var(--wash-2); }
   .btn:disabled { opacity: .4; cursor: not-allowed; }
 
@@ -782,7 +793,7 @@
   }
   @media (max-width: 760px) {
     .masthead h1 { font-size: 32px; }
-    header.masthead { padding-top: 48px; }
+    header.masthead { padding-top: 32px; }
     /* one row that scrolls sideways, edge to edge, instead of four rows of chips */
     #sections { flex: 1 1 100%; min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
       margin-inline: calc(-1 * var(--gut)); padding-inline: var(--gut); scroll-padding-inline: var(--gut); }
@@ -812,8 +823,15 @@ press scales. Every coloured pixel on screen belongs to the palettes. See DESIGN
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
 </svg>
 
+<header class="tb-bar">
+  <div class="tb-bar-in">
+    <a href="https://granqvistsanna-web.github.io/" data-toolbox-home>Toolbox</a><span class="tb-sep" aria-hidden="true">/</span>
+    <span class="tb-name">Colourbook</span>
+    <div class="tb-end"><a class="btn sm" href="https://github.com/granqvistsanna-web/colorbook"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>GitHub</a></div>
+  </div>
+</header>
+
 <header class="masthead">
-  <a href="https://granqvistsanna-web.github.io/" data-toolbox-home style="margin-bottom:20px">Toolbox</a>
   <h1>COLOUR<em>BOOK</em></h1>
 </header>
 
