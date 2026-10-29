@@ -55,8 +55,17 @@
   header.masthead { padding: 72px var(--gut) 32px; }
   .masthead h1 { color: var(--ink); font-size: 40px; line-height: 1.1; font-weight: 500; letter-spacing: -.02em; }
   .masthead h1 em { font-style: normal; color: inherit; }
+  /* Pumice's count pill: the live tally reads as a status, not a caption */
+  #meta {
+    /* 16px rather than a pill radius, so a phone-width tally that wraps to two lines still reads as one shape */
+    min-height: 32px; padding: 7px 14px; border-radius: 16px; box-shadow: var(--ring); line-height: 1.35;
+    display: inline-flex; align-items: center; gap: var(--s-4); color: var(--ink); font-weight: 500;
+  }
+  #meta::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--ok);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 20%, transparent); }
   .masthead .meta {
-    margin-top: 12px; color: var(--ink-4); font-size: 13px; line-height: 1.5; font-variant-numeric: tabular-nums;
+    align-items: center;
+    margin-top: 16px; color: var(--ink-4); font-size: 13px; line-height: 1.5; font-variant-numeric: tabular-nums;
     display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
   }
 
@@ -130,7 +139,7 @@
     grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
   }
   .card {
-    background: var(--wash);
+    background: var(--wash); padding: 8px;
     border-radius: var(--r-card); overflow: hidden;
     display: flex; flex-direction: column;
     animation: rise var(--t-rise) var(--rise) backwards;
@@ -140,7 +149,12 @@
   .card.drawing { outline: 2px solid var(--ink); outline-offset: 2px; }
   @keyframes rise { from { opacity: 0; translate: 0 10px; } }
 
-  .bands { display: flex; height: 10rem; background: var(--wash); }
+  /* the palette is the stage, inset in the card with the outer radius minus the padding, and a
+     hairline so a white or near-page swatch still has an edge */
+  .bands { display: flex; height: 10rem; background: var(--wash); position: relative;
+    border-radius: calc(var(--r-card) - 8px); overflow: hidden; }
+  .bands::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    box-shadow: inset 0 0 0 1px var(--hairline); }
   .band {
     flex: 1 1 0; min-width: 0; border: none; cursor: copy; padding: 8px 4px;
     display: flex; align-items: flex-start; justify-content: center;
@@ -161,7 +175,7 @@
   .card.drawing .band.on { outline: 2px solid currentColor; outline-offset: -2px; }
   .card.drawing .band span { opacity: 1; }
 
-  .card footer { padding: 16px 20px 18px; }
+  .card footer { padding: 12px 12px 6px; }
   .card .row1 { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-4); }
   .card h3 { font-size: 15px; font-weight: 500; letter-spacing: -.01em; color: var(--ink); }
   .card .page { font-size: 12px; font-weight: 500; color: var(--ink-4); font-variant-numeric: tabular-nums; }
@@ -176,6 +190,13 @@
   }
   .acts button:hover { color: var(--ink); background: var(--wash); }
   .acts button:active { scale: var(--press-chip); }
+  /* Pumice: actions rest hidden and spring up on hover or focus. Touch has no hover, and picking or
+     drawing is a mode where the actions are the point, so those keep them. */
+  @media (hover: hover) {
+    .card .acts { opacity: 0; translate: 0 4px;
+      transition: opacity var(--t-fade), translate var(--t-move) var(--spring-soft); }
+    .card:hover .acts, .card:focus-within .acts, .card.drawing .acts, body.pick .card .acts { opacity: 1; translate: 0 0; }
+  }
   .acts .save[aria-pressed="true"], .acts .draw[aria-pressed="true"], .acts .pn[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); }
 
   .empty { grid-column: 1 / -1; text-align: center; padding: 96px 16px; color: var(--ink-4); font-size: 15px; }
@@ -726,7 +747,7 @@
 
   /* ---- shelf: how you recognise a system three weeks later ---- */
   .shelf .card footer { border-top: none; }
-  .shelfstrip { display: flex; height: 5rem; }
+  .shelfstrip { display: flex; height: 5rem; border-radius: calc(var(--r-card) - 8px); overflow: hidden; }
   .shelfstrip i { flex: 1 1 0; }
   .shelf .card.pin { outline: 2px solid var(--ink); outline-offset: 2px; }
 
